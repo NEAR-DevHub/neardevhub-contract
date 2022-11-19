@@ -5,12 +5,25 @@ use near_sdk::serde::{Serialize, Deserialize};
 
 near_sdk::setup_alloc!();
 
+type AttestationId = u64;
+type AttesterId = AccountId;
+
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     Ideas,
     Submissions,
+    Attestations,
+    Sponsorships,
 }
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Attestation {
+    attester: AccountId,
+    description: String,
+}
+
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -76,6 +89,7 @@ pub struct Submission {
     description: String,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
+    attestations: Vec<AttestationId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -91,8 +105,8 @@ pub struct Contract {
     pub default_reviewer_id: AccountId,
     pub ideas: Vector<Idea>,
     pub submissions: LookupMap<u64, Vec<Submission>>,
+    pub attestations: Vector<Attestation>,
 }
-
 
 #[near_bindgen]
 impl Contract {
@@ -102,6 +116,7 @@ impl Contract {
             default_reviewer_id,
             ideas: Vector::new(StorageKey::Ideas),
             submissions: LookupMap::new(StorageKey::Submissions),
+            attestations: Vector::new(StorageKey::Attestations)
         }
     }
 
@@ -149,6 +164,7 @@ impl Contract {
             account_id: env::predecessor_account_id(),
             description: submission.description,
             timestamp: env::block_timestamp(),
+            attestations: vec![]
         });
         self.submissions.insert(&idea_id, &submissions);
     }
