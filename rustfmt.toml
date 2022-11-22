@@ -1,0 +1,3 @@
+use_small_heuristics = "Max"
+reorder_imports = true
+edition = "2021"
