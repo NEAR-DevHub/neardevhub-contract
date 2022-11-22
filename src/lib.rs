@@ -1,29 +1,41 @@
-use near_sdk::{env, near_bindgen, PromiseOrValue, AccountId, Promise, Balance, BorshStorageKey, PanicOnDefault, Timestamp};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, Vector};
-use near_sdk::borsh::{self, BorshSerialize, BorshDeserialize};
-use near_sdk::serde::{Serialize, Deserialize};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{
+    env, near_bindgen, AccountId, Balance, BorshStorageKey, PanicOnDefault, Promise,
+    PromiseOrValue, Timestamp,
+};
 
 near_sdk::setup_alloc!();
 
 type AttestationId = u64;
 type AttesterId = AccountId;
-
+type SubmissionId = u64;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     Ideas,
     Submissions,
+    IdeaToSubmissions,
     Attestations,
     Sponsorships,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct Attestation {
+    attestation_id: AttestationId,
     attester: AccountId,
+    timestamp: Timestamp,
+    submission_id: SubmissionId,
     description: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct AttestationInput {
+    submission_id: SubmissionId,
+    description: String,
+}
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -44,7 +56,6 @@ pub struct Idea {
     description: String,
     amount: Balance,
     submitter_id: AccountId,
-    reviewer_id: AccountId,
     status: IdeaStatus,
     timestamp: Timestamp,
 }
@@ -59,7 +70,6 @@ pub struct IdeaOutput {
     #[serde(with = "u128_dec_format")]
     amount: Balance,
     submitter_id: AccountId,
-    reviewer_id: AccountId,
     status: IdeaStatus,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
@@ -73,7 +83,6 @@ impl IdeaOutput {
             description: idea.description,
             amount: idea.amount,
             submitter_id: idea.submitter_id,
-            reviewer_id: idea.reviewer_id,
             status: idea.status,
             timestamp: idea.timestamp,
         }
@@ -102,26 +111,22 @@ pub struct SubmissionInput {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    pub default_reviewer_id: AccountId,
     pub ideas: Vector<Idea>,
-    pub submissions: LookupMap<u64, Vec<Submission>>,
+    pub submissions: Vector<Submission>,
+    pub idea_to_submissions: LookupMap<u64, Vec<SubmissionId>>,
     pub attestations: Vector<Attestation>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(default_reviewer_id: AccountId) -> Self {
+    pub fn new() -> Self {
         Self {
-            default_reviewer_id,
             ideas: Vector::new(StorageKey::Ideas),
-            submissions: LookupMap::new(StorageKey::Submissions),
-            attestations: Vector::new(StorageKey::Attestations)
+            submissions: Vector::new(StorageKey::Submissions),
+            idea_to_submissions: LookupMap::new(StorageKey::IdeaToSubmissions),
+            attestations: Vector::new(StorageKey::Attestations),
         }
-    }
-
-    pub fn set_default_reviewer(&mut self, reviewer_id: AccountId) {
-        self.default_reviewer_id = reviewer_id;
     }
 
     pub fn get_idea(&self, idea_id: u64) -> IdeaOutput {
@@ -133,92 +138,82 @@ impl Contract {
     }
 
     pub fn get_submissions(&self, idea_id: u64) -> Vec<Submission> {
-        self.submissions.get(&idea_id).unwrap_or(vec![])
+        let ids = self.idea_to_submissions.get(&idea_id).unwrap_or_default();
+        ids.into_iter().map(|id| self.submissions.get(id).unwrap()).collect()
     }
 
     pub fn get_ideas(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<IdeaOutput> {
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.ideas.len());
-        (from_index..std::cmp::min(from_index + limit, self.ideas.len())).map(
-            |idea_id| IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap())).collect()
+        (from_index..std::cmp::min(from_index + limit, self.ideas.len()))
+            .map(|idea_id| IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap()))
+            .collect()
     }
 
     #[payable]
-    pub fn add_idea(&mut self, name: String, description: String, reviewer_id: Option<AccountId>) {
+    pub fn add_idea(&mut self, name: String, description: String) {
         self.ideas.push(&Idea {
             name,
             description,
             amount: env::attached_deposit(),
             submitter_id: env::predecessor_account_id(),
-            reviewer_id: reviewer_id.unwrap_or(self.default_reviewer_id.clone()),
             status: IdeaStatus::Open,
             timestamp: env::block_timestamp(),
         })
     }
 
-    pub fn add_submission(&mut self, submission: SubmissionInput) {
-        let idea_id = submission.idea_id;
-        let mut submissions = self.submissions.get(&idea_id).unwrap_or_default();
-        submissions.push(Submission {
-            idea_id: submission.idea_id,
+    pub fn add_submission(&mut self, submission_inp: SubmissionInput) {
+        let idea_id = submission_inp.idea_id;
+        let mut submission_ids = self.idea_to_submissions.get(&idea_id).unwrap_or_default();
+        submission_ids.push(self.submissions.len());
+        self.idea_to_submissions.insert(&idea_id, &submission_ids);
+
+        self.submissions.push(&Submission {
+            idea_id: submission_inp.idea_id,
             account_id: env::predecessor_account_id(),
-            description: submission.description,
+            description: submission_inp.description,
             timestamp: env::block_timestamp(),
-            attestations: vec![]
+            attestations: vec![],
         });
-        self.submissions.insert(&idea_id, &submissions);
     }
 
-    pub fn reassign_reviewer(&mut self, idea_id: u64, reviewer_id: AccountId) {
-        let mut idea = self.ideas.get(idea_id).unwrap();
-        assert_eq!(env::predecessor_account_id(), idea.reviewer_id, "Only current reviewer can reassign");
-        idea.reviewer_id = reviewer_id;
-        self.ideas.replace(idea_id, &idea);
-    }
+    pub fn add_attestation(&mut self, attestation_inp: AttestationInput) {
+        let mut submission =
+            self.submissions.get(attestation_inp.submission_id).expect("Submission id not found");
+        let new_attestation_id = self.attestations.len();
+        submission.attestations.push(new_attestation_id);
+        self.submissions.replace(attestation_inp.submission_id, &submission);
 
-    #[payable]
-    pub fn donate(&mut self, idea_id: u64) {
-        let mut idea = self.ideas.get(idea_id).unwrap();
-        idea.amount += env::attached_deposit();
-        self.ideas.replace(idea_id, &idea);
+        self.attestations.push(&Attestation {
+            attestation_id: new_attestation_id,
+            attester: env::predecessor_account_id(),
+            timestamp: env::block_timestamp(),
+            submission_id: attestation_inp.submission_id,
+            description: attestation_inp.description,
+        });
     }
-
-    pub fn review(&mut self, idea_id: u64, status: IdeaStatus) -> PromiseOrValue<()> {
-        let mut idea = self.ideas.get(idea_id).unwrap();
-        assert_eq!(env::predecessor_account_id(), idea.reviewer_id, "Only current reviewer can review");
-        assert_eq!(idea.status, IdeaStatus::Open, "Idea must be open to change status");
-        let submissions = self.submissions.get(&idea_id).unwrap_or_default();
-        let ret = match &status {
-            IdeaStatus::Done(submission_id) => {
-                PromiseOrValue::Promise(Promise::new(submissions[*submission_id].account_id.clone()).transfer(idea.amount))
-            }
-            _ => PromiseOrValue::Value(())
-        };
-        idea.status = status;
-        self.ideas.replace(idea_id, &idea);
-        ret
+    pub fn get_attestations(&self, submission_id: SubmissionId) -> Vec<Attestation> {
+        let submission = self.submissions.get(submission_id).expect("Submission id not found");
+        submission.attestations.iter().map(|id| self.attestations.get(*id).unwrap()).collect()
     }
 }
-
 
 pub mod u128_dec_format {
     use near_sdk::serde::de;
     use near_sdk::serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(num: &u128, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&num.to_string())
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<u128, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
-        String::deserialize(deserializer)?
-            .parse()
-            .map_err(de::Error::custom)
+        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
     }
 }
 
@@ -227,18 +222,16 @@ pub mod u64_dec_format {
     use near_sdk::serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S>(num: &u64, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&num.to_string())
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<u64, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
-        String::deserialize(deserializer)?
-            .parse()
-            .map_err(de::Error::custom)
+        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
     }
 }
