@@ -21,7 +21,8 @@ enum StorageKey {
     Sponsorships,
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Attestation {
     attestation_id: AttestationId,
     attester: AccountId,
@@ -37,26 +38,11 @@ pub struct AttestationInput {
     description: String,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, PartialEq, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub enum IdeaStatus {
-    /// Open when idea is still not done.
-    Open,
-    /// If idea violates terms and conditions, it gets reported.
-    Reported,
-    /// Confirmed that idea is done by given submission id.
-    Done(usize),
-    /// Closed without payout. Either outlived or done outside of this payouts.
-    Closed,
-}
-
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Idea {
     name: String,
     description: String,
-    amount: Balance,
     submitter_id: AccountId,
-    status: IdeaStatus,
     timestamp: Timestamp,
 }
 
@@ -67,10 +53,7 @@ pub struct IdeaOutput {
     idea_id: u64,
     name: String,
     description: String,
-    #[serde(with = "u128_dec_format")]
-    amount: Balance,
     submitter_id: AccountId,
-    status: IdeaStatus,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
 }
@@ -81,9 +64,7 @@ impl IdeaOutput {
             idea_id,
             name: idea.name,
             description: idea.description,
-            amount: idea.amount,
             submitter_id: idea.submitter_id,
-            status: idea.status,
             timestamp: idea.timestamp,
         }
     }
@@ -129,6 +110,15 @@ impl Contract {
         }
     }
 
+    pub fn add_idea(&mut self, name: String, description: String) {
+        self.ideas.push(&Idea {
+            name,
+            description,
+            submitter_id: env::predecessor_account_id(),
+            timestamp: env::block_timestamp(),
+        })
+    }
+
     pub fn get_idea(&self, idea_id: u64) -> IdeaOutput {
         IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap())
     }
@@ -137,29 +127,12 @@ impl Contract {
         self.ideas.len()
     }
 
-    pub fn get_submissions(&self, idea_id: u64) -> Vec<Submission> {
-        let ids = self.idea_to_submissions.get(&idea_id).unwrap_or_default();
-        ids.into_iter().map(|id| self.submissions.get(id).unwrap()).collect()
-    }
-
     pub fn get_ideas(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<IdeaOutput> {
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.ideas.len());
         (from_index..std::cmp::min(from_index + limit, self.ideas.len()))
             .map(|idea_id| IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap()))
             .collect()
-    }
-
-    #[payable]
-    pub fn add_idea(&mut self, name: String, description: String) {
-        self.ideas.push(&Idea {
-            name,
-            description,
-            amount: env::attached_deposit(),
-            submitter_id: env::predecessor_account_id(),
-            status: IdeaStatus::Open,
-            timestamp: env::block_timestamp(),
-        })
     }
 
     pub fn add_submission(&mut self, submission_inp: SubmissionInput) {
@@ -177,6 +150,11 @@ impl Contract {
         });
     }
 
+    pub fn get_submissions(&self, idea_id: u64) -> Vec<Submission> {
+        let ids = self.idea_to_submissions.get(&idea_id).unwrap_or_default();
+        ids.into_iter().map(|id| self.submissions.get(id).unwrap()).collect()
+    }
+
     pub fn add_attestation(&mut self, attestation_inp: AttestationInput) {
         let mut submission =
             self.submissions.get(attestation_inp.submission_id).expect("Submission id not found");
@@ -192,6 +170,7 @@ impl Contract {
             description: attestation_inp.description,
         });
     }
+
     pub fn get_attestations(&self, submission_id: SubmissionId) -> Vec<Attestation> {
         let submission = self.submissions.get(submission_id).expect("Submission id not found");
         submission.attestations.iter().map(|id| self.attestations.get(*id).unwrap()).collect()
