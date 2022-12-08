@@ -82,6 +82,26 @@ pub struct Comment {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub enum VersionedComment {
+    V0(Comment),
+}
+
+impl From<VersionedComment> for Comment {
+    fn from(vc: VersionedComment) -> Self {
+        match vc {
+            VersionedComment::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Comment> for VersionedComment {
+    fn from(c: Comment) -> Self {
+        VersionedComment::V0(c)
+    }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum SponsorshipToken {
     Near,
     NEP141 { address: AccountId },
@@ -122,6 +142,26 @@ pub struct Sponsorship {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub enum VersionedSponsorship {
+    V0(Sponsorship),
+}
+
+impl From<VersionedSponsorship> for Sponsorship {
+    fn from(vs: VersionedSponsorship) -> Self {
+        match vs {
+            VersionedSponsorship::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Sponsorship> for VersionedSponsorship {
+    fn from(s: Sponsorship) -> Self {
+        VersionedSponsorship::V0(s)
+    }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Attestation {
     // Common fields
     id: AttestationId,
@@ -137,6 +177,26 @@ pub struct Attestation {
     //Specific fields
     #[serde(with = "u64_dec_format")]
     submission_id: SubmissionId,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum VersionedAttestation {
+    V0(Attestation),
+}
+
+impl From<VersionedAttestation> for Attestation {
+    fn from(va: VersionedAttestation) -> Self {
+        match va {
+            VersionedAttestation::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Attestation> for VersionedAttestation {
+    fn from(a: Attestation) -> Self {
+        VersionedAttestation::V0(a)
+    }
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -162,6 +222,26 @@ pub struct Submission {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub enum VersionedSubmission {
+    V0(Submission),
+}
+
+impl From<VersionedSubmission> for Submission {
+    fn from(vs: VersionedSubmission) -> Self {
+        match vs {
+            VersionedSubmission::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Submission> for VersionedSubmission {
+    fn from(s: Submission) -> Self {
+        VersionedSubmission::V0(s)
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Idea {
     // Common Fields
     id: IdeaId,
@@ -177,23 +257,41 @@ pub struct Idea {
     submissions: Vec<SubmissionId>,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum VersionedIdea {
+    V0(Idea),
+}
+
+impl From<VersionedIdea> for Idea {
+    fn from(vi: VersionedIdea) -> Self {
+        match vi {
+            VersionedIdea::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Idea> for VersionedIdea {
+    fn from(idea: Idea) -> Self {
+        VersionedIdea::V0(idea)
+    }
+}
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    pub treasury: AccountId,
-    pub ideas: Vector<Idea>,
-    pub submissions: Vector<Submission>,
-    pub attestations: Vector<Attestation>,
-    pub sponsorships: Vector<Sponsorship>,
-    pub comments: Vector<Comment>,
+    pub ideas: Vector<VersionedIdea>,
+    pub submissions: Vector<VersionedSubmission>,
+    pub attestations: Vector<VersionedAttestation>,
+    pub sponsorships: Vector<VersionedSponsorship>,
+    pub comments: Vector<VersionedComment>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(alternative_treasury: Option<AccountId>) -> Self {
+    pub fn new() -> Self {
         Self {
-            treasury: alternative_treasury.unwrap_or(env::current_account_id()),
             ideas: Vector::new(StorageKey::Ideas),
             submissions: Vector::new(StorageKey::Submissions),
             attestations: Vector::new(StorageKey::Attestations),
@@ -217,60 +315,62 @@ impl Contract {
 
     pub fn add_idea(&mut self, name: String, description: String) {
         let id = self.ideas.len();
-        self.ideas.push(&Idea {
-            id,
-            name,
-            description,
-            author_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            status: PostStatus::Open,
-            likes: Default::default(),
-            comments: vec![],
-            submissions: vec![],
-        })
+        self.ideas.push(
+            &Idea {
+                id,
+                name,
+                description,
+                author_id: env::predecessor_account_id(),
+                timestamp: env::block_timestamp(),
+                status: PostStatus::Open,
+                likes: Default::default(),
+                comments: vec![],
+                submissions: vec![],
+            }
+            .into(),
+        )
     }
 
     pub fn get_idea(&self, idea_id: IdeaId) -> Idea {
-        self.ideas.get(idea_id).unwrap()
+        self.ideas.get(idea_id).unwrap().into()
     }
 
     pub fn get_num_ideas(&self) -> IdeaId {
         self.ideas.len()
     }
 
-    pub fn get_ideas(&self, from_index: Option<IdeaId>, limit: Option<IdeaId>) -> Vec<Idea> {
-        let from_index = from_index.unwrap_or(0);
-        let limit = limit.unwrap_or(self.ideas.len());
-        (from_index..std::cmp::min(from_index + limit, self.ideas.len()))
-            .map(|idea_id| self.ideas.get(idea_id).unwrap())
-            .collect()
+    pub fn get_ideas(&self) -> Vec<Idea> {
+        self.ideas.iter().map(|vi| vi.into()).collect()
     }
 
     pub fn add_submission(&mut self, idea_id: IdeaId, name: String, description: String) {
         let id = self.submissions.len();
 
-        let mut idea = self.ideas.get(idea_id).expect("Submission id not found");
+        let mut idea: Idea = self.ideas.get(idea_id).expect("Submission id not found").into();
         idea.submissions.push(id);
-        self.ideas.replace(idea_id, &idea);
+        self.ideas.replace(idea_id, &idea.into());
 
-        self.submissions.push(&Submission {
-            id,
-            name,
-            description,
-            author_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            status: PostStatus::Open,
-            likes: Default::default(),
-            comments: vec![],
-            idea_id,
-            attestations: vec![],
-            sponsorships: vec![],
-        });
+        self.submissions.push(
+            &Submission {
+                id,
+                name,
+                description,
+                author_id: env::predecessor_account_id(),
+                timestamp: env::block_timestamp(),
+                status: PostStatus::Open,
+                likes: Default::default(),
+                comments: vec![],
+                idea_id,
+                attestations: vec![],
+                sponsorships: vec![],
+            }
+            .into(),
+        );
     }
 
     pub fn get_submissions(&self, idea_id: IdeaId) -> Vec<Submission> {
-        let idea = self.ideas.get(idea_id).expect("Idea id not found");
-        idea.submissions.iter().map(|id| self.submissions.get(*id).unwrap()).collect()
+        let idea: Idea = self.ideas.get(idea_id).expect("Idea id not found").into();
+        idea.submissions.iter().map(|id| self.submissions.get(*id).unwrap().into()).collect()
     }
 
     pub fn add_attestation(
@@ -281,26 +381,35 @@ impl Contract {
     ) {
         let id = self.attestations.len();
 
-        let mut submission = self.submissions.get(submission_id).expect("Submission id not found");
+        let mut submission: Submission =
+            self.submissions.get(submission_id).expect("Submission id not found").into();
         submission.attestations.push(id);
-        self.submissions.replace(submission_id, &submission);
+        self.submissions.replace(submission_id, &submission.into());
 
-        self.attestations.push(&Attestation {
-            id,
-            name,
-            description,
-            author_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            status: PostStatus::Open,
-            likes: Default::default(),
-            comments: vec![],
-            submission_id,
-        });
+        self.attestations.push(
+            &Attestation {
+                id,
+                name,
+                description,
+                author_id: env::predecessor_account_id(),
+                timestamp: env::block_timestamp(),
+                status: PostStatus::Open,
+                likes: Default::default(),
+                comments: vec![],
+                submission_id,
+            }
+            .into(),
+        );
     }
 
     pub fn get_attestations(&self, submission_id: SubmissionId) -> Vec<Attestation> {
-        let submission = self.submissions.get(submission_id).expect("Submission id not found");
-        submission.attestations.iter().map(|id| self.attestations.get(*id).unwrap()).collect()
+        let submission: Submission =
+            self.submissions.get(submission_id).expect("Submission id not found").into();
+        submission
+            .attestations
+            .iter()
+            .map(|id| self.attestations.get(*id).unwrap().into())
+            .collect()
     }
 
     pub fn add_sponsorship(
@@ -314,29 +423,38 @@ impl Contract {
     ) {
         let id = self.sponsorships.len();
 
-        let mut submission = self.submissions.get(submission_id).expect("Submission id not found");
+        let mut submission: Submission =
+            self.submissions.get(submission_id).expect("Submission id not found").into();
         submission.sponsorships.push(id);
-        self.submissions.replace(submission_id, &submission);
+        self.submissions.replace(submission_id, &submission.into());
 
-        self.sponsorships.push(&Sponsorship {
-            id,
-            name,
-            description,
-            author_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            status: PostStatus::Open,
-            likes: Default::default(),
-            comments: vec![],
-            submission_id,
-            sponsorship_token: SponsorshipToken::from_str(&sponsorship_token).unwrap(),
-            amount: Balance::from_str(&amount).unwrap(),
-            supervisor,
-        });
+        self.sponsorships.push(
+            &Sponsorship {
+                id,
+                name,
+                description,
+                author_id: env::predecessor_account_id(),
+                timestamp: env::block_timestamp(),
+                status: PostStatus::Open,
+                likes: Default::default(),
+                comments: vec![],
+                submission_id,
+                sponsorship_token: SponsorshipToken::from_str(&sponsorship_token).unwrap(),
+                amount: Balance::from_str(&amount).unwrap(),
+                supervisor,
+            }
+            .into(),
+        );
     }
 
     pub fn get_sponsorships(&self, submission_id: SubmissionId) -> Vec<Sponsorship> {
-        let submission = self.submissions.get(submission_id).expect("Submission id not found");
-        submission.sponsorships.iter().map(|id| self.sponsorships.get(*id).unwrap()).collect()
+        let submission: Submission =
+            self.submissions.get(submission_id).expect("Submission id not found").into();
+        submission
+            .sponsorships
+            .iter()
+            .map(|id| self.sponsorships.get(*id).unwrap().into())
+            .collect()
     }
 
     pub fn like(&mut self, post_type: PostType, post_id: u64) {
@@ -344,32 +462,33 @@ impl Contract {
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         match post_type {
             PostType::Idea => {
-                let mut idea = self.ideas.get(post_id).expect("Idea id not found");
+                let mut idea: Idea = self.ideas.get(post_id).expect("Idea id not found").into();
                 idea.likes.insert(like);
-                self.ideas.replace(post_id, &idea);
+                self.ideas.replace(post_id, &idea.into());
             }
             PostType::Submission => {
-                let mut submission =
-                    self.submissions.get(post_id).expect("Submission id not found");
+                let mut submission: Submission =
+                    self.submissions.get(post_id).expect("Submission id not found").into();
                 submission.likes.insert(like);
-                self.submissions.replace(post_id, &submission);
+                self.submissions.replace(post_id, &submission.into());
             }
             PostType::Attestation => {
-                let mut attestation =
-                    self.attestations.get(post_id).expect("Attestation id not found");
+                let mut attestation: Attestation =
+                    self.attestations.get(post_id).expect("Attestation id not found").into();
                 attestation.likes.insert(like);
-                self.attestations.replace(post_id, &attestation);
+                self.attestations.replace(post_id, &attestation.into());
             }
             PostType::Sponsorship => {
-                let mut sponsorship =
-                    self.sponsorships.get(post_id).expect("Sponsorship id not found");
+                let mut sponsorship: Sponsorship =
+                    self.sponsorships.get(post_id).expect("Sponsorship id not found").into();
                 sponsorship.likes.insert(like);
-                self.sponsorships.replace(post_id, &sponsorship);
+                self.sponsorships.replace(post_id, &sponsorship.into());
             }
             PostType::Comment => {
-                let mut comment = self.comments.get(post_id).expect("Comment id not found");
+                let mut comment: Comment =
+                    self.comments.get(post_id).expect("Comment id not found").into();
                 comment.likes.insert(like);
-                self.comments.replace(post_id, &comment);
+                self.comments.replace(post_id, &comment.into());
             }
         }
     }
@@ -383,54 +502,68 @@ impl Contract {
             comments: vec![],
         };
         let comment_id = self.comments.len();
-        self.comments.push(&comment);
+        self.comments.push(&comment.into());
         match post_type {
             PostType::Idea => {
-                let mut idea = self.ideas.get(post_id).expect("Idea id not found");
+                let mut idea: Idea = self.ideas.get(post_id).expect("Idea id not found").into();
                 idea.comments.push(comment_id);
-                self.ideas.replace(post_id, &idea);
+                self.ideas.replace(post_id, &idea.into());
             }
             PostType::Submission => {
-                let mut submission =
-                    self.submissions.get(post_id).expect("Submission id not found");
+                let mut submission: Submission =
+                    self.submissions.get(post_id).expect("Submission id not found").into();
                 submission.comments.push(comment_id);
-                self.submissions.replace(post_id, &submission);
+                self.submissions.replace(post_id, &submission.into());
             }
             PostType::Attestation => {
-                let mut attestation =
-                    self.attestations.get(post_id).expect("Attestation id not found");
+                let mut attestation: Attestation =
+                    self.attestations.get(post_id).expect("Attestation id not found").into();
                 attestation.comments.push(comment_id);
-                self.attestations.replace(post_id, &attestation);
+                self.attestations.replace(post_id, &attestation.into());
             }
             PostType::Sponsorship => {
-                let mut sponsorship =
-                    self.sponsorships.get(post_id).expect("Sponsorship id not found");
+                let mut sponsorship: Sponsorship =
+                    self.sponsorships.get(post_id).expect("Sponsorship id not found").into();
                 sponsorship.comments.push(comment_id);
-                self.sponsorships.replace(post_id, &sponsorship);
+                self.sponsorships.replace(post_id, &sponsorship.into());
             }
             PostType::Comment => {
-                let mut comment = self.comments.get(post_id).expect("Comment id not found");
+                let mut comment: Comment =
+                    self.comments.get(post_id).expect("Comment id not found").into();
                 comment.comments.push(comment_id);
-                self.comments.replace(post_id, &comment);
+                self.comments.replace(post_id, &comment.into());
             }
         }
     }
 
     pub fn get_comments(&self, post_type: PostType, post_id: u64) -> Vec<Comment> {
         let comment_ids = match post_type {
-            PostType::Idea => self.ideas.get(post_id).expect("Idea id not found").comments,
+            PostType::Idea => {
+                let idea: Idea = self.ideas.get(post_id).expect("Idea id not found").into();
+                idea.comments
+            }
             PostType::Submission => {
-                self.submissions.get(post_id).expect("Submission id not found").comments
+                let submission: Submission =
+                    self.submissions.get(post_id).expect("Submission id not found").into();
+                submission.comments
             }
             PostType::Attestation => {
-                self.attestations.get(post_id).expect("Attestation id not found").comments
+                let attestation: Attestation =
+                    self.attestations.get(post_id).expect("Attestation id not found").into();
+                attestation.comments
             }
             PostType::Sponsorship => {
-                self.sponsorships.get(post_id).expect("Sponsorship id not found").comments
+                let sponsorship: Sponsorship =
+                    self.sponsorships.get(post_id).expect("Sponsorship id not found").into();
+                sponsorship.comments
             }
-            PostType::Comment => self.comments.get(post_id).expect("Comment id not found").comments,
+            PostType::Comment => {
+                let comment: Comment =
+                    self.comments.get(post_id).expect("Comment id not found").into();
+                comment.comments
+            }
         };
-        comment_ids.iter().map(|id| self.comments.get(*id).unwrap()).collect()
+        comment_ids.iter().map(|id| self.comments.get(*id).unwrap().into()).collect()
     }
 }
 
