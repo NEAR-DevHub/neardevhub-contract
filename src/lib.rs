@@ -20,7 +20,14 @@ enum StorageKey {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
-enum SponsorshipToken {
+pub enum PostStatus {
+    Open,
+    Closed { reason: String },
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum SponsorshipToken {
     Native,
     NEP141 { address: AccountId },
 }
@@ -28,21 +35,18 @@ enum SponsorshipToken {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Sponsorship {
-    sponsorship_id: SponsorshipId,
-    idea_id: IdeaId,
-    sponsor: AccountId,
+    // Common fields
+    id: SponsorshipId,
+    name: String,
+    description: String,
+    author_id: AccountId,
+    #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
-    description: String,
-    sponsorship_token: SponsorshipToken,
-    amount: Balance,
-}
+    status: PostStatus,
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
-pub struct SponsorshipInput {
-    idea_id: IdeaId,
-    sponsor: AccountId,
-    description: String,
+    // Specific fields
+    #[serde(with = "u64_dec_format")]
+    submission_id: IdeaId,
     sponsorship_token: SponsorshipToken,
     amount: Balance,
 }
@@ -50,72 +54,52 @@ pub struct SponsorshipInput {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Attestation {
-    attestation_id: AttestationId,
-    attester: AccountId,
-    timestamp: Timestamp,
-    submission_id: SubmissionId,
-    description: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
-pub struct AttestationInput {
-    submission_id: SubmissionId,
-    description: String,
-}
-
-#[derive(BorshDeserialize, BorshSerialize)]
-pub struct Idea {
+    // Common fields
+    id: AttestationId,
     name: String,
     description: String,
-    submitter_id: AccountId,
-    timestamp: Timestamp,
-    submissions: Vec<SubmissionId>,
-    sponsorships: Vec<SponsorshipId>,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
-pub struct IdeaOutput {
-    #[serde(with = "u64_dec_format")]
-    idea_id: u64,
-    name: String,
-    description: String,
-    submitter_id: AccountId,
+    author_id: AccountId,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
-}
+    status: PostStatus,
 
-impl IdeaOutput {
-    fn from(idea_id: u64, idea: Idea) -> IdeaOutput {
-        IdeaOutput {
-            idea_id,
-            name: idea.name,
-            description: idea.description,
-            submitter_id: idea.submitter_id,
-            timestamp: idea.timestamp,
-        }
-    }
+    //Specific fields
+    #[serde(with = "u64_dec_format")]
+    submission_id: SubmissionId,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Submission {
-    #[serde(with = "u64_dec_format")]
-    idea_id: u64,
-    account_id: AccountId,
+    // Common fields
+    id: SubmissionId,
+    name: String,
     description: String,
+    author_id: AccountId,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
+    status: PostStatus,
+
+    // Specific fields
+    #[serde(with = "u64_dec_format")]
+    idea_id: u64,
     attestations: Vec<AttestationId>,
     sponsorships: Vec<SponsorshipId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
-pub struct SubmissionInput {
-    idea_id: u64,
+pub struct Idea {
+    // Common Fields
+    id: IdeaId,
+    name: String,
     description: String,
+    author_id: AccountId,
+    timestamp: Timestamp,
+    status: PostStatus,
+
+    // Specific fields
+    submissions: Vec<SubmissionId>,
 }
 
 #[near_bindgen]
@@ -141,44 +125,63 @@ impl Contract {
         }
     }
 
+    /// Clear all of the state.
+    pub fn root_purge(&mut self) {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+        self.ideas.clear();
+        self.submissions.clear();
+        self.sponsorships.clear();
+        self.attestations.clear();
+    }
+
     pub fn add_idea(&mut self, name: String, description: String) {
+        let id = self.ideas.len();
         self.ideas.push(&Idea {
+            id,
             name,
             description,
-            submitter_id: env::predecessor_account_id(),
+            author_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
+            status: PostStatus::Open,
             submissions: vec![],
-            sponsorships: vec![],
         })
     }
 
-    pub fn get_idea(&self, idea_id: IdeaId) -> IdeaOutput {
-        IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap())
+    pub fn get_idea(&self, idea_id: IdeaId) -> Idea {
+        self.ideas.get(idea_id).unwrap()
     }
 
     pub fn get_num_ideas(&self) -> IdeaId {
         self.ideas.len()
     }
 
-    pub fn get_ideas(&self, from_index: Option<IdeaId>, limit: Option<IdeaId>) -> Vec<IdeaOutput> {
+    pub fn get_ideas(&self, from_index: Option<IdeaId>, limit: Option<IdeaId>) -> Vec<Idea> {
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.ideas.len());
         (from_index..std::cmp::min(from_index + limit, self.ideas.len()))
-            .map(|idea_id| IdeaOutput::from(idea_id, self.ideas.get(idea_id).unwrap()))
+            .map(|idea_id| self.ideas.get(idea_id).unwrap())
             .collect()
     }
 
-    pub fn add_submission(&mut self, submission_inp: SubmissionInput) {
-        let idea_id = submission_inp.idea_id;
+    pub fn add_submission(&mut self, idea_id: IdeaId, name: String, description: String) {
+        let id = self.submissions.len();
+
         let mut idea = self.ideas.get(idea_id).expect("Submission id not found");
-        idea.submissions.push(self.submissions.len());
+        idea.submissions.push(id);
         self.ideas.replace(idea_id, &idea);
 
         self.submissions.push(&Submission {
-            idea_id: submission_inp.idea_id,
-            account_id: env::predecessor_account_id(),
-            description: submission_inp.description,
+            id,
+            name,
+            description,
+            author_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
+            status: PostStatus::Open,
+            idea_id,
             attestations: vec![],
             sponsorships: vec![],
         });
@@ -189,20 +192,26 @@ impl Contract {
         idea.submissions.iter().map(|id| self.submissions.get(*id).unwrap()).collect()
     }
 
-    pub fn add_attestation(&mut self, attestation_inp: AttestationInput) {
-        let new_attestation_id = self.attestations.len();
+    pub fn add_attestation(
+        &mut self,
+        submission_id: SubmissionId,
+        name: String,
+        description: String,
+    ) {
+        let id = self.attestations.len();
 
-        let mut submission =
-            self.submissions.get(attestation_inp.submission_id).expect("Submission id not found");
-        submission.attestations.push(new_attestation_id);
-        self.submissions.replace(attestation_inp.submission_id, &submission);
+        let mut submission = self.submissions.get(submission_id).expect("Submission id not found");
+        submission.attestations.push(id);
+        self.submissions.replace(submission_id, &submission);
 
         self.attestations.push(&Attestation {
-            attestation_id: new_attestation_id,
-            attester: env::predecessor_account_id(),
+            id,
+            name,
+            description,
+            author_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
-            submission_id: attestation_inp.submission_id,
-            description: attestation_inp.description,
+            status: PostStatus::Open,
+            submission_id,
         });
     }
 
@@ -211,27 +220,36 @@ impl Contract {
         submission.attestations.iter().map(|id| self.attestations.get(*id).unwrap()).collect()
     }
 
-    pub fn add_sponsorship(&mut self, sponsorship_inp: SponsorshipInput) {
-        let new_sponsorship_id = self.sponsorships.len();
+    pub fn add_sponsorship(
+        &mut self,
+        submission_id: SubmissionId,
+        name: String,
+        description: String,
+        sponsorship_token: SponsorshipToken,
+        amount: Balance,
+    ) {
+        let id = self.sponsorships.len();
 
-        let mut idea = self.ideas.get(sponsorship_inp.idea_id).expect("Idea id not found");
-        idea.sponsorships.push(new_sponsorship_id);
-        self.ideas.replace(sponsorship_inp.idea_id, &idea);
+        let mut submission = self.submissions.get(submission_id).expect("Submission id not found");
+        submission.attestations.push(id);
+        self.submissions.replace(submission_id, &submission);
 
         self.sponsorships.push(&Sponsorship {
-            sponsorship_id: new_sponsorship_id,
-            idea_id: sponsorship_inp.idea_id,
-            sponsor: sponsorship_inp.sponsor,
+            id,
+            name,
+            description,
+            author_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
-            description: sponsorship_inp.description,
-            sponsorship_token: sponsorship_inp.sponsorship_token,
-            amount: sponsorship_inp.amount,
+            status: PostStatus::Open,
+            submission_id,
+            sponsorship_token,
+            amount,
         });
     }
 
-    pub fn get_sponsorships(&self, idea_id: IdeaId) -> Vec<Sponsorship> {
-        let idea = self.ideas.get(idea_id).expect("Idea id not found");
-        idea.sponsorships.iter().map(|id| self.sponsorships.get(*id).unwrap()).collect()
+    pub fn get_sponsorships(&self, submission_id: SubmissionId) -> Vec<Sponsorship> {
+        let submission = self.submissions.get(submission_id).expect("Submission id not found");
+        submission.sponsorships.iter().map(|id| self.sponsorships.get(*id).unwrap()).collect()
     }
 }
 
