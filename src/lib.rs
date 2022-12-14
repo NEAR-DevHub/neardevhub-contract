@@ -434,6 +434,10 @@ impl Contract {
         idea.submissions.iter().map(|id| self.submissions.get(*id).unwrap().into()).collect()
     }
 
+    pub fn get_submission(&self, submission_id: SubmissionId) -> Submission {
+        self.submissions.get(submission_id).unwrap().into()
+    }
+
     pub fn add_attestation(
         &mut self,
         submission_id: SubmissionId,
@@ -471,6 +475,10 @@ impl Contract {
             .iter()
             .map(|id| self.attestations.get(*id).unwrap().into())
             .collect()
+    }
+
+    pub fn get_attestation(&self, attestation_id: AttestationId) -> Attestation {
+        self.attestations.get(attestation_id).unwrap().into()
     }
 
     pub fn add_sponsorship(
@@ -516,6 +524,10 @@ impl Contract {
             .iter()
             .map(|id| self.sponsorships.get(*id).unwrap().into())
             .collect()
+    }
+
+    pub fn get_sponsorship(&self, sponsorship_id: SponsorshipId) -> Sponsorship {
+        self.sponsorships.get(sponsorship_id).unwrap().into()
     }
 
     pub fn like(&mut self, post_type: PostType, post_id: u64) {
@@ -626,6 +638,10 @@ impl Contract {
             }
         };
         comment_ids.iter().map(|id| self.comments.get(*id).unwrap().into()).collect()
+    }
+
+    pub fn get_comment(&self, comment_id: CommentId) -> Comment {
+        self.comments.get(comment_id).unwrap().into()
     }
 }
 
