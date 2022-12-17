@@ -71,7 +71,19 @@ impl Eq for Like {}
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommentV0 {
+    author_id: AccountId,
+    #[serde(with = "u64_dec_format")]
+    timestamp: Timestamp,
+    description: String,
+    likes: HashSet<Like>,
+    comments: Vec<CommentId>,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Comment {
+    id: CommentId,
     author_id: AccountId,
     #[serde(with = "u64_dec_format")]
     timestamp: Timestamp,
@@ -83,20 +95,29 @@ pub struct Comment {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub enum VersionedComment {
-    V0(Comment),
+    V0(CommentV0),
+    V1(Comment),
 }
 
 impl From<VersionedComment> for Comment {
     fn from(vc: VersionedComment) -> Self {
         match vc {
-            VersionedComment::V0(v0) => v0,
+            VersionedComment::V0(v0) => Comment {
+                id: 0,
+                author_id: v0.author_id,
+                timestamp: v0.timestamp,
+                description: v0.description,
+                likes: v0.likes,
+                comments: v0.comments,
+            },
+            VersionedComment::V1(v1) => v1,
         }
     }
 }
 
 impl From<Comment> for VersionedComment {
     fn from(c: Comment) -> Self {
-        VersionedComment::V0(c)
+        VersionedComment::V1(c)
     }
 }
 
@@ -306,6 +327,29 @@ impl Contract {
         env::state_write(&Self::new());
     }
 
+    /// This code was used to migrate comments to new version.
+    /// Adds id.
+    pub fn migrate_comments_to_v1(&mut self) {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+        for i in 0..self.comments.len() {
+            let c: Comment = self.comments.get(i).unwrap().into();
+            let new_c: VersionedComment = Comment {
+                id: i,
+                author_id: c.author_id,
+                timestamp: c.timestamp,
+                description: c.description,
+                likes: c.likes,
+                comments: c.comments,
+            }
+            .into();
+            self.comments.replace(i, &new_c);
+        }
+    }
+
     #[init]
     pub fn new() -> Self {
         Self {
@@ -390,6 +434,10 @@ impl Contract {
         idea.submissions.iter().map(|id| self.submissions.get(*id).unwrap().into()).collect()
     }
 
+    pub fn get_submission(&self, submission_id: SubmissionId) -> Submission {
+        self.submissions.get(submission_id).unwrap().into()
+    }
+
     pub fn add_attestation(
         &mut self,
         submission_id: SubmissionId,
@@ -427,6 +475,10 @@ impl Contract {
             .iter()
             .map(|id| self.attestations.get(*id).unwrap().into())
             .collect()
+    }
+
+    pub fn get_attestation(&self, attestation_id: AttestationId) -> Attestation {
+        self.attestations.get(attestation_id).unwrap().into()
     }
 
     pub fn add_sponsorship(
@@ -474,6 +526,10 @@ impl Contract {
             .collect()
     }
 
+    pub fn get_sponsorship(&self, sponsorship_id: SponsorshipId) -> Sponsorship {
+        self.sponsorships.get(sponsorship_id).unwrap().into()
+    }
+
     pub fn like(&mut self, post_type: PostType, post_id: u64) {
         let like =
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
@@ -511,43 +567,44 @@ impl Contract {
     }
 
     pub fn comment(&mut self, post_type: PostType, post_id: u64, description: String) {
+        let id = self.comments.len();
         let comment = Comment {
+            id,
             author_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
             description,
             likes: Default::default(),
             comments: vec![],
         };
-        let comment_id = self.comments.len();
         self.comments.push(&comment.into());
         match post_type {
             PostType::Idea => {
                 let mut idea: Idea = self.ideas.get(post_id).expect("Idea id not found").into();
-                idea.comments.push(comment_id);
+                idea.comments.push(id);
                 self.ideas.replace(post_id, &idea.into());
             }
             PostType::Submission => {
                 let mut submission: Submission =
                     self.submissions.get(post_id).expect("Submission id not found").into();
-                submission.comments.push(comment_id);
+                submission.comments.push(id);
                 self.submissions.replace(post_id, &submission.into());
             }
             PostType::Attestation => {
                 let mut attestation: Attestation =
                     self.attestations.get(post_id).expect("Attestation id not found").into();
-                attestation.comments.push(comment_id);
+                attestation.comments.push(id);
                 self.attestations.replace(post_id, &attestation.into());
             }
             PostType::Sponsorship => {
                 let mut sponsorship: Sponsorship =
                     self.sponsorships.get(post_id).expect("Sponsorship id not found").into();
-                sponsorship.comments.push(comment_id);
+                sponsorship.comments.push(id);
                 self.sponsorships.replace(post_id, &sponsorship.into());
             }
             PostType::Comment => {
                 let mut comment: Comment =
                     self.comments.get(post_id).expect("Comment id not found").into();
-                comment.comments.push(comment_id);
+                comment.comments.push(id);
                 self.comments.replace(post_id, &comment.into());
             }
         }
@@ -581,6 +638,10 @@ impl Contract {
             }
         };
         comment_ids.iter().map(|id| self.comments.get(*id).unwrap().into()).collect()
+    }
+
+    pub fn get_comment(&self, comment_id: CommentId) -> Comment {
+        self.comments.get(comment_id).unwrap().into()
     }
 }
 
