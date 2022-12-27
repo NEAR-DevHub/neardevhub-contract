@@ -1,3 +1,6 @@
+pub mod migrations;
+pub mod str_serializers;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::Vector;
 use near_sdk::serde::{Deserialize, Serialize};
@@ -6,6 +9,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
+use str_serializers::*;
 
 near_sdk::setup_alloc!();
 
@@ -157,6 +161,7 @@ pub struct Sponsorship {
     #[serde(with = "u64_dec_format")]
     submission_id: IdeaId,
     sponsorship_token: SponsorshipToken,
+    #[serde(with = "u128_dec_format")]
     amount: Balance,
     supervisor: AccountId,
 }
@@ -310,46 +315,6 @@ pub struct Contract {
 
 #[near_bindgen]
 impl Contract {
-    /// This code was called only once to upgrade the contract to contain comments.
-    pub fn initiate_comments() {
-        assert_eq!(
-            env::current_account_id(),
-            env::predecessor_account_id(),
-            "Can only be called by the account itself"
-        );
-        let v: Vector<Comment> = Vector::new(StorageKey::Comments);
-        let data = v.try_to_vec().expect("Cannot serialize the contract state.");
-        env::storage_write(
-            &StorageKey::Comments.try_to_vec().expect("Cannot serialize comments key"),
-            &data,
-        );
-
-        env::state_write(&Self::new());
-    }
-
-    /// This code was used to migrate comments to new version.
-    /// Adds id.
-    pub fn migrate_comments_to_v1(&mut self) {
-        assert_eq!(
-            env::current_account_id(),
-            env::predecessor_account_id(),
-            "Can only be called by the account itself"
-        );
-        for i in 0..self.comments.len() {
-            let c: Comment = self.comments.get(i).unwrap().into();
-            let new_c: VersionedComment = Comment {
-                id: i,
-                author_id: c.author_id,
-                timestamp: c.timestamp,
-                description: c.description,
-                likes: c.likes,
-                comments: c.comments,
-            }
-            .into();
-            self.comments.replace(i, &new_c);
-        }
-    }
-
     #[init]
     pub fn new() -> Self {
         Self {
@@ -359,19 +324,6 @@ impl Contract {
             sponsorships: Vector::new(StorageKey::Sponsorships),
             comments: Vector::new(StorageKey::Comments),
         }
-    }
-
-    /// Clear all of the state.
-    pub fn root_purge(&mut self) {
-        assert_eq!(
-            env::current_account_id(),
-            env::predecessor_account_id(),
-            "Can only be called by the account itself"
-        );
-        self.ideas.clear();
-        self.submissions.clear();
-        self.sponsorships.clear();
-        self.attestations.clear();
     }
 
     pub fn add_idea(&mut self, name: String, description: String) {
@@ -642,43 +594,5 @@ impl Contract {
 
     pub fn get_comment(&self, comment_id: CommentId) -> Comment {
         self.comments.get(comment_id).unwrap().into()
-    }
-}
-
-pub mod u128_dec_format {
-    use near_sdk::serde::de;
-    use near_sdk::serde::{Deserialize, Deserializer, Serializer};
-
-    pub fn serialize<S>(num: &u128, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&num.to_string())
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<u128, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
-    }
-}
-
-pub mod u64_dec_format {
-    use near_sdk::serde::de;
-    use near_sdk::serde::{Deserialize, Deserializer, Serializer};
-
-    pub fn serialize<S>(num: &u64, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&num.to_string())
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<u64, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
     }
 }
