@@ -3,7 +3,7 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::near_bindgen;
+use near_sdk::{near_bindgen, IntoStorageKey};
 
 #[near_bindgen]
 impl Contract {
@@ -87,6 +87,43 @@ impl Contract {
             );
         }
 
-        env::state_write(&Self::new());
+        env::state_write(&FakeContract {
+            ideas: FakeVector::new(32, StorageKey::Ideas),
+            submissions: FakeVector::new(6, StorageKey::Submissions),
+            attestations: FakeVector::new(1, StorageKey::Attestations),
+            sponsorships: FakeVector::new(1, StorageKey::Sponsorships),
+            comments: FakeVector::new(15, StorageKey::Comments),
+            posts: Vector::new(StorageKey::Posts),
+            post_to_parent: LookupMap::new(StorageKey::PostToParent),
+            post_to_children: LookupMap::new(StorageKey::PostToChildren),
+        });
     }
+}
+
+// Fake vector purely for the sake of overriding initialization.
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct FakeVector {
+    len: u64,
+    prefix: Vec<u8>,
+}
+
+impl FakeVector {
+    pub fn new<S>(len: u64, prefix: S) -> Self
+    where
+        S: IntoStorageKey,
+    {
+        Self { len, prefix: prefix.into_storage_key() }
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct FakeContract {
+    pub ideas: FakeVector,
+    pub submissions: FakeVector,
+    pub attestations: FakeVector,
+    pub sponsorships: FakeVector,
+    pub comments: FakeVector,
+    pub posts: Vector<Post>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
 }
