@@ -25,7 +25,7 @@ pub struct Contract {
     pub attestations: Vector<VersionedAttestation>,
     pub sponsorships: Vector<VersionedSponsorship>,
     pub comments: Vector<VersionedComment>,
-    pub posts: Vector<Post>,
+    pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
 }

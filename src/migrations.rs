@@ -4,6 +4,7 @@
 
 use crate::*;
 use near_sdk::{near_bindgen, IntoStorageKey};
+use std::collections::HashMap;
 
 #[near_bindgen]
 impl Contract {
@@ -97,6 +98,284 @@ impl Contract {
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
         });
+    }
+
+    /// This code was used to migrate comments to new version.
+    /// Adds id.
+    pub fn unsafe_copy_to_posts(&mut self) {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+
+        // A pair (old id, post).
+        let mut posts_to_add = vec![];
+
+        for idea_id in 0..self.ideas.len() {
+            let Idea {
+                id,
+                name,
+                description,
+                author_id,
+                timestamp,
+                status,
+                likes,
+                comments,
+                submissions,
+            } = self.ideas.get(idea_id).unwrap().into();
+
+            // Fields that are not useful anymore.
+            let _ = status;
+
+            // Will be used in the next loop;
+            let _ = (comments, submissions);
+
+            let new_post = VersionedPost::V0(Post {
+                author_id: author_id.clone(),
+                editor_id: author_id,
+                timestamp,
+                likes,
+                labels: Default::default(),
+                body: PostBody::Idea(VersionedIdea::V1(IdeaV1 { name, description })),
+            });
+            posts_to_add.push((id, new_post));
+        }
+
+        for submission_id in 0..self.submissions.len() {
+            let Submission {
+                id,
+                name,
+                description,
+                author_id,
+                timestamp,
+                status,
+                likes,
+                comments,
+                idea_id,
+                attestations,
+                sponsorships,
+            } = self.submissions.get(submission_id).unwrap().into();
+
+            // Fields that are not useful anymore.
+            let _ = (status, idea_id);
+
+            // Will be used in the next loop;
+            let _ = (comments, attestations, sponsorships);
+
+            let new_post = VersionedPost::V0(Post {
+                author_id: author_id.clone(),
+                editor_id: author_id,
+                timestamp,
+                likes,
+                labels: Default::default(),
+                body: PostBody::Submission(VersionedSubmission::V1(SubmissionV1 {
+                    name,
+                    description,
+                })),
+            });
+            posts_to_add.push((id, new_post));
+        }
+
+        for attestation_id in 0..self.attestations.len() {
+            let Attestation {
+                id,
+                name,
+                description,
+                author_id,
+                timestamp,
+                status,
+                likes,
+                comments,
+                submission_id,
+            } = self.attestations.get(attestation_id).unwrap().into();
+
+            // Fields that are not useful anymore.
+            let _ = (status, submission_id);
+
+            // Will be used in the next loop;
+            let _ = comments;
+
+            let new_post = VersionedPost::V0(Post {
+                author_id: author_id.clone(),
+                editor_id: author_id,
+                timestamp,
+                likes,
+                labels: Default::default(),
+                body: PostBody::Attestation(VersionedAttestation::V1(AttestationV1 {
+                    name,
+                    description,
+                })),
+            });
+            posts_to_add.push((id, new_post));
+        }
+
+        for sponsorship_id in 0..self.sponsorships.len() {
+            let Sponsorship {
+                id,
+                name,
+                description,
+                author_id,
+                timestamp,
+                status,
+                likes,
+                comments,
+                submission_id,
+                sponsorship_token,
+                amount,
+                supervisor,
+            } = self.sponsorships.get(sponsorship_id).unwrap().into();
+
+            // Fields that are not useful anymore.
+            let _ = (status, submission_id);
+
+            // Will be used in the next loop;
+            let _ = comments;
+
+            let new_post = VersionedPost::V0(Post {
+                author_id: author_id.clone(),
+                editor_id: author_id,
+                timestamp,
+                likes,
+                labels: Default::default(),
+                body: PostBody::Sponsorship(VersionedSponsorship::V1(SponsorshipV1 {
+                    name,
+                    description,
+                    sponsorship_token,
+                    amount,
+                    supervisor,
+                })),
+            });
+
+            posts_to_add.push((id, new_post));
+        }
+
+        for comment_id in 0..self.comments.len() {
+            let Comment { id, author_id, timestamp, description, likes, comments } =
+                self.comments.get(comment_id).unwrap().into();
+
+            // Will be used in the next loop;
+            let _ = comments;
+
+            let new_post = VersionedPost::V0(Post {
+                author_id: author_id.clone(),
+                editor_id: author_id,
+                timestamp,
+                likes,
+                labels: Default::default(),
+                body: PostBody::Comment(VersionedComment::V2(CommentV2 { description })),
+            });
+
+            posts_to_add.push((id, new_post));
+        }
+
+        // Pretend like posts were added in time sequential order, just in case for the future.
+        posts_to_add.sort_by_key(|p| match &p.1 {
+            VersionedPost::V0(v0) => v0.timestamp,
+        });
+
+        let mut old_to_new_id_comment: HashMap<u64, PostId> = HashMap::new();
+        let mut old_to_new_id_idea: HashMap<u64, PostId> = HashMap::new();
+        let mut old_to_new_id_submission: HashMap<u64, PostId> = HashMap::new();
+        let mut old_to_new_id_attestation: HashMap<u64, PostId> = HashMap::new();
+        let mut old_to_new_id_sponsorship: HashMap<u64, PostId> = HashMap::new();
+
+        for new_id in 0..posts_to_add.len() {
+            let (old_id, post) = posts_to_add[new_id].clone();
+            match &post {
+                VersionedPost::V0(post) => match post.body {
+                    PostBody::Comment(_) => {
+                        old_to_new_id_comment.insert(old_id, new_id as u64);
+                    }
+                    PostBody::Idea(_) => {
+                        old_to_new_id_idea.insert(old_id, new_id as u64);
+                    }
+                    PostBody::Submission(_) => {
+                        old_to_new_id_submission.insert(old_id, new_id as u64);
+                    }
+                    PostBody::Attestation(_) => {
+                        old_to_new_id_attestation.insert(old_id, new_id as u64);
+                    }
+                    PostBody::Sponsorship(_) => {
+                        old_to_new_id_sponsorship.insert(old_id, new_id as u64);
+                    }
+                },
+            }
+            self.posts.push(&post);
+        }
+        for new_id in 0..posts_to_add.len() as u64 {
+            let (old_id, post) = &posts_to_add[new_id as usize];
+            #[allow(irrefutable_let_patterns)]
+            if let VersionedPost::V0(post) = &post {
+                match &post.body {
+                    PostBody::Comment(_) => {
+                        let c: Comment = self.comments.get(*old_id).unwrap().into();
+                        let mut new_children = vec![];
+                        for old_child_id in c.comments {
+                            let new_child_id = old_to_new_id_comment[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        self.post_to_children.insert(&new_id, &new_children);
+                    }
+                    PostBody::Idea(_) => {
+                        let i: Idea = self.ideas.get(*old_id).unwrap().into();
+                        let mut new_children = vec![];
+                        for old_child_id in i.comments {
+                            let new_child_id = old_to_new_id_comment[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        for old_child_id in i.submissions {
+                            let new_child_id = old_to_new_id_submission[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        self.post_to_children.insert(&new_id, &new_children);
+                    }
+                    PostBody::Submission(_) => {
+                        let s: Submission = self.submissions.get(*old_id).unwrap().into();
+                        let mut new_children = vec![];
+                        for old_child_id in s.comments {
+                            let new_child_id = old_to_new_id_comment[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        for old_child_id in s.attestations {
+                            let new_child_id = old_to_new_id_attestation[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        for old_child_id in s.sponsorships {
+                            let new_child_id = old_to_new_id_sponsorship[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        self.post_to_children.insert(&new_id, &new_children);
+                    }
+                    PostBody::Attestation(_) => {
+                        let a: Attestation = self.attestations.get(*old_id).unwrap().into();
+                        let mut new_children = vec![];
+                        for old_child_id in a.comments {
+                            let new_child_id = old_to_new_id_attestation[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        self.post_to_children.insert(&new_id, &new_children);
+                    }
+                    PostBody::Sponsorship(_) => {
+                        let s: Sponsorship = self.sponsorships.get(*old_id).unwrap().into();
+                        let mut new_children = vec![];
+                        for old_child_id in s.comments {
+                            let new_child_id = old_to_new_id_sponsorship[&old_child_id];
+                            self.post_to_parent.insert(&new_child_id, &new_id);
+                            new_children.push(new_child_id);
+                        }
+                        self.post_to_children.insert(&new_id, &new_children);
+                    }
+                }
+            }
+        }
     }
 }
 

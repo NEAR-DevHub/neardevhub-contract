@@ -7,7 +7,7 @@ use near_sdk::{AccountId, Balance, Timestamp};
 use std::collections::HashSet;
 use std::str::FromStr;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub enum SponsorshipToken {
     Near,
@@ -25,7 +25,7 @@ impl FromStr for SponsorshipToken {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Sponsorship {
     // Common fields
@@ -48,7 +48,7 @@ pub struct Sponsorship {
     pub supervisor: AccountId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct SponsorshipV1 {
     pub name: String,
@@ -59,7 +59,7 @@ pub struct SponsorshipV1 {
     pub supervisor: AccountId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
