@@ -24,14 +24,23 @@ pub struct Idea {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct IdeaV1 {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum VersionedIdea {
     V0(Idea),
+    V1(IdeaV1),
 }
 
 impl From<VersionedIdea> for Idea {
     fn from(vi: VersionedIdea) -> Self {
         match vi {
             VersionedIdea::V0(v0) => v0,
+            VersionedIdea::V1(_) => unimplemented!(),
         }
     }
 }

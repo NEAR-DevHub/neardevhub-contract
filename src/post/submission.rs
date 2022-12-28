@@ -29,14 +29,23 @@ pub struct Submission {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct SubmissionV1 {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum VersionedSubmission {
     V0(Submission),
+    V1(SubmissionV1),
 }
 
 impl From<VersionedSubmission> for Submission {
     fn from(vs: VersionedSubmission) -> Self {
         match vs {
             VersionedSubmission::V0(v0) => v0,
+            VersionedSubmission::V1(_) => unimplemented!(),
         }
     }
 }

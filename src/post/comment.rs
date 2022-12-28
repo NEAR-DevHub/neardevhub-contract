@@ -31,9 +31,16 @@ pub struct Comment {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommentV2 {
+    pub description: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum VersionedComment {
     V0(CommentV0),
     V1(Comment),
+    V2(CommentV2),
 }
 
 impl From<VersionedComment> for Comment {
@@ -48,6 +55,7 @@ impl From<VersionedComment> for Comment {
                 comments: v0.comments,
             },
             VersionedComment::V1(v1) => v1,
+            VersionedComment::V2(_) => unimplemented!(),
         }
     }
 }

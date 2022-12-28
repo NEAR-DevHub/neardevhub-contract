@@ -50,14 +50,27 @@ pub struct Sponsorship {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct SponsorshipV1 {
+    pub name: String,
+    pub description: String,
+    pub sponsorship_token: SponsorshipToken,
+    #[serde(with = "u128_dec_format")]
+    pub amount: Balance,
+    pub supervisor: AccountId,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
+    V1(SponsorshipV1),
 }
 
 impl From<VersionedSponsorship> for Sponsorship {
     fn from(vs: VersionedSponsorship) -> Self {
         match vs {
             VersionedSponsorship::V0(v0) => v0,
+            VersionedSponsorship::V1(_) => unimplemented!(),
         }
     }
 }
