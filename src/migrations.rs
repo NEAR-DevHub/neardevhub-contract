@@ -108,6 +108,7 @@ impl Contract {
             env::predecessor_account_id(),
             "Can only be called by the account itself"
         );
+        self.posts.clear();
 
         // A pair (old id, post).
         let mut posts_to_add = vec![];
@@ -133,11 +134,14 @@ impl Contract {
 
             let new_post = VersionedPost::V0(Post {
                 author_id: author_id.clone(),
-                editor_id: author_id,
-                timestamp,
                 likes,
-                labels: Default::default(),
-                body: PostBody::Idea(VersionedIdea::V1(IdeaV1 { name, description })),
+                snapshot: PostSnapshot {
+                    editor_id: author_id,
+                    timestamp,
+                    labels: Default::default(),
+                    body: PostBody::Idea(VersionedIdea::V1(IdeaV1 { name, description })),
+                },
+                snapshot_history: vec![],
             });
             posts_to_add.push((id, new_post));
         }
@@ -165,14 +169,17 @@ impl Contract {
 
             let new_post = VersionedPost::V0(Post {
                 author_id: author_id.clone(),
-                editor_id: author_id,
-                timestamp,
                 likes,
-                labels: Default::default(),
-                body: PostBody::Submission(VersionedSubmission::V1(SubmissionV1 {
-                    name,
-                    description,
-                })),
+                snapshot: PostSnapshot {
+                    editor_id: author_id,
+                    timestamp,
+                    labels: Default::default(),
+                    body: PostBody::Submission(VersionedSubmission::V1(SubmissionV1 {
+                        name,
+                        description,
+                    })),
+                },
+                snapshot_history: vec![],
             });
             posts_to_add.push((id, new_post));
         }
@@ -198,14 +205,17 @@ impl Contract {
 
             let new_post = VersionedPost::V0(Post {
                 author_id: author_id.clone(),
-                editor_id: author_id,
-                timestamp,
                 likes,
-                labels: Default::default(),
-                body: PostBody::Attestation(VersionedAttestation::V1(AttestationV1 {
-                    name,
-                    description,
-                })),
+                snapshot: PostSnapshot {
+                    editor_id: author_id,
+                    timestamp,
+                    labels: Default::default(),
+                    body: PostBody::Attestation(VersionedAttestation::V1(AttestationV1 {
+                        name,
+                        description,
+                    })),
+                },
+                snapshot_history: vec![],
             });
             posts_to_add.push((id, new_post));
         }
@@ -234,17 +244,20 @@ impl Contract {
 
             let new_post = VersionedPost::V0(Post {
                 author_id: author_id.clone(),
-                editor_id: author_id,
-                timestamp,
                 likes,
-                labels: Default::default(),
-                body: PostBody::Sponsorship(VersionedSponsorship::V1(SponsorshipV1 {
-                    name,
-                    description,
-                    sponsorship_token,
-                    amount,
-                    supervisor,
-                })),
+                snapshot: PostSnapshot {
+                    editor_id: author_id,
+                    timestamp,
+                    labels: Default::default(),
+                    body: PostBody::Sponsorship(VersionedSponsorship::V1(SponsorshipV1 {
+                        name,
+                        description,
+                        sponsorship_token,
+                        amount,
+                        supervisor,
+                    })),
+                },
+                snapshot_history: vec![],
             });
 
             posts_to_add.push((id, new_post));
@@ -259,11 +272,14 @@ impl Contract {
 
             let new_post = VersionedPost::V0(Post {
                 author_id: author_id.clone(),
-                editor_id: author_id,
-                timestamp,
                 likes,
-                labels: Default::default(),
-                body: PostBody::Comment(VersionedComment::V2(CommentV2 { description })),
+                snapshot: PostSnapshot {
+                    editor_id: author_id,
+                    timestamp,
+                    labels: Default::default(),
+                    body: PostBody::Comment(VersionedComment::V2(CommentV2 { description })),
+                },
+                snapshot_history: vec![],
             });
 
             posts_to_add.push((id, new_post));
@@ -271,7 +287,7 @@ impl Contract {
 
         // Pretend like posts were added in time sequential order, just in case for the future.
         posts_to_add.sort_by_key(|p| match &p.1 {
-            VersionedPost::V0(v0) => v0.timestamp,
+            VersionedPost::V0(v0) => v0.snapshot.timestamp,
         });
 
         let mut old_to_new_id_comment: HashMap<u64, PostId> = HashMap::new();
@@ -283,7 +299,7 @@ impl Contract {
         for new_id in 0..posts_to_add.len() {
             let (old_id, post) = posts_to_add[new_id].clone();
             match &post {
-                VersionedPost::V0(post) => match post.body {
+                VersionedPost::V0(post) => match post.snapshot.body {
                     PostBody::Comment(_) => {
                         old_to_new_id_comment.insert(old_id, new_id as u64);
                     }
@@ -307,7 +323,7 @@ impl Contract {
             let (old_id, post) = &posts_to_add[new_id as usize];
             #[allow(irrefutable_let_patterns)]
             if let VersionedPost::V0(post) = &post {
-                match &post.body {
+                match &post.snapshot.body {
                     PostBody::Comment(_) => {
                         let c: Comment = self.comments.get(*old_id).unwrap().into();
                         let mut new_children = vec![];

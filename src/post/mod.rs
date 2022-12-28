@@ -60,13 +60,10 @@ pub enum VersionedPost {
 #[serde(crate = "near_sdk::serde")]
 pub struct Post {
     pub author_id: AccountId,
-    pub editor_id: AccountId,
-    #[serde(with = "u64_dec_format")]
-    pub timestamp: Timestamp,
     pub likes: HashSet<Like>,
-    pub labels: HashSet<Label>,
-
-    pub body: PostBody,
+    pub snapshot: PostSnapshot,
+    // Excludes the current snapshot itself.
+    pub snapshot_history: Vec<PostSnapshot>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -94,6 +91,16 @@ impl PartialOrd for Label {
 }
 
 impl Eq for Label {}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct PostSnapshot {
+    pub editor_id: AccountId,
+    #[serde(with = "u64_dec_format")]
+    pub timestamp: Timestamp,
+    pub labels: HashSet<Label>,
+    pub body: PostBody,
+}
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
