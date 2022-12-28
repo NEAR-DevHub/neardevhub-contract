@@ -3,13 +3,14 @@ pub mod post;
 pub mod str_serializers;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::Vector;
+use near_sdk::collections::{LookupMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault};
 use post::*;
 use std::str::FromStr;
 
 near_sdk::setup_alloc!();
 
+type PostId = u64;
 type IdeaId = u64;
 type AttestationId = u64;
 type SubmissionId = u64;
@@ -24,6 +25,9 @@ pub struct Contract {
     pub attestations: Vector<VersionedAttestation>,
     pub sponsorships: Vector<VersionedSponsorship>,
     pub comments: Vector<VersionedComment>,
+    pub posts: Vector<Post>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
 }
 
 #[near_bindgen]
@@ -36,6 +40,9 @@ impl Contract {
             attestations: Vector::new(StorageKey::Attestations),
             sponsorships: Vector::new(StorageKey::Sponsorships),
             comments: Vector::new(StorageKey::Comments),
+            posts: Vector::new(StorageKey::Posts),
+            post_to_parent: LookupMap::new(StorageKey::PostToParent),
+            post_to_children: LookupMap::new(StorageKey::PostToChildren),
         }
     }
 

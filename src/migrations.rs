@@ -46,4 +46,47 @@ impl Contract {
             self.comments.replace(i, &new_c);
         }
     }
+
+    pub fn unsafe_initiate_posts() {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+
+        {
+            let posts: Vector<Post> = Vector::new(StorageKey::Posts);
+            let data = posts.try_to_vec().expect("Cannot serialize the contract state.");
+            env::storage_write(
+                &StorageKey::Posts.try_to_vec().expect("Cannot serialize posts key"),
+                &data,
+            );
+        }
+
+        {
+            let post_to_parent: LookupMap<PostId, PostId> =
+                LookupMap::new(StorageKey::PostToParent);
+            let data = post_to_parent.try_to_vec().expect("Cannot serialize the contract state.");
+            env::storage_write(
+                &StorageKey::PostToParent
+                    .try_to_vec()
+                    .expect("Cannot serialize post to parent key"),
+                &data,
+            );
+        }
+
+        {
+            let post_to_children: LookupMap<PostId, Vec<PostId>> =
+                LookupMap::new(StorageKey::PostToChildren);
+            let data = post_to_children.try_to_vec().expect("Cannot serialize the contract state.");
+            env::storage_write(
+                &StorageKey::PostToChildren
+                    .try_to_vec()
+                    .expect("Cannot serialize post to children key"),
+                &data,
+            );
+        }
+
+        env::state_write(&Self::new());
+    }
 }

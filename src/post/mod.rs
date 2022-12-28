@@ -45,6 +45,9 @@ pub enum StorageKey {
     Attestations,
     Sponsorships,
     Comments,
+    Posts,
+    PostToParent,
+    PostToChildren,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
