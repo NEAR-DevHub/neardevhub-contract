@@ -133,6 +133,7 @@ impl Contract {
             let _ = (comments, submissions);
 
             let new_post = VersionedPost::V0(Post {
+                id: PostId::MAX,
                 author_id: author_id.clone(),
                 likes,
                 snapshot: PostSnapshot {
@@ -168,6 +169,7 @@ impl Contract {
             let _ = (comments, attestations, sponsorships);
 
             let new_post = VersionedPost::V0(Post {
+                id: PostId::MAX,
                 author_id: author_id.clone(),
                 likes,
                 snapshot: PostSnapshot {
@@ -204,6 +206,7 @@ impl Contract {
             let _ = comments;
 
             let new_post = VersionedPost::V0(Post {
+                id: PostId::MAX,
                 author_id: author_id.clone(),
                 likes,
                 snapshot: PostSnapshot {
@@ -243,6 +246,7 @@ impl Contract {
             let _ = comments;
 
             let new_post = VersionedPost::V0(Post {
+                id: PostId::MAX,
                 author_id: author_id.clone(),
                 likes,
                 snapshot: PostSnapshot {
@@ -271,6 +275,8 @@ impl Contract {
             let _ = comments;
 
             let new_post = VersionedPost::V0(Post {
+                // Temporary value.
+                id: PostId::MAX,
                 author_id: author_id.clone(),
                 likes,
                 snapshot: PostSnapshot {
@@ -317,7 +323,12 @@ impl Contract {
                     }
                 },
             }
-            self.posts.push(&post);
+
+            // Inject correct post id.
+            let VersionedPost::V0(mut post) = post;
+            post.id = new_id as PostId;
+
+            self.posts.push(&VersionedPost::V0(post));
         }
 
         // First add ideas into virtual top level post.

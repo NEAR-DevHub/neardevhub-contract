@@ -60,6 +60,7 @@ pub enum VersionedPost {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Post {
+    pub id: PostId,
     pub author_id: AccountId,
     pub likes: HashSet<Like>,
     pub snapshot: PostSnapshot,
