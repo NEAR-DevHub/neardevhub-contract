@@ -37,6 +37,7 @@ pub struct CommentV2 {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "comment_version")]
 pub enum VersionedComment {
     V0(CommentV0),
     V1(Comment),
