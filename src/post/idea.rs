@@ -31,6 +31,7 @@ pub struct IdeaV1 {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "idea_version")]
 pub enum VersionedIdea {
     V0(Idea),
     V1(IdeaV1),

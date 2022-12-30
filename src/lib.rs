@@ -17,6 +17,9 @@ type SubmissionId = u64;
 type SponsorshipId = u64;
 type CommentId = u64;
 
+/// An imaginary top post representing the landing page.
+const ROOT_POST_ID: u64 = u64::MAX;
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
@@ -314,5 +317,20 @@ impl Contract {
 
     pub fn get_comment(&self, comment_id: CommentId) -> Comment {
         self.comments.get(comment_id).unwrap().into()
+    }
+
+    /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
+    /// `parent_id` post.
+    pub fn get_posts(&self, parent_id: Option<PostId>) -> Vec<VersionedPost> {
+        let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
+        let children_ids = self.post_to_children.get(&parent_id).expect("Parent id not found");
+        children_ids
+            .into_iter()
+            .map(|id| self.posts.get(id).expect("Post with id not found. Broken state invariant."))
+            .collect()
+    }
+
+    pub fn get_post(&self, post_id: PostId) -> VersionedPost {
+        self.posts.get(post_id).expect("Post id not found")
     }
 }

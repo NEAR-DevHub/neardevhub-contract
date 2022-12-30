@@ -36,6 +36,7 @@ pub struct SubmissionV1 {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "submission_version")]
 pub enum VersionedSubmission {
     V0(Submission),
     V1(SubmissionV1),

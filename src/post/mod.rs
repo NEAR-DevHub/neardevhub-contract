@@ -24,11 +24,11 @@ pub type PostId = u64;
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub enum PostType {
+    Comment,
     Idea,
     Submission,
     Attestation,
     Sponsorship,
-    Comment,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -52,6 +52,7 @@ pub enum StorageKey {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "post_version")]
 pub enum VersionedPost {
     V0(Post),
 }
@@ -104,6 +105,7 @@ pub struct PostSnapshot {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "post_type")]
 pub enum PostBody {
     Comment(VersionedComment),
     Idea(VersionedIdea),

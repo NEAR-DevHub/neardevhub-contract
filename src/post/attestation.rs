@@ -34,6 +34,7 @@ pub struct AttestationV1 {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "attestation_version")]
 pub enum VersionedAttestation {
     V0(Attestation),
     V1(AttestationV1),

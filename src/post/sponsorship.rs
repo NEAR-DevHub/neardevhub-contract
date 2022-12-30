@@ -61,6 +61,7 @@ pub struct SponsorshipV1 {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[serde(tag = "sponsorship_version")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
     V1(SponsorshipV1),

@@ -319,6 +319,17 @@ impl Contract {
             }
             self.posts.push(&post);
         }
+
+        // First add ideas into virtual top level post.
+        let mut new_idea_ids: Vec<u64> = vec![];
+        for old_id in 0..self.ideas.len() {
+            let new_id = old_to_new_id_idea.get(&old_id).unwrap();
+            new_idea_ids.push(*new_id);
+            self.post_to_parent.insert(new_id, &ROOT_POST_ID);
+        }
+        self.post_to_children.insert(&ROOT_POST_ID, &new_idea_ids);
+
+        // Then process all non-root posts.
         for new_id in 0..posts_to_add.len() as u64 {
             let (old_id, post) = &posts_to_add[new_id as usize];
             #[allow(irrefutable_let_patterns)]
