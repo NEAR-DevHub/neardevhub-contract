@@ -333,4 +333,18 @@ impl Contract {
     pub fn get_post(&self, post_id: PostId) -> VersionedPost {
         self.posts.get(post_id).expect("Post id not found")
     }
+
+    pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
+        let post_id = post_id.unwrap_or(ROOT_POST_ID);
+        self.post_to_children.get(&post_id).expect("Parent id not found")
+    }
+
+    pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
+        let res = self.post_to_parent.get(&post_id).expect("Parent id not found");
+        if res == ROOT_POST_ID {
+            Option::None
+        } else {
+            Option::Some(res)
+        }
+    }
 }
