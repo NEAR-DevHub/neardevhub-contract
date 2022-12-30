@@ -100,6 +100,7 @@ pub struct PostSnapshot {
     #[serde(with = "u64_dec_format")]
     pub timestamp: Timestamp,
     pub labels: HashSet<Label>,
+    #[serde(flatten)]
     pub body: PostBody,
 }
 
