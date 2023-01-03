@@ -68,6 +68,20 @@ pub struct Post {
     pub snapshot_history: Vec<PostSnapshot>,
 }
 
+impl From<VersionedPost> for Post {
+    fn from(vp: VersionedPost) -> Self {
+        match vp {
+            VersionedPost::V0(v0) => v0,
+        }
+    }
+}
+
+impl From<Post> for VersionedPost {
+    fn from(p: Post) -> Self {
+        VersionedPost::V0(p)
+    }
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Label {

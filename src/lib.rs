@@ -6,6 +6,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault};
 use post::*;
+use std::collections::HashSet;
 use std::str::FromStr;
 
 near_sdk::setup_alloc!();
@@ -346,5 +347,33 @@ impl Contract {
         } else {
             Option::Some(res)
         }
+    }
+
+    pub fn add_like(&mut self, post_id: PostId) {
+        let mut post: Post = self.posts.get(post_id).expect("Post id not found").into();
+        let like =
+            Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
+        post.likes.insert(like);
+        self.posts.replace(post_id, &post.into());
+    }
+
+    pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<Label>) {
+        let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
+        let id = self.posts.len();
+        let author_id = env::predecessor_account_id();
+        let editor_id = author_id.clone();
+        let post = Post {
+            id,
+            author_id,
+            likes: Default::default(),
+            snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
+            snapshot_history: vec![],
+        };
+        self.posts.push(&post.into());
+        self.post_to_parent.insert(&id, &parent_id);
+
+        let mut siblings = self.post_to_children.get(&parent_id).expect("Parent id not found");
+        siblings.push(id);
+        self.post_to_children.insert(&parent_id, &siblings);
     }
 }
