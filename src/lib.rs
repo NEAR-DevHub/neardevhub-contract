@@ -1,9 +1,10 @@
 pub mod migrations;
 pub mod post;
+pub mod stats;
 pub mod str_serializers;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, Vector};
+use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
@@ -32,6 +33,7 @@ pub struct Contract {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    // pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
 }
 
 #[near_bindgen]
