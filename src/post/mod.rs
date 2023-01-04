@@ -48,7 +48,7 @@ pub enum StorageKey {
     Posts,
     PostToParent,
     PostToChildren,
-    // LabelToPosts,
+    LabelToPosts,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
