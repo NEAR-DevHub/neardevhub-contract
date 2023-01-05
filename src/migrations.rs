@@ -49,6 +49,19 @@ impl Contract {
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
         });
     }
+
+    pub fn unsafe_fix_missing_children(&mut self) {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+        for id in 0..self.posts.len() {
+            if self.post_to_children.get(&id).is_none() {
+                self.post_to_children.insert(&id, &vec![]);
+            }
+        }
+    }
 }
 
 // Fake vector purely for the sake of overriding initialization.
