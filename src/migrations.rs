@@ -31,7 +31,22 @@ impl Contract {
             posts: FakeVector::new(64, StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
-            label_to_posts: UnorderedMap::new(StorageKey::LabelToPosts),
+            label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
+        });
+    }
+
+    pub fn unsafe_purge_one_post() {
+        assert_eq!(
+            env::current_account_id(),
+            env::predecessor_account_id(),
+            "Can only be called by the account itself"
+        );
+
+        env::state_write(&FakeContract {
+            posts: FakeVector::new(64, StorageKey::Posts),
+            post_to_parent: LookupMap::new(StorageKey::PostToParent),
+            post_to_children: LookupMap::new(StorageKey::PostToChildren),
+            label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
         });
     }
 }
