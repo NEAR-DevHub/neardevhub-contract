@@ -38,7 +38,7 @@ impl Contract {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
-            label_to_posts: UnorderedMap::new(StorageKey::LabelToPosts),
+            label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
         }
     }
 
@@ -147,7 +147,7 @@ impl Contract {
         };
         post.snapshot = new_snapshot;
         post.snapshot_history.push(old_snapshot);
-        self.posts.push(&post.into());
+        self.posts.replace(id, &post.into());
 
         // Update labels index.
 

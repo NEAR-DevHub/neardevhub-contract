@@ -46,7 +46,8 @@ pub enum StorageKey {
     Posts,
     PostToParent,
     PostToChildren,
-    LabelToPosts,
+    LabelToPosts, // This collection got corrupted by accident.
+    LabelToPostsV2,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
