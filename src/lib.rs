@@ -45,25 +45,41 @@ impl Contract {
     /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
     /// `parent_id` post.
     pub fn get_posts(&self, parent_id: Option<PostId>) -> Vec<VersionedPost> {
+        near_sdk::log!("get_posts");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
-        let children_ids = self.post_to_children.get(&parent_id).expect("Parent id not found");
+        let children_ids = self
+            .post_to_children
+            .get(&parent_id)
+            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
         children_ids
             .into_iter()
-            .map(|id| self.posts.get(id).expect("Post with id not found. Broken state invariant."))
+            .map(|id| {
+                self.posts
+                    .get(id)
+                    .unwrap_or_else(|| panic!("Post id {} not found. Broken state invariant", id))
+            })
             .collect()
     }
 
     pub fn get_post(&self, post_id: PostId) -> VersionedPost {
-        self.posts.get(post_id).expect("Post id not found")
+        near_sdk::log!("get_post");
+        self.posts.get(post_id).unwrap_or_else(|| panic!("Post id {} not found", post_id))
     }
 
     pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
+        near_sdk::log!("get_children_ids");
         let post_id = post_id.unwrap_or(ROOT_POST_ID);
-        self.post_to_children.get(&post_id).expect("Parent id not found")
+        self.post_to_children
+            .get(&post_id)
+            .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
     }
 
     pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
-        let res = self.post_to_parent.get(&post_id).expect("Parent id not found");
+        near_sdk::log!("get_parent_id");
+        let res = self
+            .post_to_parent
+            .get(&post_id)
+            .unwrap_or_else(|| panic!("Parent id {} not found", post_id));
         if res == ROOT_POST_ID {
             Option::None
         } else {
@@ -72,7 +88,12 @@ impl Contract {
     }
 
     pub fn add_like(&mut self, post_id: PostId) {
-        let mut post: Post = self.posts.get(post_id).expect("Post id not found").into();
+        near_sdk::log!("add_like");
+        let mut post: Post = self
+            .posts
+            .get(post_id)
+            .unwrap_or_else(|| panic!("Post id {} not found", post_id))
+            .into();
         let like =
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
@@ -80,6 +101,7 @@ impl Contract {
     }
 
     pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
+        near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let id = self.posts.len();
         let author_id = env::predecessor_account_id();
@@ -100,12 +122,16 @@ impl Contract {
         self.posts.push(&post.into());
         self.post_to_parent.insert(&id, &parent_id);
 
-        let mut siblings = self.post_to_children.get(&parent_id).expect("Parent id not found");
+        let mut siblings = self
+            .post_to_children
+            .get(&parent_id)
+            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
         siblings.push(id);
         self.post_to_children.insert(&parent_id, &siblings);
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
+        near_sdk::log!("get_posts_by_label");
         let mut res: Vec<_> =
             self.label_to_posts.get(&label).unwrap_or_default().into_iter().collect();
         res.sort();
@@ -113,13 +139,19 @@ impl Contract {
     }
 
     pub fn get_all_labels(&self) -> Vec<String> {
+        near_sdk::log!("get_all_labels");
         let mut res: Vec<_> = self.label_to_posts.keys().collect();
         res.sort();
         res
     }
 
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
-        let post: Post = self.posts.get(post_id).expect("Post id not found").into();
+        near_sdk::log!("is_allowed_to_edit");
+        let post: Post = self
+            .posts
+            .get(post_id)
+            .unwrap_or_else(|| panic!("Post id {} not found", post_id))
+            .into();
         let editor = match editor {
             None => env::predecessor_account_id(),
             Some(e) => e,
@@ -129,12 +161,14 @@ impl Contract {
     }
 
     pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
+        near_sdk::log!("edit_post");
         assert!(
             self.is_allowed_to_edit(id, Option::None),
             "The account is not allowed to edit this post"
         );
         let editor_id = env::predecessor_account_id();
-        let mut post: Post = self.posts.get(id).expect("Post id not found").into();
+        let mut post: Post =
+            self.posts.get(id).unwrap_or_else(|| panic!("Post id {} not found", id)).into();
 
         let old_snapshot = post.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();
