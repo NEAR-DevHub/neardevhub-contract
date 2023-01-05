@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod migrations;
 pub mod post;
 pub mod stats;
