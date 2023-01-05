@@ -161,7 +161,7 @@ impl Contract {
         }
 
         for label_to_add in labels_to_add {
-            let mut posts = self.label_to_posts.get(&label_to_add).unwrap();
+            let mut posts = self.label_to_posts.get(&label_to_add).unwrap_or_default();
             posts.insert(id);
             self.label_to_posts.insert(&label_to_add, &posts);
         }
