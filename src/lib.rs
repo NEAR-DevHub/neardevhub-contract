@@ -1,3 +1,4 @@
+pub mod debug;
 pub mod migrations;
 pub mod post;
 pub mod stats;
@@ -128,6 +129,9 @@ impl Contract {
             .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
         siblings.push(id);
         self.post_to_children.insert(&parent_id, &siblings);
+
+        // Don't forget to add an empty list of your own children.
+        self.post_to_children.insert(&id, &vec![]);
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
