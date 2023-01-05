@@ -7,7 +7,7 @@ use near_sdk::{AccountId, Balance, Timestamp};
 use std::collections::HashSet;
 use std::str::FromStr;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub enum SponsorshipToken {
     Near,
@@ -25,7 +25,7 @@ impl FromStr for SponsorshipToken {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Sponsorship {
     // Common fields
@@ -48,16 +48,30 @@ pub struct Sponsorship {
     pub supervisor: AccountId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct SponsorshipV1 {
+    pub name: String,
+    pub description: String,
+    pub sponsorship_token: SponsorshipToken,
+    #[serde(with = "u128_dec_format")]
+    pub amount: Balance,
+    pub supervisor: AccountId,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(tag = "sponsorship_version")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
+    V1(SponsorshipV1),
 }
 
 impl From<VersionedSponsorship> for Sponsorship {
     fn from(vs: VersionedSponsorship) -> Self {
         match vs {
             VersionedSponsorship::V0(v0) => v0,
+            VersionedSponsorship::V1(_) => unimplemented!(),
         }
     }
 }

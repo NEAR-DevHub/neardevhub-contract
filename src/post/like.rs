@@ -5,7 +5,7 @@ use near_sdk::{AccountId, Timestamp};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Like {
     pub author_id: AccountId,

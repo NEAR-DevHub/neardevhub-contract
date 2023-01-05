@@ -3,47 +3,59 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::near_bindgen;
+use near_sdk::{near_bindgen, IntoStorageKey};
 
 #[near_bindgen]
 impl Contract {
-    /// This code was called only once to upgrade the contract to contain comments.
-    pub fn unsafe_initiate_comments() {
+    pub fn unsafe_initiate_labels_remove_old_collections() {
         assert_eq!(
             env::current_account_id(),
             env::predecessor_account_id(),
             "Can only be called by the account itself"
         );
-        let v: Vector<Comment> = Vector::new(StorageKey::Comments);
-        let data = v.try_to_vec().expect("Cannot serialize the contract state.");
-        env::storage_write(
-            &StorageKey::Comments.try_to_vec().expect("Cannot serialize comments key"),
-            &data,
-        );
 
-        env::state_write(&Self::new());
-    }
+        // First remove old collections.
+        let mut ideas: Vector<VersionedIdea> = Vector::new(StorageKey::Ideas);
+        let mut submissions: Vector<VersionedSubmission> = Vector::new(StorageKey::Submissions);
+        let mut attestations: Vector<VersionedAttestation> = Vector::new(StorageKey::Attestations);
+        let mut sponsorships: Vector<VersionedSponsorship> = Vector::new(StorageKey::Sponsorships);
+        let mut comments: Vector<VersionedComment> = Vector::new(StorageKey::Comments);
 
-    /// This code was used to migrate comments to new version.
-    /// Adds id.
-    pub fn unsafe_migrate_comments_to_v1(&mut self) {
-        assert_eq!(
-            env::current_account_id(),
-            env::predecessor_account_id(),
-            "Can only be called by the account itself"
-        );
-        for i in 0..self.comments.len() {
-            let c: Comment = self.comments.get(i).unwrap().into();
-            let new_c: VersionedComment = Comment {
-                id: i,
-                author_id: c.author_id,
-                timestamp: c.timestamp,
-                description: c.description,
-                likes: c.likes,
-                comments: c.comments,
-            }
-            .into();
-            self.comments.replace(i, &new_c);
-        }
+        ideas.clear();
+        submissions.clear();
+        attestations.clear();
+        sponsorships.clear();
+        comments.clear();
+
+        env::state_write(&FakeContract {
+            posts: FakeVector::new(64, StorageKey::Posts),
+            post_to_parent: LookupMap::new(StorageKey::PostToParent),
+            post_to_children: LookupMap::new(StorageKey::PostToChildren),
+            label_to_posts: UnorderedMap::new(StorageKey::LabelToPosts),
+        });
     }
+}
+
+// Fake vector purely for the sake of overriding initialization.
+#[derive(BorshSerialize, BorshDeserialize)]
+pub struct FakeVector {
+    len: u64,
+    prefix: Vec<u8>,
+}
+
+impl FakeVector {
+    pub fn new<S>(len: u64, prefix: S) -> Self
+    where
+        S: IntoStorageKey,
+    {
+        Self { len, prefix: prefix.into_storage_key() }
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct FakeContract {
+    pub posts: FakeVector,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
 }

@@ -6,7 +6,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommentV0 {
     pub author_id: AccountId,
@@ -17,7 +17,7 @@ pub struct CommentV0 {
     pub comments: Vec<CommentId>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Comment {
     pub id: CommentId,
@@ -29,11 +29,19 @@ pub struct Comment {
     pub comments: Vec<CommentId>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommentV2 {
+    pub description: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(tag = "comment_version")]
 pub enum VersionedComment {
     V0(CommentV0),
     V1(Comment),
+    V2(CommentV2),
 }
 
 impl From<VersionedComment> for Comment {
@@ -48,6 +56,7 @@ impl From<VersionedComment> for Comment {
                 comments: v0.comments,
             },
             VersionedComment::V1(v1) => v1,
+            VersionedComment::V2(_) => unimplemented!(),
         }
     }
 }

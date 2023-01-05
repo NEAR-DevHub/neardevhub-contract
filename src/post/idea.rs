@@ -5,7 +5,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Idea {
     // Common Fields
@@ -22,16 +22,26 @@ pub struct Idea {
     pub submissions: Vec<SubmissionId>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct IdeaV1 {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(tag = "idea_version")]
 pub enum VersionedIdea {
     V0(Idea),
+    V1(IdeaV1),
 }
 
 impl From<VersionedIdea> for Idea {
     fn from(vi: VersionedIdea) -> Self {
         match vi {
             VersionedIdea::V0(v0) => v0,
+            VersionedIdea::V1(_) => unimplemented!(),
         }
     }
 }
