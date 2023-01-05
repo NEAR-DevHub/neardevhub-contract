@@ -90,8 +90,6 @@ impl Contract {
             other_posts.insert(id);
             self.label_to_posts.insert(label, &other_posts);
         }
-        let labels = labels.into_iter().map(|name| Label { name }).collect();
-
         let post = Post {
             id,
             author_id,
@@ -140,7 +138,7 @@ impl Contract {
 
         let old_snapshot = post.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();
-        let new_labels: HashSet<_> = labels.into_iter().map(|name| Label { name }).collect();
+        let new_labels = labels;
         let new_snapshot = PostSnapshot {
             editor_id,
             timestamp: env::block_timestamp(),
@@ -157,15 +155,15 @@ impl Contract {
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;
         for label_to_remove in labels_to_remove {
-            let mut posts = self.label_to_posts.get(&label_to_remove.name).unwrap();
+            let mut posts = self.label_to_posts.get(&label_to_remove).unwrap();
             posts.remove(&id);
-            self.label_to_posts.insert(&label_to_remove.name, &posts);
+            self.label_to_posts.insert(&label_to_remove, &posts);
         }
 
         for label_to_add in labels_to_add {
-            let mut posts = self.label_to_posts.get(&label_to_add.name).unwrap();
+            let mut posts = self.label_to_posts.get(&label_to_add).unwrap();
             posts.insert(id);
-            self.label_to_posts.insert(&label_to_add.name, &posts);
+            self.label_to_posts.insert(&label_to_add, &posts);
         }
     }
 }

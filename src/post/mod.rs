@@ -14,9 +14,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, BorshStorageKey, Timestamp};
 pub use sponsorship::*;
-use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 pub use submission::*;
 
 pub type PostId = u64;
@@ -83,31 +81,7 @@ impl From<Post> for VersionedPost {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct Label {
-    pub name: String,
-}
-
-impl Hash for Label {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state)
-    }
-}
-
-impl PartialEq for Label {
-    fn eq(&self, other: &Self) -> bool {
-        self.name.eq(&other.name)
-    }
-}
-
-impl PartialOrd for Label {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.name.partial_cmp(&other.name)
-    }
-}
-
-impl Eq for Label {}
+type Label = String;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
