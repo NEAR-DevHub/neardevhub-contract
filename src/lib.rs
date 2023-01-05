@@ -122,7 +122,10 @@ impl Contract {
 
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
         let post: Post = self.posts.get(post_id).expect("Post id not found").into();
-        let editor = editor.unwrap_or(env::predecessor_account_id());
+        let editor = match editor {
+            None => env::predecessor_account_id(),
+            Some(e) => e,
+        };
         // TODO: Allow moderators to edit posts.
         editor == env::current_account_id() || editor == post.author_id
     }
