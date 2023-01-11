@@ -1,5 +1,6 @@
 mod attestation;
 mod comment;
+mod github;
 mod idea;
 mod like;
 mod sponsorship;
@@ -27,6 +28,7 @@ pub enum PostType {
     Submission,
     Attestation,
     Sponsorship,
+    Github,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
