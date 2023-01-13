@@ -1,13 +1,16 @@
 pub mod debug;
 pub mod migrations;
 pub mod post;
+mod social_db;
 pub mod stats;
 pub mod str_serializers;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
+use near_sdk::serde_json::json;
+use near_sdk::{env, near_bindgen, AccountId, Gas, PanicOnDefault, Promise};
 use post::*;
+use social_db::{ext_social_db, SOCIAL_DB};
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -21,6 +24,8 @@ type CommentId = u64;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
+
+const GAS_FOR_LIKE: Gas = 10_000_000_000_000;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -88,17 +93,37 @@ impl Contract {
         }
     }
 
-    pub fn add_like(&mut self, post_id: PostId) {
+    #[payable]
+    pub fn add_like(&mut self, post_id: PostId) -> Promise {
         near_sdk::log!("add_like");
         let mut post: Post = self
             .posts
             .get(post_id)
             .unwrap_or_else(|| panic!("Post id {} not found", post_id))
             .into();
+        let post_author = post.author_id.clone();
         let like =
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.into());
+        ext_social_db::set(
+            json!({
+                env::predecessor_account_id() : {
+                    "index": {
+                        "notify": json!({
+                            "key": post_author,
+                            "value": {
+                                "type": "devgovgigs/like",
+                                "post": post_id,
+                            },
+                        }).to_string()
+                    }
+                }
+            }),
+            &SOCIAL_DB,
+            env::attached_deposit(),
+            env::prepaid_gas() - GAS_FOR_LIKE,
+        )
     }
 
     pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
@@ -123,10 +148,9 @@ impl Contract {
         self.posts.push(&post.into());
         self.post_to_parent.insert(&id, &parent_id);
 
-        let mut siblings = self
-            .post_to_children
-            .get(&parent_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
+        let mut siblings = self.post_to_children.get(&parent_id).unwrap_or_else(
+            || Vec::new(), // panic!("Parent id {} not found", parent_id)
+        );
         siblings.push(id);
         self.post_to_children.insert(&parent_id, &siblings);
 
