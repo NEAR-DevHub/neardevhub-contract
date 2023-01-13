@@ -1,5 +1,6 @@
 pub mod debug;
 pub mod migrations;
+mod notify;
 pub mod post;
 mod social_db;
 pub mod stats;
@@ -7,10 +8,8 @@ pub mod str_serializers;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::serde_json::json;
-use near_sdk::{env, near_bindgen, AccountId, Gas, PanicOnDefault, Promise};
+use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault, Promise};
 use post::*;
-use social_db::{ext_social_db, SOCIAL_DB};
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -24,8 +23,6 @@ type CommentId = u64;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
-
-const GAS_FOR_LIKE: Gas = 10_000_000_000_000;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -106,27 +103,16 @@ impl Contract {
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.into());
-        ext_social_db::set(
-            json!({
-                env::predecessor_account_id() : {
-                    "index": {
-                        "notify": json!({
-                            "key": post_author,
-                            "value": {
-                                "type": "devgovgigs/like",
-                                "post": post_id,
-                            },
-                        }).to_string()
-                    }
-                }
-            }),
-            &SOCIAL_DB,
-            env::attached_deposit(),
-            env::prepaid_gas() - GAS_FOR_LIKE,
-        )
+        notify::notify_like(post_id, post_author)
     }
 
-    pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
+    #[payable]
+    pub fn add_post(
+        &mut self,
+        parent_id: Option<PostId>,
+        body: PostBody,
+        labels: HashSet<String>,
+    ) -> Option<Promise> {
         near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let id = self.posts.len();
@@ -156,6 +142,18 @@ impl Contract {
 
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
+
+        if parent_id != ROOT_POST_ID {
+            let parent_post: Post = self
+                .posts
+                .get(parent_id)
+                .unwrap_or_else(|| panic!("Parent post with id {} not found", parent_id))
+                .into();
+            let parent_author = parent_post.author_id;
+            Some(notify::notify_reply(parent_id, parent_author))
+        } else {
+            None
+        }
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
@@ -188,7 +186,8 @@ impl Contract {
         editor == env::current_account_id() || editor == post.author_id
     }
 
-    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
+    #[payable]
+    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("edit_post");
         assert!(
             self.is_allowed_to_edit(id, Option::None),
@@ -209,6 +208,7 @@ impl Contract {
         };
         post.snapshot = new_snapshot;
         post.snapshot_history.push(old_snapshot);
+        let post_author = post.author_id.clone();
         self.posts.replace(id, &post.into());
 
         // Update labels index.
@@ -227,5 +227,7 @@ impl Contract {
             posts.insert(id);
             self.label_to_posts.insert(&label_to_add, &posts);
         }
+
+        notify::notify_edit(id, post_author)
     }
 }
