@@ -69,6 +69,10 @@ impl Contract {
         self.posts.get(post_id).unwrap_or_else(|| panic!("Post id {} not found", post_id))
     }
 
+    pub fn get_all_post_ids(&self) -> Vec<PostId> {
+        (0..self.posts.len()).into_iter().collect()
+    }
+
     pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
         near_sdk::log!("get_children_ids");
         let post_id = post_id.unwrap_or(ROOT_POST_ID);
