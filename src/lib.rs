@@ -8,7 +8,7 @@ pub mod str_serializers;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault, Promise};
+use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
 
@@ -91,7 +91,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_like(&mut self, post_id: PostId) -> Promise {
+    pub fn add_like(&mut self, post_id: PostId) {
         near_sdk::log!("add_like");
         let mut post: Post = self
             .posts
@@ -103,16 +103,11 @@ impl Contract {
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.into());
-        notify::notify_like(post_id, post_author)
+        notify::notify_like(post_id, post_author);
     }
 
     #[payable]
-    pub fn add_post(
-        &mut self,
-        parent_id: Option<PostId>,
-        body: PostBody,
-        labels: HashSet<String>,
-    ) -> Option<Promise> {
+    pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let id = self.posts.len();
@@ -134,9 +129,10 @@ impl Contract {
         self.posts.push(&post.into());
         self.post_to_parent.insert(&id, &parent_id);
 
-        let mut siblings = self.post_to_children.get(&parent_id).unwrap_or_else(
-            || Vec::new(), // panic!("Parent id {} not found", parent_id)
-        );
+        let mut siblings = self
+            .post_to_children
+            .get(&parent_id)
+            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
         siblings.push(id);
         self.post_to_children.insert(&parent_id, &siblings);
 
@@ -150,9 +146,7 @@ impl Contract {
                 .unwrap_or_else(|| panic!("Parent post with id {} not found", parent_id))
                 .into();
             let parent_author = parent_post.author_id;
-            Some(notify::notify_reply(parent_id, parent_author))
-        } else {
-            None
+            notify::notify_reply(parent_id, parent_author);
         }
     }
 
@@ -187,7 +181,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) -> Promise {
+    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("edit_post");
         assert!(
             self.is_allowed_to_edit(id, Option::None),
@@ -228,6 +222,6 @@ impl Contract {
             self.label_to_posts.insert(&label_to_add, &posts);
         }
 
-        notify::notify_edit(id, post_author)
+        notify::notify_edit(id, post_author);
     }
 }
