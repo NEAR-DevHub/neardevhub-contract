@@ -1,6 +1,8 @@
 pub mod debug;
 pub mod migrations;
+mod notify;
 pub mod post;
+mod social_db;
 pub mod stats;
 pub mod str_serializers;
 
@@ -92,6 +94,7 @@ impl Contract {
         }
     }
 
+    #[payable]
     pub fn add_like(&mut self, post_id: PostId) {
         near_sdk::log!("add_like");
         let mut post: Post = self
@@ -99,12 +102,15 @@ impl Contract {
             .get(post_id)
             .unwrap_or_else(|| panic!("Post id {} not found", post_id))
             .into();
+        let post_author = post.author_id.clone();
         let like =
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.into());
+        notify::notify_like(post_id, post_author);
     }
 
+    #[payable]
     pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
@@ -136,6 +142,16 @@ impl Contract {
 
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
+
+        if parent_id != ROOT_POST_ID {
+            let parent_post: Post = self
+                .posts
+                .get(parent_id)
+                .unwrap_or_else(|| panic!("Parent post with id {} not found", parent_id))
+                .into();
+            let parent_author = parent_post.author_id;
+            notify::notify_reply(parent_id, parent_author);
+        }
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
@@ -168,6 +184,7 @@ impl Contract {
         editor == env::current_account_id() || editor == post.author_id
     }
 
+    #[payable]
     pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("edit_post");
         assert!(
@@ -189,6 +206,7 @@ impl Contract {
         };
         post.snapshot = new_snapshot;
         post.snapshot_history.push(old_snapshot);
+        let post_author = post.author_id.clone();
         self.posts.replace(id, &post.into());
 
         // Update labels index.
@@ -207,5 +225,7 @@ impl Contract {
             posts.insert(id);
             self.label_to_posts.insert(&label_to_add, &posts);
         }
+
+        notify::notify_edit(id, post_author);
     }
 }
