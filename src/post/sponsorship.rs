@@ -12,6 +12,7 @@ use std::str::FromStr;
 pub enum SponsorshipToken {
     Near,
     NEP141 { address: AccountId },
+    USD,
 }
 
 impl FromStr for SponsorshipToken {
