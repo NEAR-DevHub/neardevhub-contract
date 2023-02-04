@@ -1,3 +1,4 @@
+pub mod access_control;
 pub mod debug;
 pub mod migrations;
 mod notify;
