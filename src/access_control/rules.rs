@@ -1,5 +1,5 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -28,7 +28,22 @@ impl From<RuleMetadata> for VersionedRuleMetadata {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, PartialOrd, PartialEq, Ord, Eq, Hash, Debug)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    PartialOrd,
+    PartialEq,
+    Ord,
+    Eq,
+    Hash,
+    Debug,
+)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(from = "String")]
+#[serde(into = "String")]
 pub enum Rule {
     ExactMatch(String),
     StartsWith(String),
@@ -37,34 +52,21 @@ pub enum Rule {
 /// JSON string representation prefix of Rule::StartsWith variant.
 const STARTS_WITH: &str = "starts-with:";
 
-impl ToString for Rule {
-    fn to_string(&self) -> String {
-        match self {
-            Rule::ExactMatch(s) => s.to_string(),
-            Rule::StartsWith(s) => format!("{}{}", STARTS_WITH, s).to_string(),
+impl From<String> for Rule {
+    fn from(full_str: String) -> Self {
+        if let Some(s) = full_str.strip_prefix(STARTS_WITH) {
+            Rule::StartsWith(s.to_string())
+        } else {
+            Rule::ExactMatch(full_str)
         }
     }
 }
 
-impl Serialize for Rule {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        Serialize::serialize(&self.to_string(), serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for Rule {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let full_str = <String as Deserialize>::deserialize(deserializer)?;
-        if let Some(s) = full_str.strip_prefix(STARTS_WITH) {
-            Ok(Rule::StartsWith(s.to_string()))
-        } else {
-            Ok(Rule::ExactMatch(full_str))
+impl Into<String> for Rule {
+    fn into(self) -> String {
+        match self {
+            Rule::ExactMatch(s) => s.to_string(),
+            Rule::StartsWith(s) => format!("{}{}", STARTS_WITH, s).to_string(),
         }
     }
 }
