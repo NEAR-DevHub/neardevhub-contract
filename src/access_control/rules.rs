@@ -45,6 +45,10 @@ impl From<RuleMetadata> for VersionedRuleMetadata {
 #[serde(from = "String")]
 #[serde(into = "String")]
 pub enum Rule {
+    /// Labels can be any string, but rules are created by the NEAR account owner of this contract,
+    /// or small circle of moderators. So this code cannot be abused. Likely creating a label that
+    /// mimics a rule makes this label only more restrictive, so there might be nothing to exploit.
+    /// TODO: Add extra logic to prevent malicious rules creation by creating labels that mimic rules.
     ExactMatch(String),
     StartsWith(String),
 }
