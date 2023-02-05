@@ -2,7 +2,9 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default,
+)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RulesList {
     #[serde(flatten)]

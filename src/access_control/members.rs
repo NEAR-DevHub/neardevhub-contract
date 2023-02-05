@@ -102,7 +102,9 @@ impl From<MemberMetadata> for VersionedMemberMetadata {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default,
+)]
 #[serde(crate = "near_sdk::serde")]
 pub struct MembersList {
     #[serde(flatten)]
