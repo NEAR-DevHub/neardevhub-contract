@@ -1,3 +1,4 @@
+pub mod access_control;
 pub mod debug;
 pub mod migrations;
 mod notify;
@@ -6,6 +7,8 @@ mod social_db;
 pub mod stats;
 pub mod str_serializers;
 
+use crate::access_control::members::ActionType;
+use crate::access_control::AccessControl;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -31,6 +34,7 @@ pub struct Contract {
     pub post_to_parent: LookupMap<PostId, PostId>,
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
 }
 
 #[near_bindgen]
@@ -42,6 +46,7 @@ impl Contract {
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
+            access_control: AccessControl::default(),
         }
     }
 
@@ -117,6 +122,13 @@ impl Contract {
         let id = self.posts.len();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
+        assert!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels.iter().cloned().collect()
+            ),
+            "Cannot use these labels"
+        );
 
         for label in &labels {
             let mut other_posts = self.label_to_posts.get(label).unwrap_or_default();
@@ -180,8 +192,35 @@ impl Contract {
             None => env::predecessor_account_id(),
             Some(e) => e,
         };
-        // TODO: Allow moderators to edit posts.
-        editor == env::current_account_id() || editor == post.author_id
+        // First check for simple cases.
+        if editor == env::current_account_id() || editor == post.author_id {
+            return true;
+        }
+
+        // Then check for complex case.
+        self.access_control
+            .members_list
+            .check_permissions(editor, post.snapshot.labels.iter().cloned().collect())
+            .contains(&ActionType::EditPost)
+    }
+
+    pub fn is_allowed_to_use_labels(&self, editor: Option<AccountId>, labels: Vec<String>) -> bool {
+        let editor = match editor {
+            None => env::predecessor_account_id(),
+            Some(e) => e,
+        };
+        // First check for simple cases.
+        if editor == env::current_account_id() {
+            return true;
+        }
+        let restricted_labels = self.access_control.rules_list.find_restricted(labels.clone());
+        if restricted_labels.is_empty() {
+            return true;
+        }
+        self.access_control
+            .members_list
+            .check_permissions(editor, labels)
+            .contains(&ActionType::UseLabels)
     }
 
     #[payable]
@@ -199,7 +238,7 @@ impl Contract {
         let old_labels_set = old_snapshot.labels.clone();
         let new_labels = labels;
         let new_snapshot = PostSnapshot {
-            editor_id,
+            editor_id: editor_id.clone(),
             timestamp: env::block_timestamp(),
             labels: new_labels.clone(),
             body,
@@ -214,6 +253,21 @@ impl Contract {
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;
+        assert!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_remove.iter().cloned().collect()
+            ),
+            "Not allowed to remove these labels"
+        );
+        assert!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_add.iter().cloned().collect()
+            ),
+            "Not allowed to add these labels"
+        );
+
         for label_to_remove in labels_to_remove {
             let mut posts = self.label_to_posts.get(&label_to_remove).unwrap();
             posts.remove(&id);
