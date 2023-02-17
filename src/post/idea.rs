@@ -37,11 +37,26 @@ pub enum VersionedIdea {
     V1(IdeaV1),
 }
 
+impl VersionedIdea {
+    pub fn latest_version(self) -> IdeaV1 {
+        self.into()
+    }
+}
+
 impl From<VersionedIdea> for Idea {
     fn from(vi: VersionedIdea) -> Self {
         match vi {
             VersionedIdea::V0(v0) => v0,
             VersionedIdea::V1(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedIdea> for IdeaV1 {
+    fn from(vi: VersionedIdea) -> Self {
+        match vi {
+            VersionedIdea::V1(v1) => v1,
+            _ => unimplemented!(),
         }
     }
 }

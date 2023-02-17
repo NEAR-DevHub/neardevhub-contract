@@ -42,11 +42,26 @@ pub enum VersionedSubmission {
     V1(SubmissionV1),
 }
 
+impl VersionedSubmission {
+    pub fn latest_version(self) -> SubmissionV1 {
+        self.into()
+    }
+}
+
 impl From<VersionedSubmission> for Submission {
     fn from(vs: VersionedSubmission) -> Self {
         match vs {
             VersionedSubmission::V0(v0) => v0,
             VersionedSubmission::V1(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedSubmission> for SubmissionV1 {
+    fn from(vs: VersionedSubmission) -> Self {
+        match vs {
+            VersionedSubmission::V1(v1) => v1,
+            _ => unimplemented!(),
         }
     }
 }

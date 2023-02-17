@@ -127,7 +127,7 @@ impl RulesList {
 
 #[cfg(test)]
 mod tests {
-    use crate::access_control::rules::{Rule, RuleMetadata, RulesList, VersionedRuleMetadata};
+    use crate::access_control::rules::{Rule, RuleMetadata, RulesList};
     use near_sdk::serde_json;
     use std::collections::{HashMap, HashSet};
 

@@ -40,11 +40,26 @@ pub enum VersionedAttestation {
     V1(AttestationV1),
 }
 
+impl VersionedAttestation {
+    pub fn latest_version(self) -> AttestationV1 {
+        self.into()
+    }
+}
+
 impl From<VersionedAttestation> for Attestation {
     fn from(va: VersionedAttestation) -> Self {
         match va {
             VersionedAttestation::V0(v0) => v0,
             VersionedAttestation::V1(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedAttestation> for AttestationV1 {
+    fn from(va: VersionedAttestation) -> Self {
+        match va {
+            VersionedAttestation::V0(_) => unimplemented!(),
+            VersionedAttestation::V1(v1) => v1,
         }
     }
 }

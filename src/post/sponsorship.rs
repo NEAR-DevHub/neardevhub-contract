@@ -68,11 +68,26 @@ pub enum VersionedSponsorship {
     V1(SponsorshipV1),
 }
 
+impl VersionedSponsorship {
+    pub fn latest_version(self) -> SponsorshipV1 {
+        self.into()
+    }
+}
+
 impl From<VersionedSponsorship> for Sponsorship {
     fn from(vs: VersionedSponsorship) -> Self {
         match vs {
             VersionedSponsorship::V0(v0) => v0,
             VersionedSponsorship::V1(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedSponsorship> for SponsorshipV1 {
+    fn from(vs: VersionedSponsorship) -> Self {
+        match vs {
+            VersionedSponsorship::V1(v1) => v1,
+            _ => unimplemented!(),
         }
     }
 }
