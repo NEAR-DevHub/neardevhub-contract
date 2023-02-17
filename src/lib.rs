@@ -6,6 +6,7 @@ pub mod post;
 mod social_db;
 pub mod stats;
 pub mod str_serializers;
+mod repost;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::AccessControl;
@@ -142,7 +143,7 @@ impl Contract {
             snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
             snapshot_history: vec![],
         };
-        self.posts.push(&post.into());
+        self.posts.push(&post.clone().into());
         self.post_to_parent.insert(&id, &parent_id);
 
         let mut siblings = self
@@ -163,6 +164,8 @@ impl Contract {
                 .into();
             let parent_author = parent_post.author_id;
             notify::notify_reply(parent_id, parent_author);
+        } else {
+            repost::repost(post);
         }
     }
 

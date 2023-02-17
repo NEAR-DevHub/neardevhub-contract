@@ -44,6 +44,12 @@ pub enum VersionedComment {
     V2(CommentV2),
 }
 
+impl VersionedComment {
+    pub fn latest_version(self) -> CommentV2 {
+        self.into()
+    }
+}
+
 impl From<VersionedComment> for Comment {
     fn from(vc: VersionedComment) -> Self {
         match vc {
@@ -57,6 +63,15 @@ impl From<VersionedComment> for Comment {
             },
             VersionedComment::V1(v1) => v1,
             VersionedComment::V2(_) => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedComment> for CommentV2 {
+    fn from(vc: VersionedComment) -> Self {
+        match vc {
+            VersionedComment::V2(v2) => v2,
+            _ => unimplemented!(),
         }
     }
 }
