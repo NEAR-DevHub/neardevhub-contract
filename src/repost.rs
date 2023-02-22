@@ -3,7 +3,7 @@ use near_sdk::serde_json::json;
 use near_sdk::{AccountId, env, Gas, Promise};
 use crate::post::{Post, PostBody};
 
-const GAS_FOR_REPOST: Gas = 10_000_000_000_000;
+const GAS_FOR_REPOST: Gas = 20_000_000_000_000;
 
 fn repost_internal(post: Post, contract_address: AccountId) ->  near_sdk::serde_json::Value {
     let post_link = format!("https://near.social/#/devgovgigs.near/widget/Post?id={}", post.id);
@@ -47,7 +47,7 @@ pub fn repost(post: Post) -> Promise {
         repost_internal(post, env::current_account_id()),
         &SOCIAL_DB,
         env::attached_deposit(),
-        env::prepaid_gas() - GAS_FOR_REPOST,
+        GAS_FOR_REPOST,
     )
 }
 
