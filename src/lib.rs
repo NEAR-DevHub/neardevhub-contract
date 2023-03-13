@@ -3,18 +3,19 @@ pub mod debug;
 pub mod migrations;
 mod notify;
 pub mod post;
+mod repost;
 mod social_db;
 pub mod stats;
 pub mod str_serializers;
-mod repost;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::AccessControl;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
+use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
+use std::convert::TryInto;
 
 near_sdk::setup_alloc!();
 
@@ -36,6 +37,7 @@ pub struct Contract {
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, UnorderedSet<PostId>>,
 }
 
 #[near_bindgen]
@@ -48,6 +50,7 @@ impl Contract {
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
             access_control: AccessControl::default(),
+            authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
         }
     }
 
@@ -77,6 +80,10 @@ impl Contract {
 
     pub fn get_all_post_ids(&self) -> Vec<PostId> {
         (0..self.posts.len()).into_iter().collect()
+    }
+
+    pub fn get_all_post_ids_by_author(&self, author: AccountId) -> Vec<PostId> {
+        self.authors.get(&author).map(|posts| posts.to_vec()).unwrap_or(Vec::new())
     }
 
     pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
@@ -138,7 +145,7 @@ impl Contract {
         }
         let post = Post {
             id,
-            author_id,
+            author_id: author_id.clone(),
             likes: Default::default(),
             snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
             snapshot_history: vec![],
@@ -155,6 +162,15 @@ impl Contract {
 
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
+
+        self.authors
+            .get(&author_id)
+            .unwrap_or_else(|| {
+                UnorderedSet::new(StorageKey::AuthorPosts(
+                    env::sha256(author_id.as_bytes()).try_into().unwrap(),
+                ))
+            })
+            .insert(&id);
 
         if parent_id != ROOT_POST_ID {
             let parent_post: Post = self

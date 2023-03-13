@@ -15,7 +15,7 @@ pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
     notify(post_id, post_author, "edit")
 }
 
-fn notify(post_id: PostId, post_author: AccountId, action: &str ) -> Promise {
+fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
     ext_social_db::set(
         json!({
             env::predecessor_account_id() : {
@@ -32,6 +32,6 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str ) -> Promise {
         }),
         &SOCIAL_DB,
         env::attached_deposit(),
-        env::prepaid_gas()/2
+        env::prepaid_gas() / 2,
     )
 }

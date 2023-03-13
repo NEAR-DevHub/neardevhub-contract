@@ -3,7 +3,9 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{near_bindgen, IntoStorageKey};
+use near_sdk::{env, near_bindgen, IntoStorageKey};
+use std::cmp::min;
+use std::convert::TryInto;
 
 #[near_bindgen]
 impl Contract {
@@ -11,7 +13,7 @@ impl Contract {
         near_sdk::assert_self();
         let OldContract { posts, post_to_parent, post_to_children, label_to_posts } =
             env::state_read().unwrap();
-        env::state_write(&Contract {
+        env::state_write(&OldContract2 {
             posts,
             post_to_parent,
             post_to_children,
@@ -43,4 +45,57 @@ pub struct OldContract {
     pub post_to_parent: LookupMap<PostId, PostId>,
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct OldContract2 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+}
+
+#[near_bindgen]
+impl Contract {
+    pub fn unsafe_add_post_authors() {
+        near_sdk::assert_self();
+        let OldContract2 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+        } = env::state_read().unwrap();
+        let authors = UnorderedMap::new(StorageKey::AuthorToAuthorPosts);
+
+        env::state_write(&Contract {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+        });
+    }
+
+    pub fn add_old_post_authors(&mut self, start: u64, end: u64) {
+        near_sdk::assert_self();
+        let total = self.posts.len();
+        let end = min(total, end);
+        for i in start..end {
+            let versioned_post = self.posts.get(i);
+            if let Some(versioned_post) = versioned_post {
+                let post: Post = versioned_post.into();
+                self.authors
+                    .get(&post.author_id)
+                    .unwrap_or_else(|| {
+                        UnorderedSet::new(StorageKey::AuthorPosts(
+                            env::sha256(post.author_id.as_bytes()).try_into().unwrap(),
+                        ))
+                    })
+                    .insert(&post.id);
+            }
+        }
+    }
 }
