@@ -3,7 +3,7 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{env, near_bindgen, IntoStorageKey};
+use near_sdk::{env, near_bindgen};
 use std::cmp::min;
 use std::convert::TryInto;
 
@@ -87,14 +87,13 @@ impl Contract {
             let versioned_post = self.posts.get(i);
             if let Some(versioned_post) = versioned_post {
                 let post: Post = versioned_post.into();
-                self.authors
-                    .get(&post.author_id)
-                    .unwrap_or_else(|| {
-                        UnorderedSet::new(StorageKey::AuthorPosts(
-                            env::sha256(post.author_id.as_bytes()).try_into().unwrap(),
-                        ))
-                    })
-                    .insert(&post.id);
+                let mut author_posts = self.authors.get(&post.author_id).unwrap_or_else(|| {
+                    UnorderedSet::new(StorageKey::AuthorPosts(
+                        env::sha256(post.author_id.as_bytes()).try_into().unwrap(),
+                    ))
+                });
+                author_posts.insert(&post.id);
+                self.authors.insert(&post.author_id, &author_posts);
             }
         }
     }

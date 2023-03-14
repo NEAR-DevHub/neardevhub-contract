@@ -82,10 +82,6 @@ impl Contract {
         (0..self.posts.len()).into_iter().collect()
     }
 
-    pub fn get_all_post_ids_by_author(&self, author: AccountId) -> Vec<PostId> {
-        self.authors.get(&author).map(|posts| posts.to_vec()).unwrap_or(Vec::new())
-    }
-
     pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
         near_sdk::log!("get_children_ids");
         let post_id = post_id.unwrap_or(ROOT_POST_ID);
@@ -163,14 +159,13 @@ impl Contract {
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
 
-        self.authors
-            .get(&author_id)
-            .unwrap_or_else(|| {
-                UnorderedSet::new(StorageKey::AuthorPosts(
-                    env::sha256(author_id.as_bytes()).try_into().unwrap(),
-                ))
-            })
-            .insert(&id);
+        let mut author_posts = self.authors.get(&author_id).unwrap_or_else(|| {
+            UnorderedSet::new(StorageKey::AuthorPosts(
+                env::sha256(author_id.as_bytes()).try_into().unwrap(),
+            ))
+        });
+        author_posts.insert(&post.id);
+        self.authors.insert(&post.author_id, &author_posts);
 
         if parent_id != ROOT_POST_ID {
             let parent_post: Post = self
@@ -183,6 +178,10 @@ impl Contract {
         } else {
             repost::repost(post);
         }
+    }
+
+    pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
+        self.authors.get(&author).map(|posts| posts.to_vec()).unwrap_or(Vec::new())
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
