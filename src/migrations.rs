@@ -5,15 +5,24 @@
 use crate::*;
 use near_sdk::{env, near_bindgen};
 use std::cmp::min;
-use std::convert::TryInto;
+use std::collections::HashSet;
 
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct OldContractV1 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+}
+
+// From OldContractV1 to OldContractV2
 #[near_bindgen]
 impl Contract {
     pub fn unsafe_add_acl() {
         near_sdk::assert_self();
-        let OldContract { posts, post_to_parent, post_to_children, label_to_posts } =
+        let OldContractV1 { posts, post_to_parent, post_to_children, label_to_posts } =
             env::state_read().unwrap();
-        env::state_write(&OldContract2 {
+        env::state_write(&OldContractV2 {
             posts,
             post_to_parent,
             post_to_children,
@@ -40,15 +49,7 @@ impl Contract {
 // }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct OldContract {
-    pub posts: Vector<VersionedPost>,
-    pub post_to_parent: LookupMap<PostId, PostId>,
-    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
-    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct OldContract2 {
+pub struct OldContractV2 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
@@ -56,11 +57,12 @@ pub struct OldContract2 {
     pub access_control: AccessControl,
 }
 
+// From OldContractV2 to Contract
 #[near_bindgen]
 impl Contract {
     pub fn unsafe_add_post_authors() {
         near_sdk::assert_self();
-        let OldContract2 {
+        let OldContractV2 {
             posts,
             post_to_parent,
             post_to_children,
@@ -87,12 +89,9 @@ impl Contract {
             let versioned_post = self.posts.get(i);
             if let Some(versioned_post) = versioned_post {
                 let post: Post = versioned_post.into();
-                let mut author_posts = self.authors.get(&post.author_id).unwrap_or_else(|| {
-                    UnorderedSet::new(StorageKey::AuthorPosts(
-                        env::sha256(post.author_id.as_bytes()).try_into().unwrap(),
-                    ))
-                });
-                author_posts.insert(&post.id);
+                let mut author_posts =
+                    self.authors.get(&post.author_id).unwrap_or_else(|| HashSet::new());
+                author_posts.insert(post.id);
                 self.authors.insert(&post.author_id, &author_posts);
             }
         }

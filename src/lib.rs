@@ -11,11 +11,10 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::AccessControl;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet, Vector};
+use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
-use std::convert::TryInto;
 
 near_sdk::setup_alloc!();
 
@@ -37,7 +36,7 @@ pub struct Contract {
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
-    pub authors: UnorderedMap<AccountId, UnorderedSet<PostId>>,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
 }
 
 #[near_bindgen]
@@ -159,12 +158,8 @@ impl Contract {
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
 
-        let mut author_posts = self.authors.get(&author_id).unwrap_or_else(|| {
-            UnorderedSet::new(StorageKey::AuthorPosts(
-                env::sha256(author_id.as_bytes()).try_into().unwrap(),
-            ))
-        });
-        author_posts.insert(&post.id);
+        let mut author_posts = self.authors.get(&author_id).unwrap_or_else(|| HashSet::new());
+        author_posts.insert(post.id);
         self.authors.insert(&post.author_id, &author_posts);
 
         if parent_id != ROOT_POST_ID {
@@ -181,7 +176,7 @@ impl Contract {
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
-        self.authors.get(&author).map(|posts| posts.to_vec()).unwrap_or(Vec::new())
+        self.authors.get(&author).map(|posts| posts.into_iter().collect()).unwrap_or(Vec::new())
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {

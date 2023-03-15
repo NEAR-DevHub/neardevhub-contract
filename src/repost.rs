@@ -1,7 +1,7 @@
 use crate::post::{Post, PostBody};
 use crate::social_db::{ext_social_db, SOCIAL_DB};
 use near_sdk::serde_json::json;
-use near_sdk::{env, AccountId, Gas, Promise};
+use near_sdk::{env, AccountId, Promise};
 
 fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_json::Value {
     let post_link = format!("https://near.social/#/devgovgigs.near/widget/Post?id={}", post.id);
