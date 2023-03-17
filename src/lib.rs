@@ -149,7 +149,7 @@ impl Contract {
         let mut siblings = self
             .post_to_children
             .get(&parent_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
+            .unwrap_or_else(|| if id == 0 { Vec::new() } else { panic!("Parent id {} not found", parent_id)});
         siblings.push(id);
         self.post_to_children.insert(&parent_id, &siblings);
 
