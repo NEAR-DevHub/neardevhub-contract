@@ -3,8 +3,8 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{env, near_bindgen, Promise};
 use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{env, near_bindgen, Promise};
 use std::cmp::min;
 use std::collections::HashSet;
 
@@ -107,7 +107,7 @@ pub enum MigrateTo {
 #[serde(crate = "near_sdk::serde")]
 pub enum V2ToV3Step {
     AddPostAuthorsField,
-    InsertPostAuthors{start: u64, end: u64},
+    InsertPostAuthors { start: u64, end: u64 },
 }
 
 #[near_bindgen]
@@ -115,21 +115,23 @@ impl Contract {
     // compile twice to include current devgovgigs.wasm
     pub fn unsafe_self_upgrade() {
         near_sdk::assert_self();
-        let contract = include_bytes!("../res/devgovgigs.wasm");
-        Promise::new(env::current_account_id()).deploy_contract(contract.to_vec());
+
+        let contract = env::input().expect("No contract code is attached in input");
+        Promise::new(env::current_account_id()).deploy_contract(contract);
     }
 
-    // Without `&mut self`, `unsafe_migrate` skips `near_bindgen`, which loads state, borsh deserialize and parse `input`. 
+    // Without `&mut self`, `unsafe_migrate` skips `near_bindgen`, which loads state, borsh deserialize and parse `input`.
     pub fn unsafe_migrate() {
         near_sdk::assert_self();
         let to: MigrateTo = near_sdk::serde_json::from_slice(
-            &near_sdk::env::input().expect("Expected input since method has arguments.")
-        ).expect("Failed to deserialize input from JSON.");
+            &near_sdk::env::input().expect("Expected input since method has arguments."),
+        )
+        .expect("Failed to deserialize input from JSON.");
 
         match to {
             MigrateTo::V2 => Contract::unsafe_add_acl(),
             MigrateTo::V3(V2ToV3Step::AddPostAuthorsField) => Contract::unsafe_add_post_authors(),
-            _ => panic!("unsupported unsafe_migrate step")
+            _ => panic!("unsupported unsafe_migrate step"),
         }
     }
 
@@ -137,8 +139,10 @@ impl Contract {
     pub fn migrate(&mut self, to: MigrateTo) {
         near_sdk::assert_self();
         match to {
-            MigrateTo::V3(V2ToV3Step::InsertPostAuthors{start, end}) => self.insert_old_post_authors(start, end),
-            _ => panic!("unsupported migrate step")
+            MigrateTo::V3(V2ToV3Step::InsertPostAuthors { start, end }) => {
+                self.insert_old_post_authors(start, end)
+            }
+            _ => panic!("unsupported migrate step"),
         }
     }
 }
