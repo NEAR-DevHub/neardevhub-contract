@@ -112,7 +112,6 @@ pub enum V2ToV3Step {
 
 #[near_bindgen]
 impl Contract {
-    // compile twice to include current devgovgigs.wasm
     pub fn unsafe_self_upgrade() {
         near_sdk::assert_self();
 
