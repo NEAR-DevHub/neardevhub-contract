@@ -3,7 +3,8 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{env, near_bindgen};
+use near_sdk::{env, near_bindgen, Promise};
+use near_sdk::serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::collections::HashSet;
 
@@ -18,8 +19,7 @@ pub struct OldContractV1 {
 // From OldContractV1 to OldContractV2
 #[near_bindgen]
 impl Contract {
-    pub fn unsafe_add_acl() {
-        near_sdk::assert_self();
+    fn unsafe_add_acl() {
         let OldContractV1 { posts, post_to_parent, post_to_children, label_to_posts } =
             env::state_read().unwrap();
         env::state_write(&OldContractV2 {
@@ -60,8 +60,7 @@ pub struct OldContractV2 {
 // From OldContractV2 to Contract
 #[near_bindgen]
 impl Contract {
-    pub fn unsafe_add_post_authors() {
-        near_sdk::assert_self();
+    fn unsafe_add_post_authors() {
         let OldContractV2 {
             posts,
             post_to_parent,
@@ -81,8 +80,7 @@ impl Contract {
         });
     }
 
-    pub fn add_old_post_authors(&mut self, start: u64, end: u64) {
-        near_sdk::assert_self();
+    fn insert_old_post_authors(&mut self, start: u64, end: u64) {
         let total = self.posts.len();
         let end = min(total, end);
         for i in start..end {
@@ -94,6 +92,53 @@ impl Contract {
                 author_posts.insert(post.id);
                 self.authors.insert(&post.author_id, &author_posts);
             }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum MigrateTo {
+    V2,
+    V3(V2ToV3Step),
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum V2ToV3Step {
+    AddPostAuthorsField,
+    InsertPostAuthors{start: u64, end: u64},
+}
+
+#[near_bindgen]
+impl Contract {
+    // compile twice to include current devgovgigs.wasm
+    pub fn unsafe_self_upgrade() {
+        near_sdk::assert_self();
+        let contract = include_bytes!("../res/devgovgigs.wasm");
+        Promise::new(env::current_account_id()).deploy_contract(contract.to_vec());
+    }
+
+    // Without `&mut self`, `unsafe_migrate` skips `near_bindgen`, which loads state, borsh deserialize and parse `input`. 
+    pub fn unsafe_migrate() {
+        near_sdk::assert_self();
+        let to: MigrateTo = near_sdk::serde_json::from_slice(
+            &near_sdk::env::input().expect("Expected input since method has arguments.")
+        ).expect("Failed to deserialize input from JSON.");
+
+        match to {
+            MigrateTo::V2 => Contract::unsafe_add_acl(),
+            MigrateTo::V3(V2ToV3Step::AddPostAuthorsField) => Contract::unsafe_add_post_authors(),
+            _ => panic!("unsupported unsafe_migrate step")
+        }
+    }
+
+    // With `&mut self`, `migrate` leverages `near_bindgen`.
+    pub fn migrate(&mut self, to: MigrateTo) {
+        near_sdk::assert_self();
+        match to {
+            MigrateTo::V3(V2ToV3Step::InsertPostAuthors{start, end}) => self.insert_old_post_authors(start, end),
+            _ => panic!("unsupported migrate step")
         }
     }
 }
