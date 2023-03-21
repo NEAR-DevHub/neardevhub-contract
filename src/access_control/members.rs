@@ -122,7 +122,12 @@ impl MembersList {
     }
 
     /// Whether given account has special permissions for a post with the given labels.
+    /// Labels are restricted labels.
     pub fn check_permissions(&self, account: String, labels: Vec<String>) -> HashSet<ActionType> {
+        if !self.members.contains_key(&Member::Account(account.clone())) {
+            return HashSet::new();
+        }
+
         let mut stack = HashSet::new();
         stack.insert(Member::Account(account));
 
@@ -375,6 +380,16 @@ mod tests {
 
         let actual =
             list.check_permissions("max.near".to_string(), vec!["funding-requested".to_string()]);
+        assert!(actual.is_empty());
+    }
+
+    #[test]
+    fn check_permissions_of_not_member() {
+        let list = create_list();
+        let actual = list.check_permissions(
+            "random.near".to_string(),
+            vec!["wg-protocol".to_string(), "funding-requested".to_string()],
+        );
         assert!(actual.is_empty());
     }
 
