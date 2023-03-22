@@ -42,13 +42,15 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        Self {
+        let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
             access_control: AccessControl::default(),
-        }
+        };
+        contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
+        contract
     }
 
     /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
