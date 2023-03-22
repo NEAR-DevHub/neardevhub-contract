@@ -3,7 +3,6 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, Promise};
 use std::cmp::min;
 use std::collections::HashSet;
@@ -80,34 +79,44 @@ impl Contract {
         });
     }
 
-    fn insert_old_post_authors(&mut self, start: u64, end: u64) {
-        let total = self.posts.len();
+    fn unsafe_insert_old_post_authors(start: u64, end: u64) -> StateVersion {
+        let mut contract: Contract = env::state_read().unwrap();
+        let total = contract.posts.len();
         let end = min(total, end);
         for i in start..end {
-            let versioned_post = self.posts.get(i);
+            let versioned_post = contract.posts.get(i);
             if let Some(versioned_post) = versioned_post {
                 let post: Post = versioned_post.into();
                 let mut author_posts =
-                    self.authors.get(&post.author_id).unwrap_or_else(|| HashSet::new());
+                    contract.authors.get(&post.author_id).unwrap_or_else(|| HashSet::new());
                 author_posts.insert(post.id);
-                self.authors.insert(&post.author_id, &author_posts);
+                contract.authors.insert(&post.author_id, &author_posts);
             }
         }
+        StateVersion::V3 { done: end == total, migrated_count: end }
     }
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
-pub enum MigrateTo {
+#[derive(BorshDeserialize, BorshSerialize)]
+enum StateVersion {
+    V1,
     V2,
-    V3(V2ToV3Step),
+    V3 { done: bool, migrated_count: u64 },
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
-pub enum V2ToV3Step {
-    AddPostAuthorsField,
-    InsertPostAuthors { start: u64, end: u64 },
+const VERSION_KEY: &[u8] = b"VERSION";
+
+fn state_version_read() -> StateVersion {
+    env::storage_read(VERSION_KEY)
+        .map(|data| {
+            StateVersion::try_from_slice(&data).expect("Cannot deserialize the contract state.")
+        })
+        .unwrap_or(StateVersion::V2) // StateVersion is introduced in production contract with V2 State.
+}
+
+fn state_version_write(version: StateVersion) {
+    let data = version.try_to_vec().expect("Cannot serialize the contract state.");
+    env::storage_write(VERSION_KEY, &data);
 }
 
 #[near_bindgen]
@@ -119,29 +128,29 @@ impl Contract {
         Promise::new(env::current_account_id()).deploy_contract(contract);
     }
 
-    // Without `&mut self`, `unsafe_migrate` skips `near_bindgen`, which loads state, borsh deserialize and parse `input`.
     pub fn unsafe_migrate() {
         near_sdk::assert_self();
-        let to: MigrateTo = near_sdk::serde_json::from_slice(
-            &near_sdk::env::input().expect("Expected input since method has arguments."),
-        )
-        .expect("Failed to deserialize input from JSON.");
-
-        match to {
-            MigrateTo::V2 => Contract::unsafe_add_acl(),
-            MigrateTo::V3(V2ToV3Step::AddPostAuthorsField) => Contract::unsafe_add_post_authors(),
-            _ => panic!("unsupported unsafe_migrate step"),
-        }
-    }
-
-    // With `&mut self`, `migrate` leverages `near_bindgen`.
-    pub fn migrate(&mut self, to: MigrateTo) {
-        near_sdk::assert_self();
-        match to {
-            MigrateTo::V3(V2ToV3Step::InsertPostAuthors { start, end }) => {
-                self.insert_old_post_authors(start, end)
+        let current_version = state_version_read();
+        match current_version {
+            StateVersion::V1 => {
+                Contract::unsafe_add_acl();
+                state_version_write(StateVersion::V2);
             }
-            _ => panic!("unsupported migrate step"),
+            StateVersion::V2 => {
+                Contract::unsafe_add_post_authors();
+                state_version_write(StateVersion::V3 { done: false, migrated_count: 0 })
+            }
+            StateVersion::V3 { done: false, migrated_count } => {
+                state_version_write(Contract::unsafe_insert_old_post_authors(
+                    migrated_count,
+                    migrated_count + 100,
+                ));
+            }
+            _ => {
+                env::value_return(&true.try_to_vec().unwrap());
+                return;
+            }
         }
+        env::value_return(&false.try_to_vec().unwrap());
     }
 }
