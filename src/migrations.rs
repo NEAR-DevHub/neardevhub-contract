@@ -93,6 +93,7 @@ impl Contract {
                 contract.authors.insert(&post.author_id, &author_posts);
             }
         }
+        env::state_write(&contract);
         StateVersion::V3 { done: end == total, migrated_count: end }
     }
 }
@@ -143,7 +144,7 @@ impl Contract {
             StateVersion::V3 { done: false, migrated_count } => {
                 state_version_write(Contract::unsafe_insert_old_post_authors(
                     migrated_count,
-                    migrated_count + 100,
+                    migrated_count + 2,
                 ));
             }
             _ => {
