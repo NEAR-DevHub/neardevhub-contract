@@ -141,7 +141,7 @@ impl Contract {
             }
             StateVersion::V2 => {
                 Contract::unsafe_add_post_authors();
-                state_version_write(StateVersion::V3 { done: false, migrated_count: 0 })
+                state_version_write(&StateVersion::V3 { done: false, migrated_count: 0 })
             }
             StateVersion::V3 { done: false, migrated_count } => {
                 let new_version =
