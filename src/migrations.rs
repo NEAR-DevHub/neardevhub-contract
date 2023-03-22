@@ -98,7 +98,7 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
 enum StateVersion {
     V1,
     V2,
@@ -115,9 +115,10 @@ fn state_version_read() -> StateVersion {
         .unwrap_or(StateVersion::V2) // StateVersion is introduced in production contract with V2 State.
 }
 
-fn state_version_write(version: StateVersion) {
+fn state_version_write(version: &StateVersion) {
     let data = version.try_to_vec().expect("Cannot serialize the contract state.");
     env::storage_write(VERSION_KEY, &data);
+    near_sdk::log!("Migrated to version: {:?}", version);
 }
 
 #[near_bindgen]
@@ -132,22 +133,28 @@ impl Contract {
     pub fn unsafe_migrate() {
         near_sdk::assert_self();
         let current_version = state_version_read();
+        near_sdk::log!("Migrating from version: {:?}", current_version);
         match current_version {
             StateVersion::V1 => {
                 Contract::unsafe_add_acl();
-                state_version_write(StateVersion::V2);
+                state_version_write(&StateVersion::V2);
             }
             StateVersion::V2 => {
                 Contract::unsafe_add_post_authors();
                 state_version_write(StateVersion::V3 { done: false, migrated_count: 0 })
             }
             StateVersion::V3 { done: false, migrated_count } => {
-                state_version_write(Contract::unsafe_insert_old_post_authors(
-                    migrated_count,
-                    migrated_count + 2,
-                ));
+                let new_version =
+                    Contract::unsafe_insert_old_post_authors(migrated_count, migrated_count + 100);
+                state_version_write(&new_version);
+                if let StateVersion::V3 { done: true, migrated_count: _ } = new_version {
+                    near_sdk::log!("Migration finished.");
+                    env::value_return(&true.try_to_vec().unwrap());
+                    return;
+                }
             }
             _ => {
+                near_sdk::log!("Migration finished.");
                 env::value_return(&true.try_to_vec().unwrap());
                 return;
             }
