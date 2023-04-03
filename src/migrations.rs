@@ -99,7 +99,7 @@ impl Contract {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
-enum StateVersion {
+pub(crate) enum StateVersion {
     V1,
     V2,
     V3 { done: bool, migrated_count: u64 },
@@ -115,7 +115,7 @@ fn state_version_read() -> StateVersion {
         .unwrap_or(StateVersion::V2) // StateVersion is introduced in production contract with V2 State.
 }
 
-fn state_version_write(version: &StateVersion) {
+pub(crate) fn state_version_write(version: &StateVersion) {
     let data = version.try_to_vec().expect("Cannot serialize the contract state.");
     env::storage_write(VERSION_KEY, &data);
     near_sdk::log!("Migrated to version: {:?}", version);
@@ -127,7 +127,23 @@ impl Contract {
         near_sdk::assert_self();
 
         let contract = env::input().expect("No contract code is attached in input");
-        Promise::new(env::current_account_id()).deploy_contract(contract);
+        Promise::new(env::current_account_id()).deploy_contract(contract).then(
+            Promise::new(env::current_account_id()).function_call(
+                b"unsafe_migrate".to_vec(),
+                Vec::new(),
+                0u128,
+                env::prepaid_gas() - 60_000_000_000_000u64,
+            ),
+        );
+    }
+
+    fn migration_done() {
+        near_sdk::log!("Migration done.");
+        env::value_return(&"done".try_to_vec().unwrap());
+    }
+
+    fn needs_migration() {
+        env::value_return(&"needs-migration".try_to_vec().unwrap());
     }
 
     pub fn unsafe_migrate() {
@@ -148,17 +164,13 @@ impl Contract {
                     Contract::unsafe_insert_old_post_authors(migrated_count, migrated_count + 100);
                 state_version_write(&new_version);
                 if let StateVersion::V3 { done: true, migrated_count: _ } = new_version {
-                    near_sdk::log!("Migration finished.");
-                    env::value_return(&true.try_to_vec().unwrap());
-                    return;
+                    return Contract::migration_done();
                 }
             }
             _ => {
-                near_sdk::log!("Migration finished.");
-                env::value_return(&true.try_to_vec().unwrap());
-                return;
+                return Contract::migration_done();
             }
         }
-        env::value_return(&false.try_to_vec().unwrap());
+        Contract::needs_migration();
     }
 }
