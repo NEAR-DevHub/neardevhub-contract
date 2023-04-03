@@ -47,14 +47,16 @@ impl Contract {
             done: true,
             migrated_count: 0,
         });
-        Self {
+        let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
             access_control: AccessControl::default(),
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
-        }
+        };
+        contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
+        contract
     }
 
     /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
