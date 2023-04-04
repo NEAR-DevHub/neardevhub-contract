@@ -127,14 +127,15 @@ impl Contract {
         near_sdk::assert_self();
 
         let contract = env::input().expect("No contract code is attached in input");
-        Promise::new(env::current_account_id()).deploy_contract(contract).then(
-            Promise::new(env::current_account_id()).function_call(
+        Promise::new(env::current_account_id())
+            .deploy_contract(contract)
+            .then(Promise::new(env::current_account_id()).function_call(
                 b"unsafe_migrate".to_vec(),
                 Vec::new(),
                 0u128,
                 env::prepaid_gas() - 60_000_000_000_000u64,
-            ),
-        );
+            ))
+            .as_return();
     }
 
     fn migration_done() {
