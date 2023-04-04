@@ -140,11 +140,11 @@ impl Contract {
 
     fn migration_done() {
         near_sdk::log!("Migration done.");
-        env::value_return(&"done".try_to_vec().unwrap());
+        env::value_return(&b"\"done\"".to_vec());
     }
 
     fn needs_migration() {
-        env::value_return(&"needs-migration".try_to_vec().unwrap());
+        env::value_return(&b"\"needs-migration\"".to_vec());
     }
 
     pub fn unsafe_migrate() {
