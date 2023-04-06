@@ -13,7 +13,7 @@ pub use idea::*;
 pub use like::*;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, BorshStorageKey, Timestamp};
+use near_sdk::{AccountId, BorshStorageKey, CryptoHash, Timestamp};
 pub use sponsorship::*;
 use std::collections::HashSet;
 pub use submission::*;
@@ -50,6 +50,8 @@ pub enum StorageKey {
     PostToChildren,
     LabelToPosts, // This collection got corrupted by accident.
     LabelToPostsV2,
+    AuthorToAuthorPosts,
+    AuthorPosts(CryptoHash),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

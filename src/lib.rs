@@ -3,10 +3,10 @@ pub mod debug;
 pub mod migrations;
 mod notify;
 pub mod post;
+mod repost;
 mod social_db;
 pub mod stats;
 pub mod str_serializers;
-mod repost;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::AccessControl;
@@ -36,18 +36,24 @@ pub struct Contract {
     pub post_to_children: LookupMap<PostId, Vec<PostId>>,
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
     pub fn new() -> Self {
+        migrations::state_version_write(&migrations::StateVersion::V3 {
+            done: true,
+            migrated_count: 0,
+        });
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
             post_to_children: LookupMap::new(StorageKey::PostToChildren),
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
             access_control: AccessControl::default(),
+            authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -140,7 +146,7 @@ impl Contract {
         }
         let post = Post {
             id,
-            author_id,
+            author_id: author_id.clone(),
             likes: Default::default(),
             snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
             snapshot_history: vec![],
@@ -158,6 +164,10 @@ impl Contract {
         // Don't forget to add an empty list of your own children.
         self.post_to_children.insert(&id, &vec![]);
 
+        let mut author_posts = self.authors.get(&author_id).unwrap_or_else(|| HashSet::new());
+        author_posts.insert(post.id);
+        self.authors.insert(&post.author_id, &author_posts);
+
         if parent_id != ROOT_POST_ID {
             let parent_post: Post = self
                 .posts
@@ -169,6 +179,10 @@ impl Contract {
         } else {
             repost::repost(post);
         }
+    }
+
+    pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
+        self.authors.get(&author).map(|posts| posts.into_iter().collect()).unwrap_or(Vec::new())
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {

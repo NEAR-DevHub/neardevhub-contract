@@ -5,5 +5,5 @@ pub const SOCIAL_DB: &str = "social.near";
 
 #[ext_contract(ext_social_db)]
 pub trait SocialDB {
-    fn set(&mut self, mut data: Value);
+    fn set(&mut self, data: Value);
 }
