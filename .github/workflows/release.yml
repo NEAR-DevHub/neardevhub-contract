@@ -25,6 +25,9 @@ jobs:
     - run: rustup target add wasm32-unknown-unknown
     - name: Build contract
       run: ./build.sh
+    - name: Install near CLI
+      run: |
+        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/download/v0.3.1/near-cli-rs-v0.3.1-installer.sh | sh
     - name: Deploy contract
       run: |
         near contract call-function as-transaction "$NEAR_GIGSBOARD_ACCOUNT_ID" unsafe_self_upgrade file-args ./res/devgovgigs.wasm prepaid-gas '100 TeraGas' attached-deposit '0 NEAR' sign-as "$NEAR_GIGSBOARD_ACCOUNT_ID" network-config "$NEAR_NETWORK_CONNECTION" sign-with-plaintext-private-key --signer-public-key "$NEAR_GIGSBOARD_ACCOUNT_PUBLIC_KEY" --signer-private-key "$NEAR_GIGSBOARD_ACCOUNT_PRIVATE_KEY" send
