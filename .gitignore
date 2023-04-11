@@ -1,4 +1,4 @@
 .idea
 neardev/
 target/
-
+res/*.wasm
