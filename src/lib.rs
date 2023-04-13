@@ -200,6 +200,13 @@ impl Contract {
         res
     }
 
+    pub fn get_all_authors(&self) -> Vec<String> {
+        near_sdk::log!("get_all_authors");
+        let mut res: Vec<_> = self.authors.keys().collect();
+        res.sort();
+        res
+    }
+
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
         near_sdk::log!("is_allowed_to_edit");
         let post: Post = self
