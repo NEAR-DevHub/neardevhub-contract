@@ -249,6 +249,19 @@ impl Contract {
             .contains(&ActionType::UseLabels)
     }
 
+    pub fn get_all_allowed_labels(&self, editor: AccountId) -> Vec<String> {
+        near_sdk::log!("get_all_allowed_labels");
+        let mut res: Vec<_> = self
+            .label_to_posts
+            .keys()
+            .filter(|label| {
+                self.is_allowed_to_use_labels(Some(editor.clone()), vec![label.clone()])
+            })
+            .collect();
+        res.sort();
+        res
+    }
+
     #[payable]
     pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("edit_post");
