@@ -56,7 +56,7 @@ pub struct OldContractV2 {
     pub access_control: AccessControl,
 }
 
-// From OldContractV2 to Contract
+// From OldContractV2 to OldContractV3
 #[near_bindgen]
 impl Contract {
     fn unsafe_add_post_authors() {
@@ -69,7 +69,7 @@ impl Contract {
         } = env::state_read().unwrap();
         let authors = UnorderedMap::new(StorageKey::AuthorToAuthorPosts);
 
-        env::state_write(&Contract {
+        env::state_write(&OldContractV3 {
             posts,
             post_to_parent,
             post_to_children,
@@ -80,7 +80,7 @@ impl Contract {
     }
 
     fn unsafe_insert_old_post_authors(start: u64, end: u64) -> StateVersion {
-        let mut contract: Contract = env::state_read().unwrap();
+        let mut contract: OldContractV3 = env::state_read().unwrap();
         let total = contract.posts.len();
         let end = min(total, end);
         for i in start..end {
@@ -98,11 +98,46 @@ impl Contract {
     }
 }
 
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct OldContractV3 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+}
+
+// From OldContractV3 to Contract
+#[near_bindgen]
+impl Contract {
+    fn unsafe_add_communities() {
+        let OldContractV3 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+        } = env::state_read().unwrap();
+        env::state_write(&Contract {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities: UnorderedMap::new(StorageKey::Communities),
+        });
+    }
+}
+
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub(crate) enum StateVersion {
     V1,
     V2,
     V3 { done: bool, migrated_count: u64 },
+    V4,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -167,6 +202,10 @@ impl Contract {
                 if let StateVersion::V3 { done: true, migrated_count: _ } = new_version {
                     return Contract::migration_done();
                 }
+            }
+            StateVersion::V3 { done: true, migrated_count: _ } => {
+                Contract::unsafe_add_communities();
+                state_version_write(&StateVersion::V4);
             }
             _ => {
                 return Contract::migration_done();
