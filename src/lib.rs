@@ -324,9 +324,7 @@ impl Contract {
     }
 
     pub fn add_community(&mut self, slug: String, mut community: Community) {
-        if let Some(_) = self.communities.get(&slug) {
-            panic!("Community already exists");
-        }
+        env::require!(self.communities.get(&slug).is_none(), "Community already exists");
 
         community.validate();
         community.set_default_admin();
