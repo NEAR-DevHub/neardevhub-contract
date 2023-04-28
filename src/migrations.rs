@@ -199,13 +199,11 @@ impl Contract {
                 let new_version =
                     Contract::unsafe_insert_old_post_authors(migrated_count, migrated_count + 100);
                 state_version_write(&new_version);
-                if let StateVersion::V3 { done: true, migrated_count: _ } = new_version {
-                    return Contract::migration_done();
-                }
             }
             StateVersion::V3 { done: true, migrated_count: _ } => {
                 Contract::unsafe_add_communities();
                 state_version_write(&StateVersion::V4);
+                return Contract::migration_done();
             }
             _ => {
                 return Contract::migration_done();
