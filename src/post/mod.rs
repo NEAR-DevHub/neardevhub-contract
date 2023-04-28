@@ -52,6 +52,7 @@ pub enum StorageKey {
     LabelToPostsV2,
     AuthorToAuthorPosts,
     AuthorPosts(CryptoHash),
+    Communities,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

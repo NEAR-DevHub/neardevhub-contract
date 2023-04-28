@@ -1,4 +1,5 @@
 pub mod access_control;
+pub mod community;
 pub mod debug;
 pub mod migrations;
 mod notify;
@@ -10,6 +11,7 @@ pub mod str_serializers;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::AccessControl;
+use community::{Community, CommunityCard};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -37,16 +39,14 @@ pub struct Contract {
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub communities: UnorderedMap<String, Community>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V3 {
-            done: true,
-            migrated_count: 0,
-        });
+        migrations::state_version_write(&migrations::StateVersion::V4);
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
@@ -54,6 +54,7 @@ impl Contract {
             label_to_posts: UnorderedMap::new(StorageKey::LabelToPostsV2),
             access_control: AccessControl::default(),
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
+            communities: UnorderedMap::new(StorageKey::Communities),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -320,5 +321,42 @@ impl Contract {
         }
 
         notify::notify_edit(id, post_author);
+    }
+
+    pub fn add_community(&mut self, slug: String, mut community: Community) {
+        if self.communities.get(&slug).is_some() {
+            panic!("Community already exists");
+        }
+        community.validate();
+        community.set_default_admin();
+        self.communities.insert(&slug, &community);
+    }
+
+    pub fn edit_community(&mut self, slug: String, mut community: Community) {
+        let community_old = self.communities.get(&slug).expect("Community does not exist");
+        if !community_old.admins.contains(&env::predecessor_account_id()) {
+            panic!("Only community admins can edit community");
+        }
+
+        community.validate();
+        community.set_default_admin();
+        self.communities.insert(&slug, &community);
+    }
+
+    pub fn get_all_communities(&self) -> Vec<CommunityCard> {
+        near_sdk::log!("get_all_communities");
+        self.communities
+            .iter()
+            .map(|(slug, community)| CommunityCard {
+                slug,
+                name: community.name,
+                description: community.description,
+                image_url: community.image_url,
+            })
+            .collect()
+    }
+
+    pub fn get_community(&self, slug: String) -> Option<Community> {
+        self.communities.get(&slug)
     }
 }
