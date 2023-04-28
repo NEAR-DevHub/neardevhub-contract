@@ -41,6 +41,9 @@ impl Community {
         if self.description.len() > 60 {
             panic!("Community description is limit to 60 characters");
         }
+        if self.labels.len() == 0 {
+            panic!("At least one primary label is required");
+        }
     }
 
     pub fn set_default_admin(&mut self) {
