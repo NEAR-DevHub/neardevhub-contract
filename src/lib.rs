@@ -324,15 +324,16 @@ impl Contract {
     }
 
     pub fn add_community(&mut self, slug: String, mut community: Community) {
-        env::require!(self.communities.get(&slug).is_none(), "Community already exists");
-
+        if self.communities.get(&slug).is_some() {
+            panic!("Community already exists");
+        }
         community.validate();
         community.set_default_admin();
         self.communities.insert(&slug, &community);
     }
 
     pub fn edit_community(&mut self, slug: String, mut community: Community) {
-        let community_old = self.get_community(slug.clone());
+        let community_old = self.communities.get(&slug).expect("Community does not exist");
         if !community_old.admins.contains(&env::predecessor_account_id()) {
             panic!("Only community admins can edit community");
         }
@@ -350,12 +351,12 @@ impl Contract {
                 slug,
                 name: community.name,
                 description: community.description,
-                image: community.image,
+                image_url: community.image_url,
             })
             .collect()
     }
 
-    pub fn get_community(&self, slug: String) -> Community {
-        self.communities.get(&slug).expect(&format!("Community {} doesn't exist", slug))
+    pub fn get_community(&self, slug: String) -> Option<Community> {
+        self.communities.get(&slug)
     }
 }

@@ -14,13 +14,13 @@ pub struct Github {
 pub struct Community {
     pub name: String,
     pub description: String,
-    pub image: String,
-    pub thumbnail: String,
-    pub overview: String,
-    pub events: String,
+    pub image_url: String,
+    pub thumbnail_url: String,
+    pub overview_page_markdown: String,
+    pub events_page_markdown: String,
     pub admins: Vec<AccountId>,
     pub labels: Vec<String>,
-    pub telegram: Vec<String>,
+    pub telegram_handles: Vec<String>,
     pub github: Vec<Github>,
 }
 
@@ -30,7 +30,7 @@ pub struct CommunityCard {
     pub slug: String,
     pub name: String,
     pub description: String,
-    pub image: String,
+    pub image_url: String,
 }
 
 impl Community {
