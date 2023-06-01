@@ -10,6 +10,7 @@ pub mod stats;
 pub mod str_serializers;
 
 use crate::access_control::members::ActionType;
+use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::{Community, CommunityCard};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -334,8 +335,12 @@ impl Contract {
 
     pub fn edit_community(&mut self, slug: String, mut community: Community) {
         let community_old = self.communities.get(&slug).expect("Community does not exist");
-        if !community_old.admins.contains(&env::predecessor_account_id()) {
-            panic!("Only community admins can edit community");
+        let moderators = self.access_control.members_list.get_moderators();
+        let editor = env::predecessor_account_id();
+        if !community_old.admins.contains(&editor)
+            && !moderators.contains(&Member::Account(editor.clone()))
+        {
+            panic!("Only community admins or moderators can edit community");
         }
 
         community.validate();

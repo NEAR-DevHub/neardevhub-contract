@@ -244,6 +244,14 @@ impl MembersList {
         self.remove_member(&member);
         self.add_member(member, metadata);
     }
+
+    pub fn get_moderators(&self) -> HashSet<Member> {
+        self.members
+            .get(&Member::Team("moderators".to_string()))
+            .expect("Team moderators does not exist")
+            .last_version()
+            .children
+    }
 }
 
 #[cfg(test)]
