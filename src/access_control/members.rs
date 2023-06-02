@@ -244,6 +244,13 @@ impl MembersList {
         self.remove_member(&member);
         self.add_member(member, metadata);
     }
+
+    pub fn get_moderators(&self) -> HashSet<Member> {
+        self.members
+            .get(&Member::Team("moderators".to_string()))
+            .map(|team| team.last_version().children)
+            .unwrap_or(HashSet::new())
+    }
 }
 
 #[cfg(test)]
