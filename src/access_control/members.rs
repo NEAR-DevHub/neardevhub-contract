@@ -248,9 +248,8 @@ impl MembersList {
     pub fn get_moderators(&self) -> HashSet<Member> {
         self.members
             .get(&Member::Team("moderators".to_string()))
-            .expect("Team moderators does not exist")
-            .last_version()
-            .children
+            .map(|team| team.last_version().children)
+            .unwrap_or(HashSet::new())
     }
 }
 
