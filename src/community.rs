@@ -15,7 +15,7 @@ pub struct Community {
     pub labels: Vec<String>,
     pub telegram_handles: Vec<String>,
     /// JSON string of github board configuration
-    pub github: String,
+    pub github: Option<String>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
