@@ -1,6 +1,7 @@
 use crate::access_control::rules::Rule;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::AccountId;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 
@@ -123,13 +124,17 @@ impl MembersList {
 
     /// Whether given account has special permissions for a post with the given labels.
     /// Labels are restricted labels.
-    pub fn check_permissions(&self, account: String, labels: Vec<String>) -> HashSet<ActionType> {
-        if !self.members.contains_key(&Member::Account(account.clone())) {
+    pub fn check_permissions(
+        &self,
+        account: AccountId,
+        labels: Vec<String>,
+    ) -> HashSet<ActionType> {
+        if !self.members.contains_key(&Member::Account(account.to_string())) {
             return HashSet::new();
         }
 
         let mut stack = HashSet::new();
-        stack.insert(Member::Account(account));
+        stack.insert(Member::Account(account.to_string()));
 
         let mut res = HashSet::new();
         while let Some(member) = stack.iter().next().cloned() {

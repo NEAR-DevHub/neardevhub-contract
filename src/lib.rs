@@ -15,11 +15,10 @@ use crate::access_control::AccessControl;
 use community::{Community, CommunityCard};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
+use near_sdk::require;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
-
-near_sdk::setup_alloc!();
 
 type PostId = u64;
 type IdeaId = u64;
@@ -202,7 +201,7 @@ impl Contract {
         res
     }
 
-    pub fn get_all_authors(&self) -> Vec<String> {
+    pub fn get_all_authors(&self) -> Vec<AccountId> {
         near_sdk::log!("get_all_authors");
         let mut res: Vec<_> = self.authors.keys().collect();
         res.sort();
@@ -325,9 +324,7 @@ impl Contract {
     }
 
     pub fn add_community(&mut self, slug: String, mut community: Community) {
-        if self.communities.get(&slug).is_some() {
-            panic!("Community already exists");
-        }
+        require!(self.communities.get(&slug).is_some(), "Community already exists");
         community.validate();
         community.set_default_admin();
         self.communities.insert(&slug, &community);
@@ -337,11 +334,11 @@ impl Contract {
         let community_old = self.communities.get(&slug).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
-        if !community_old.admins.contains(&editor)
-            && !moderators.contains(&Member::Account(editor.clone()))
-        {
-            panic!("Only community admins or moderators can edit community");
-        }
+        require!(
+            !community_old.admins.contains(&editor)
+                && !moderators.contains(&Member::Account(editor.to_string())),
+            "Only community admins or moderators can edit community"
+        );
 
         community.validate();
         community.set_default_admin();
