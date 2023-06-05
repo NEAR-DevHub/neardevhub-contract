@@ -4,13 +4,6 @@ use near_sdk::{env, AccountId};
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct Github {
-    pub repo: String,
-    pub labels: Vec<String>,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub name: String,
     pub description: String,
@@ -21,7 +14,8 @@ pub struct Community {
     pub admins: Vec<AccountId>,
     pub labels: Vec<String>,
     pub telegram_handles: Vec<String>,
-    pub github: Vec<Github>,
+    /// JSON string of github board configuration
+    pub github: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
