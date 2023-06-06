@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::social_db::{ext_social_db, SOCIAL_DB};
 use crate::PostId;
 use near_sdk::serde_json::json;
@@ -18,7 +16,7 @@ pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
 }
 
 fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
-    ext_social_db::ext(SOCIAL_DB.to_string().try_into().unwrap())
+    ext_social_db::ext(SOCIAL_DB.parse().unwrap())
         .with_static_gas(env::prepaid_gas() / 2)
         .with_attached_deposit(env::attached_deposit())
         .set(json!({

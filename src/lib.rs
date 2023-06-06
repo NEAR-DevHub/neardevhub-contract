@@ -217,10 +217,7 @@ impl Contract {
             .get(post_id)
             .unwrap_or_else(|| panic!("Post id {} not found", post_id))
             .into();
-        let editor = match editor {
-            None => env::predecessor_account_id(),
-            Some(e) => e,
-        };
+        let editor = editor.unwrap_or_else(env::predecessor_account_id);
         // First check for simple cases.
         if editor == env::current_account_id() || editor == post.author_id {
             return true;
@@ -234,10 +231,7 @@ impl Contract {
     }
 
     pub fn is_allowed_to_use_labels(&self, editor: Option<AccountId>, labels: Vec<String>) -> bool {
-        let editor = match editor {
-            None => env::predecessor_account_id(),
-            Some(e) => e,
-        };
+        let editor = editor.unwrap_or_else(env::predecessor_account_id);
         // First check for simple cases.
         if editor == env::current_account_id() {
             return true;
