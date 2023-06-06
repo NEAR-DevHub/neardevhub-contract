@@ -332,7 +332,7 @@ impl Contract {
         let editor = env::predecessor_account_id();
         require!(
             !community_old.admins.contains(&editor)
-                && !moderators.contains(&Member::Account(editor.to_string())),
+                && !moderators.contains(&Member::Account(editor)),
             "Only community admins or moderators can edit community"
         );
 

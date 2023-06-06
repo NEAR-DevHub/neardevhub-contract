@@ -23,7 +23,7 @@ use std::collections::{HashMap, HashSet};
 #[serde(into = "String")]
 pub enum Member {
     /// NEAR account names do not allow `:` character so this structure cannot be abused.
-    Account(String),
+    Account(near_sdk::AccountId),
     Team(String),
 }
 
@@ -35,7 +35,7 @@ impl From<String> for Member {
         if let Some(s) = full_str.strip_prefix(TEAM) {
             Member::Team(s.to_string())
         } else {
-            Member::Account(full_str)
+            Member::Account(full_str.parse().unwrap())
         }
     }
 }
@@ -129,12 +129,13 @@ impl MembersList {
         account: AccountId,
         labels: Vec<String>,
     ) -> HashSet<ActionType> {
-        if !self.members.contains_key(&Member::Account(account.to_string())) {
+        let member_account = Member::Account(account);
+        if !self.members.contains_key(&member_account) {
             return HashSet::new();
         }
 
         let mut stack = HashSet::new();
-        stack.insert(Member::Account(account.to_string()));
+        stack.insert(member_account);
 
         let mut res = HashSet::new();
         while let Some(member) = stack.iter().next().cloned() {
@@ -269,7 +270,7 @@ mod tests {
 
     #[test]
     fn member_serialization() {
-        let member = Member::Account("alice.near".to_string());
+        let member = Member::Account("alice.near".parse().unwrap());
         assert_eq!(serde_json::to_value(&member).unwrap(), serde_json::json!("alice.near"));
 
         let member = Member::Team("funding".to_string());
@@ -279,7 +280,7 @@ mod tests {
     #[test]
     fn member_deserialization() {
         let member: Member = serde_json::from_str(r#""alice.near""#).unwrap();
-        assert_eq!(member, Member::Account("alice.near".to_string()));
+        assert_eq!(member, Member::Account("alice.near".parse().unwrap()));
 
         let member: Member = serde_json::from_str(r#""team:funding""#).unwrap();
         assert_eq!(member, Member::Team("funding".to_string()));
@@ -287,7 +288,7 @@ mod tests {
 
     fn root_member() -> (Member, VersionedMemberMetadata) {
         (
-            Member::Account("devgovgigs.near".to_string()),
+            Member::Account("devgovgigs.near".parse().unwrap()),
             MemberMetadata {
                 description: "Main account can do anything".to_string(),
                 permissions: HashMap::from([
@@ -312,7 +313,7 @@ mod tests {
 
     fn moderator_member(name: &str) -> (Member, VersionedMemberMetadata) {
         (
-            Member::Account(name.to_string()),
+            Member::Account(name.parse().unwrap()),
             MemberMetadata {
                 description: format!("{} inherits everything from moderator group.", name)
                     .to_string(),

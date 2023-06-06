@@ -5,7 +5,6 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Balance, Timestamp};
 use std::collections::HashSet;
-use std::convert::TryFrom;
 use std::str::FromStr;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -17,12 +16,13 @@ pub enum SponsorshipToken {
 }
 
 impl FromStr for SponsorshipToken {
-    type Err = ();
+    type Err = near_sdk::ParseAccountIdError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "near" => Ok(Self::Near),
-            _ => Ok(Self::NEP141 { address: AccountId::try_from(s.to_string()).unwrap() }),
+            "usd" => Ok(Self::USD),
+            _ => Ok(Self::NEP141 { address: s.parse()? }),
         }
     }
 }
