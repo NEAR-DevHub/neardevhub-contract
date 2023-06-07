@@ -1,5 +1,3 @@
-#![allow(unused_mut)]
-
 pub mod access_control;
 pub mod community;
 pub mod debug;
@@ -17,10 +15,11 @@ use crate::access_control::AccessControl;
 use community::{Community, CommunityCard};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::require;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use std::collections::HashSet;
+
+near_sdk::setup_alloc!();
 
 type PostId = u64;
 type IdeaId = u64;
@@ -203,7 +202,7 @@ impl Contract {
         res
     }
 
-    pub fn get_all_authors(&self) -> Vec<AccountId> {
+    pub fn get_all_authors(&self) -> Vec<String> {
         near_sdk::log!("get_all_authors");
         let mut res: Vec<_> = self.authors.keys().collect();
         res.sort();
@@ -217,7 +216,10 @@ impl Contract {
             .get(post_id)
             .unwrap_or_else(|| panic!("Post id {} not found", post_id))
             .into();
-        let editor = editor.unwrap_or_else(env::predecessor_account_id);
+        let editor = match editor {
+            None => env::predecessor_account_id(),
+            Some(e) => e,
+        };
         // First check for simple cases.
         if editor == env::current_account_id() || editor == post.author_id {
             return true;
@@ -231,7 +233,10 @@ impl Contract {
     }
 
     pub fn is_allowed_to_use_labels(&self, editor: Option<AccountId>, labels: Vec<String>) -> bool {
-        let editor = editor.unwrap_or_else(env::predecessor_account_id);
+        let editor = match editor {
+            None => env::predecessor_account_id(),
+            Some(e) => e,
+        };
         // First check for simple cases.
         if editor == env::current_account_id() {
             return true;
@@ -320,7 +325,9 @@ impl Contract {
     }
 
     pub fn add_community(&mut self, slug: String, mut community: Community) {
-        require!(self.communities.get(&slug).is_some(), "Community already exists");
+        if self.communities.get(&slug).is_some() {
+            panic!("Community already exists");
+        }
         community.validate();
         community.set_default_admin();
         self.communities.insert(&slug, &community);
@@ -330,11 +337,11 @@ impl Contract {
         let community_old = self.communities.get(&slug).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
-        require!(
-            !community_old.admins.contains(&editor)
-                && !moderators.contains(&Member::Account(editor)),
-            "Only community admins or moderators can edit community"
-        );
+        if !community_old.admins.contains(&editor)
+            && !moderators.contains(&Member::Account(editor.clone()))
+        {
+            panic!("Only community admins or moderators can edit community");
+        }
 
         community.validate();
         community.set_default_admin();
