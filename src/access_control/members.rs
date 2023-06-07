@@ -1,6 +1,7 @@
 use crate::access_control::rules::Rule;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::AccountId;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 
@@ -22,7 +23,7 @@ use std::collections::{HashMap, HashSet};
 #[serde(into = "String")]
 pub enum Member {
     /// NEAR account names do not allow `:` character so this structure cannot be abused.
-    Account(String),
+    Account(AccountId),
     Team(String),
 }
 
@@ -34,7 +35,7 @@ impl From<String> for Member {
         if let Some(s) = full_str.strip_prefix(TEAM) {
             Member::Team(s.to_string())
         } else {
-            Member::Account(full_str)
+            Member::Account(full_str.parse().unwrap())
         }
     }
 }
@@ -123,13 +124,18 @@ impl MembersList {
 
     /// Whether given account has special permissions for a post with the given labels.
     /// Labels are restricted labels.
-    pub fn check_permissions(&self, account: String, labels: Vec<String>) -> HashSet<ActionType> {
-        if !self.members.contains_key(&Member::Account(account.clone())) {
+    pub fn check_permissions(
+        &self,
+        account: AccountId,
+        labels: Vec<String>,
+    ) -> HashSet<ActionType> {
+        let member_account = Member::Account(account);
+        if !self.members.contains_key(&member_account) {
             return HashSet::new();
         }
 
         let mut stack = HashSet::new();
-        stack.insert(Member::Account(account));
+        stack.insert(member_account);
 
         let mut res = HashSet::new();
         while let Some(member) = stack.iter().next().cloned() {
@@ -264,7 +270,7 @@ mod tests {
 
     #[test]
     fn member_serialization() {
-        let member = Member::Account("alice.near".to_string());
+        let member = Member::Account("alice.near".parse().unwrap());
         assert_eq!(serde_json::to_value(&member).unwrap(), serde_json::json!("alice.near"));
 
         let member = Member::Team("funding".to_string());
@@ -274,7 +280,7 @@ mod tests {
     #[test]
     fn member_deserialization() {
         let member: Member = serde_json::from_str(r#""alice.near""#).unwrap();
-        assert_eq!(member, Member::Account("alice.near".to_string()));
+        assert_eq!(member, Member::Account("alice.near".parse().unwrap()));
 
         let member: Member = serde_json::from_str(r#""team:funding""#).unwrap();
         assert_eq!(member, Member::Team("funding".to_string()));
@@ -282,7 +288,7 @@ mod tests {
 
     fn root_member() -> (Member, VersionedMemberMetadata) {
         (
-            Member::Account("devgovgigs.near".to_string()),
+            Member::Account("devgovgigs.near".parse().unwrap()),
             MemberMetadata {
                 description: "Main account can do anything".to_string(),
                 permissions: HashMap::from([
@@ -307,7 +313,7 @@ mod tests {
 
     fn moderator_member(name: &str) -> (Member, VersionedMemberMetadata) {
         (
-            Member::Account(name.to_string()),
+            Member::Account(name.parse().unwrap()),
             MemberMetadata {
                 description: format!("{} inherits everything from moderator group.", name)
                     .to_string(),
@@ -334,9 +340,9 @@ mod tests {
                     ),
                 ]),
                 children: HashSet::from([
-                    Member::Account("ori.near".to_string()),
-                    Member::Account("max.near".to_string()),
-                    Member::Account("vlad.near".to_string()),
+                    Member::Account("ori.near".parse().unwrap()),
+                    Member::Account("max.near".parse().unwrap()),
+                    Member::Account("vlad.near".parse().unwrap()),
                 ]),
                 ..Default::default()
             }
@@ -364,7 +370,7 @@ mod tests {
             root_members,
             HashSet::from([
                 Member::Team("moderators".to_string()),
-                Member::Account("devgovgigs.near".to_string())
+                Member::Account("devgovgigs.near".parse().unwrap())
             ])
         );
     }
@@ -373,7 +379,7 @@ mod tests {
     fn check_permissions() {
         let list = create_list();
         let actual = list.check_permissions(
-            "max.near".to_string(),
+            "max.near".parse().unwrap(),
             vec!["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert_eq!(
@@ -385,8 +391,8 @@ mod tests {
             .unwrap()
         );
 
-        let actual =
-            list.check_permissions("max.near".to_string(), vec!["funding-requested".to_string()]);
+        let actual = list
+            .check_permissions("max.near".parse().unwrap(), vec!["funding-requested".to_string()]);
         assert!(actual.is_empty());
     }
 
@@ -394,7 +400,7 @@ mod tests {
     fn check_permissions_of_not_member() {
         let list = create_list();
         let actual = list.check_permissions(
-            "random.near".to_string(),
+            "random.near".parse().unwrap(),
             vec!["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert!(actual.is_empty());
@@ -404,14 +410,14 @@ mod tests {
     fn add_remove_member() {
         let mut list = create_list();
         list.add_member(
-            Member::Account("bob.near".to_string()),
+            Member::Account("bob.near".parse().unwrap()),
             MemberMetadata {
                 parents: HashSet::from([Member::Team("moderators".to_string())]),
                 ..Default::default()
             }
             .into(),
         );
-        list.remove_member(&Member::Account("bob.near".to_string()));
+        list.remove_member(&Member::Account("bob.near".parse().unwrap()));
         assert_eq!(list, create_list());
     }
 }

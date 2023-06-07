@@ -16,12 +16,13 @@ pub enum SponsorshipToken {
 }
 
 impl FromStr for SponsorshipToken {
-    type Err = ();
+    type Err = near_sdk::ParseAccountIdError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "near" => Ok(Self::Near),
-            _ => Ok(Self::NEP141 { address: s.to_string() }),
+            "usd" => Ok(Self::USD),
+            _ => Ok(Self::NEP141 { address: s.parse()? }),
         }
     }
 }
