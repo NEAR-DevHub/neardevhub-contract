@@ -23,7 +23,7 @@ use std::collections::{HashMap, HashSet};
 #[serde(into = "String")]
 pub enum Member {
     /// NEAR account names do not allow `:` character so this structure cannot be abused.
-    Account(near_sdk::AccountId),
+    Account(AccountId),
     Team(String),
 }
 
@@ -340,9 +340,9 @@ mod tests {
                     ),
                 ]),
                 children: HashSet::from([
-                    Member::Account("ori.near".to_string()),
-                    Member::Account("max.near".to_string()),
-                    Member::Account("vlad.near".to_string()),
+                    Member::Account("ori.near".parse().unwrap()),
+                    Member::Account("max.near".parse().unwrap()),
+                    Member::Account("vlad.near".parse().unwrap()),
                 ]),
                 ..Default::default()
             }
@@ -370,7 +370,7 @@ mod tests {
             root_members,
             HashSet::from([
                 Member::Team("moderators".to_string()),
-                Member::Account("devgovgigs.near".to_string())
+                Member::Account("devgovgigs.near".parse().unwrap())
             ])
         );
     }
@@ -379,7 +379,7 @@ mod tests {
     fn check_permissions() {
         let list = create_list();
         let actual = list.check_permissions(
-            "max.near".to_string(),
+            "max.near".parse().unwrap(),
             vec!["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert_eq!(
@@ -391,8 +391,8 @@ mod tests {
             .unwrap()
         );
 
-        let actual =
-            list.check_permissions("max.near".to_string(), vec!["funding-requested".to_string()]);
+        let actual = list
+            .check_permissions("max.near".parse().unwrap(), vec!["funding-requested".to_string()]);
         assert!(actual.is_empty());
     }
 
@@ -400,7 +400,7 @@ mod tests {
     fn check_permissions_of_not_member() {
         let list = create_list();
         let actual = list.check_permissions(
-            "random.near".to_string(),
+            "random.near".parse().unwrap(),
             vec!["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert!(actual.is_empty());
@@ -410,14 +410,14 @@ mod tests {
     fn add_remove_member() {
         let mut list = create_list();
         list.add_member(
-            Member::Account("bob.near".to_string()),
+            Member::Account("bob.near".parse().unwrap()),
             MemberMetadata {
                 parents: HashSet::from([Member::Team("moderators".to_string())]),
                 ..Default::default()
             }
             .into(),
         );
-        list.remove_member(&Member::Account("bob.near".to_string()));
+        list.remove_member(&Member::Account("bob.near".parse().unwrap()));
         assert_eq!(list, create_list());
     }
 }
