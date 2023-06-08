@@ -169,6 +169,14 @@ impl Contract {
         author_posts.insert(post.id);
         self.authors.insert(&post.author_id, &author_posts);
 
+        let desc = match post.snapshot.body.clone() {
+            PostBody::Comment(comment) => comment.latest_version().description,
+            PostBody::Idea(idea) => idea.latest_version().description,
+            PostBody::Submission(submission) => submission.latest_version().description,
+            PostBody::Attestation(attestation) => attestation.latest_version().description,
+            PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
+        };
+
         if parent_id != ROOT_POST_ID {
             let parent_post: Post = self
                 .posts
@@ -180,6 +188,8 @@ impl Contract {
         } else {
             repost::repost(post);
         }
+        
+        notify::notify_mentions(desc.as_str(), id);
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
