@@ -58,7 +58,7 @@ pub fn repost(post: Post) -> Promise {
         repost_internal(post, env::current_account_id()),
         &SOCIAL_DB,
         env::attached_deposit(),
-        env::prepaid_gas() / 2,
+        env::prepaid_gas() / 3,
     )
 }
 

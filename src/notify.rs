@@ -32,6 +32,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
     }
 
     for mention in &mentions {
+        near_sdk::log!(mention);
         notify_mention(post_id, mention.to_string());
     }
 }
@@ -69,6 +70,6 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
         }),
         &SOCIAL_DB,
         env::attached_deposit(),
-        env::prepaid_gas() / 2,
+        env::prepaid_gas() / 4,
     )
 }

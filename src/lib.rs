@@ -185,11 +185,11 @@ impl Contract {
                 .into();
             let parent_author = parent_post.author_id;
             notify::notify_reply(parent_id, parent_author);
+            notify::notify_mentions(desc.as_str(), id);
         } else {
             repost::repost(post);
+            notify::notify_mentions(desc.as_str(), id);
         }
-        
-        notify::notify_mentions(desc.as_str(), id);
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
