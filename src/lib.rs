@@ -324,17 +324,17 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    pub fn add_community(&mut self, slug: String, mut community: Community) {
-        if self.communities.get(&slug).is_some() {
+    pub fn add_community(&mut self, handle: String, mut community: Community) {
+        if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
         }
         community.validate();
         community.set_default_admin();
-        self.communities.insert(&slug, &community);
+        self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community(&mut self, slug: String, mut community: Community) {
-        let community_old = self.communities.get(&slug).expect("Community does not exist");
+    pub fn edit_community(&mut self, handle: String, mut community: Community) {
+        let community_old = self.communities.get(&handle).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
         if !community_old.admins.contains(&editor)
@@ -345,15 +345,15 @@ impl Contract {
 
         community.validate();
         community.set_default_admin();
-        self.communities.insert(&slug, &community);
+        self.communities.insert(&handle, &community);
     }
 
     pub fn get_all_communities(&self) -> Vec<CommunityCard> {
         near_sdk::log!("get_all_communities");
         self.communities
             .iter()
-            .map(|(slug, community)| CommunityCard {
-                slug,
+            .map(|(handle, community)| CommunityCard {
+                handle,
                 name: community.name,
                 description: community.description,
                 image_url: community.image_url,
@@ -361,7 +361,7 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_community(&self, slug: String) -> Option<Community> {
-        self.communities.get(&slug)
+    pub fn get_community(&self, handle: String) -> Option<Community> {
+        self.communities.get(&handle)
     }
 }

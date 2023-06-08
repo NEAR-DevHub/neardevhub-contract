@@ -4,24 +4,32 @@ use near_sdk::{env, AccountId};
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct Wiki {
+    name: String,
+    content_markdown: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub name: String,
     pub description: String,
     pub image_url: String,
     pub thumbnail_url: String,
-    pub overview_page_markdown: String,
-    pub events_page_markdown: String,
+    pub wiki1: Option<Wiki>,
+    pub wiki2: Option<Wiki>,
     pub admins: Vec<AccountId>,
-    pub labels: Vec<String>,
-    pub telegram_handles: Vec<String>,
+    pub tag: String,
+    pub telegram_handle: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
+    pub sponsorship: bool,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityCard {
-    pub slug: String,
+    pub handle: String,
     pub name: String,
     pub description: String,
     pub image_url: String,
@@ -34,9 +42,6 @@ impl Community {
         }
         if self.description.len() > 60 {
             panic!("Community description is limit to 60 characters");
-        }
-        if self.labels.len() == 0 {
-            panic!("At least one primary label is required");
         }
     }
 
