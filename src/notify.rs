@@ -31,18 +31,36 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
         mentions.push(mention);
     }
 
-    for mention in &mentions {
-        near_sdk::log!(mention);
-        notify_mention(post_id, mention.to_string());
+    if mentions.len() > 0 {
+        let mut notify_values = Vec::new();
+
+        for mention in mentions {
+            notify_values.push(json!({
+                "key": mention,
+                "value": {
+                    "type": format!("devgovgigs/{}", "mention"),
+                    "post": post_id,
+                }
+            }));
+        }
+
+        ext_social_db::set(
+            json!({
+                env::predecessor_account_id() : {
+                    "index": {
+                        "notify": json!(notify_values).to_string()
+                    }
+                }
+            }),
+            &SOCIAL_DB,
+            env::attached_deposit(),
+            env::prepaid_gas() / 4,
+        );
     }
 }
 
 pub fn notify_like(post_id: PostId, post_author: AccountId) -> Promise {
     notify(post_id, post_author, "like")
-}
-
-pub fn notify_mention(post_id: PostId, mentioned_account: AccountId) -> Promise {
-    notify(post_id, mentioned_account, "mention")
 }
 
 pub fn notify_reply(post_id: PostId, post_author: AccountId) -> Promise {
