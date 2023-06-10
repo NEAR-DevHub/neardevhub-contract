@@ -38,7 +38,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
             notify_values.push(json!({
                 "key": mention,
                 "value": {
-                    "type": format!("devgovgigs/{}", "mention"),
+                    "type": "devgovgigs/mention",
                     "post": post_id,
                 }
             }));
