@@ -369,3 +369,61 @@ impl Contract {
         self.communities.get(&slug)
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use std::collections::HashSet;
+    use std::convert::TryInto;
+
+    use near_sdk::test_utils::{VMContextBuilder,get_created_receipts};
+    use near_sdk::{testing_env, MockedBlockchain, VMContext};
+    use regex::Regex;
+    use crate::post::PostBody;
+
+    use super::Contract;
+
+    fn get_context(is_view: bool) -> VMContext {
+        VMContextBuilder::new()
+            .signer_account_id("bob.near".try_into().unwrap())
+            .is_view(is_view)
+            .build()
+    }
+
+    #[test]
+    pub fn test_add_post_with_mention() {
+        let context = get_context(false);
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        let body: PostBody = near_sdk::serde_json::from_str(r#"
+        {
+            "name": "another post",
+            "description": "Hello to @petersalomonsen.near and @psalomo.near. This is an idea with mentions.",
+            "post_type": "Idea",
+            "idea_version": "V1"
+        }"#).unwrap();
+        contract.add_post(None, body, HashSet::new());
+        let receipts = get_created_receipts();
+        assert_eq!(2, receipts.len());
+        let receipt = receipts.get(1).unwrap();
+        let receipt_str = format!("{:?}", receipt);
+        let re = Regex::new(r#"method_name: (\[[^\]]*\]), args: (\[[^\]]*\])"#).unwrap();
+
+        // Extract the method_name and args values
+        for cap in re.captures_iter(&receipt_str) {
+            let method_name = &cap[1];
+
+            let args = &cap[2];
+
+            let method_name = method_name.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
+            let method_name = String::from_utf8(method_name).expect("Failed to convert method_name to String");
+
+            assert_eq!("set", method_name);
+
+            let args = args.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
+            let args = String::from_utf8(args).expect("Failed to convert args to String");
+
+            assert_eq!("{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}}]\"}}}}", args);
+        }
+    }
+}
