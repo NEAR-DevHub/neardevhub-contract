@@ -356,7 +356,8 @@ impl Contract {
                 handle,
                 name: community.name,
                 description: community.description,
-                image_url: community.image_url,
+                logo_url: community.logo_url,
+                banner_url: community.banner_url,
             })
             .collect()
     }
