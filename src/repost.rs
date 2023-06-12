@@ -1,4 +1,4 @@
-use crate::post::{Post, PostBody};
+use crate::post::{get_post_description, Post, PostBody};
 use crate::social_db::{ext_social_db, SOCIAL_DB};
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
@@ -19,13 +19,7 @@ fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_j
         _ => Default::default(),
     };
 
-    let desc = match post.snapshot.body.clone() {
-        PostBody::Comment(comment) => comment.latest_version().description,
-        PostBody::Idea(idea) => idea.latest_version().description,
-        PostBody::Submission(submission) => submission.latest_version().description,
-        PostBody::Attestation(attestation) => attestation.latest_version().description,
-        PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
-    };
+    let desc = get_post_description(post.clone());
 
     let text = format!(
         "@{author} [Posted on Developer DAO Board]({post_link})\n{title}{desc}",

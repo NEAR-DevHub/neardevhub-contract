@@ -169,13 +169,7 @@ impl Contract {
         author_posts.insert(post.id);
         self.authors.insert(&post.author_id, &author_posts);
 
-        let desc = match post.snapshot.body.clone() {
-            PostBody::Comment(comment) => comment.latest_version().description,
-            PostBody::Idea(idea) => idea.latest_version().description,
-            PostBody::Submission(submission) => submission.latest_version().description,
-            PostBody::Attestation(attestation) => attestation.latest_version().description,
-            PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
-        };
+        let desc = get_post_description(post.clone());
 
         if parent_id != ROOT_POST_ID {
             let parent_post: Post = self
@@ -375,10 +369,10 @@ mod tests {
     use std::collections::HashSet;
     use std::convert::TryInto;
 
-    use near_sdk::test_utils::{VMContextBuilder,get_created_receipts};
+    use crate::post::PostBody;
+    use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
     use regex::Regex;
-    use crate::post::PostBody;
 
     use super::Contract;
 
@@ -415,12 +409,23 @@ mod tests {
 
             let args = &cap[2];
 
-            let method_name = method_name.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
-            let method_name = String::from_utf8(method_name).expect("Failed to convert method_name to String");
+            let method_name = method_name
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .split(", ")
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<u8>>();
+            let method_name =
+                String::from_utf8(method_name).expect("Failed to convert method_name to String");
 
             assert_eq!("set", method_name);
 
-            let args = args.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
+            let args = args
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .split(", ")
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<u8>>();
             let args = String::from_utf8(args).expect("Failed to convert args to String");
 
             assert_eq!("{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}}]\"}}}}", args);

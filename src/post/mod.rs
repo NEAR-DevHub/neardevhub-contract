@@ -110,3 +110,13 @@ pub enum PostBody {
     Attestation(VersionedAttestation),
     Sponsorship(VersionedSponsorship),
 }
+
+pub fn get_post_description(post: Post) -> String {
+    return match post.snapshot.body.clone() {
+        PostBody::Comment(comment) => comment.latest_version().description,
+        PostBody::Idea(idea) => idea.latest_version().description,
+        PostBody::Submission(submission) => submission.latest_version().description,
+        PostBody::Attestation(attestation) => attestation.latest_version().description,
+        PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
+    };
+}
