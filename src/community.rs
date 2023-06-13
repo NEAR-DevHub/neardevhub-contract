@@ -16,7 +16,7 @@ pub struct Community {
     pub admins: Vec<AccountId>,
     pub name: String,
     pub description: String,
-    pub bio_markdown: String,
+    pub bio_markdown: Option<String>,
     pub logo_url: String,
     pub banner_url: String,
     pub tag: String,
@@ -26,7 +26,7 @@ pub struct Community {
     pub website_url: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
-    pub sponsorship: bool,
+    pub sponsorship: Option<bool>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub overview_id: Option<u8>,
@@ -54,11 +54,8 @@ impl Community {
         if self.handle.len() > 40 {
             panic!("Community handle is limit to 40 characters");
         }
-        if self.handle.len() > 20 {
+        if self.tag.len() > 20 {
             panic!("Community tag is limit to 20 characters");
-        }
-        if self.bio_markdown.len() > 200 {
-            panic!("Community bio is limit to 200 characters");
         }
     }
 
