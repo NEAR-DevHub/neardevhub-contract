@@ -5,6 +5,7 @@ use near_sdk::{env, AccountId};
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct WikiPage {
+    enabled: bool,
     name: String,
     content_markdown: String,
 }
