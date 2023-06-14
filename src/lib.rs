@@ -12,7 +12,7 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard};
+use community::{Community, CommunityCard, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -333,7 +333,7 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community(&mut self, handle: String, mut community: Community) {
+    fn get_community_for_editing(&self, handle: &String) -> Community {
         let community_old = self.communities.get(&handle).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
@@ -342,10 +342,44 @@ impl Contract {
         {
             panic!("Only community admins or moderators can edit community");
         }
+        return community_old;
+    }
 
+    pub fn edit_community(&mut self, handle: String, mut community: Community) {
+        let _ = self.get_community_for_editing(&handle);
         community.validate();
         community.set_default_admin();
         self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.github = github;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_wiki1(&mut self, handle: String, wiki1: Option<WikiPage>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.wiki1 = wiki1;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_wiki2(&mut self, handle: String, wiki2: Option<WikiPage>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.wiki2 = wiki2;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn delete_community(&mut self, handle: String) {
+        let caller = env::predecessor_account_id();
+        let moderators = self.access_control.members_list.get_moderators();
+        if !moderators.contains(&Member::Account(caller.clone())) {
+            panic!("Only moderators can delete community");
+        }
+        self.communities.remove(&handle);
     }
 
     pub fn get_all_communities(&self) -> Vec<CommunityCard> {
