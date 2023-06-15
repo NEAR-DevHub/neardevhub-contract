@@ -29,8 +29,6 @@ pub struct Community {
     pub sponsorship: Option<bool>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub overview_id: Option<u8>,
-    pub events_id: Option<u8>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
