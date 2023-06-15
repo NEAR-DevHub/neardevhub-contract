@@ -349,7 +349,8 @@ impl Contract {
         let _ = self.get_community_for_editing(&handle);
         community.validate();
         community.set_default_admin();
-        self.communities.insert(&handle, &community);
+        self.communities.remove(&handle);
+        self.communities.insert(&community.handle, &community);
     }
 
     pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
