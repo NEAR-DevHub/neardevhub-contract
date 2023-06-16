@@ -356,7 +356,7 @@ impl Contract {
             self.communities.insert(&handle, &community);
         } else {
             if self.communities.get(&community.handle).is_some() {
-                panic!("Renamed community already exists");
+                panic!("Community handle '{}' is already taken", community.handle);
             }
             self.communities.remove(&handle);
             self.communities.insert(&community.handle, &community);
