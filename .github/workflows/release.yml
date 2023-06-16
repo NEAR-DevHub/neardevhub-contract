@@ -21,6 +21,7 @@ jobs:
       with:
         profile: minimal
         toolchain: 1.68.2
+        default: true
     - uses: Swatinem/rust-cache@v1
     - run: rustup target add wasm32-unknown-unknown
     - name: Build contract
