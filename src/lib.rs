@@ -352,8 +352,15 @@ impl Contract {
         let _ = self.get_community_for_editing(&handle);
         community.validate();
         community.set_default_admin();
-        self.communities.remove(&handle);
-        self.communities.insert(&community.handle, &community);
+        if handle == community.handle {
+            self.communities.insert(&handle, &community);
+        } else {
+            if self.communities.get(&community.handle).is_some() {
+                panic!("Community handle '{}' is already taken", community.handle);
+            }
+            self.communities.remove(&handle);
+            self.communities.insert(&community.handle, &community);
+        }
     }
 
     pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
