@@ -12,7 +12,7 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard};
+use community::{Community, CommunityCard, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -327,17 +327,17 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    pub fn add_community(&mut self, slug: String, mut community: Community) {
-        if self.communities.get(&slug).is_some() {
+    pub fn add_community(&mut self, handle: String, mut community: Community) {
+        if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
         }
         community.validate();
         community.set_default_admin();
-        self.communities.insert(&slug, &community);
+        self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community(&mut self, slug: String, mut community: Community) {
-        let community_old = self.communities.get(&slug).expect("Community does not exist");
+    fn get_community_for_editing(&self, handle: &String) -> Community {
+        let community_old = self.communities.get(&handle).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
         if !community_old.admins.contains(&editor)
@@ -345,27 +345,63 @@ impl Contract {
         {
             panic!("Only community admins or moderators can edit community");
         }
+        return community_old;
+    }
 
+    pub fn edit_community(&mut self, handle: String, mut community: Community) {
+        let _ = self.get_community_for_editing(&handle);
         community.validate();
         community.set_default_admin();
-        self.communities.insert(&slug, &community);
+        self.communities.remove(&handle);
+        self.communities.insert(&community.handle, &community);
+    }
+
+    pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.github = github;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_wiki1(&mut self, handle: String, wiki1: Option<WikiPage>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.wiki1 = wiki1;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_wiki2(&mut self, handle: String, wiki2: Option<WikiPage>) {
+        let mut community = self.get_community_for_editing(&handle);
+
+        community.wiki2 = wiki2;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn delete_community(&mut self, handle: String) {
+        let caller = env::predecessor_account_id();
+        let moderators = self.access_control.members_list.get_moderators();
+        if !moderators.contains(&Member::Account(caller.clone())) {
+            panic!("Only moderators can delete community");
+        }
+        self.communities.remove(&handle);
     }
 
     pub fn get_all_communities(&self) -> Vec<CommunityCard> {
         near_sdk::log!("get_all_communities");
         self.communities
             .iter()
-            .map(|(slug, community)| CommunityCard {
-                slug,
+            .map(|(handle, community)| CommunityCard {
+                handle,
                 name: community.name,
                 description: community.description,
-                image_url: community.image_url,
+                logo_url: community.logo_url,
+                banner_url: community.banner_url,
             })
             .collect()
     }
 
-    pub fn get_community(&self, slug: String) -> Option<Community> {
-        self.communities.get(&slug)
+    pub fn get_community(&self, handle: String) -> Option<Community> {
+        self.communities.get(&handle)
     }
 }
 

@@ -4,27 +4,41 @@ use near_sdk::{env, AccountId};
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct WikiPage {
+    name: String,
+    content_markdown: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
+    pub handle: String,
+    pub admins: Vec<AccountId>,
     pub name: String,
     pub description: String,
-    pub image_url: String,
-    pub thumbnail_url: String,
-    pub overview_page_markdown: String,
-    pub events_page_markdown: String,
-    pub admins: Vec<AccountId>,
-    pub labels: Vec<String>,
-    pub telegram_handles: Vec<String>,
+    pub bio_markdown: Option<String>,
+    pub logo_url: String,
+    pub banner_url: String,
+    pub tag: String,
+    pub github_handle: Option<String>,
+    pub telegram_handle: Option<String>,
+    pub twitter_handle: Option<String>,
+    pub website_url: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
+    pub sponsorship: Option<bool>,
+    pub wiki1: Option<WikiPage>,
+    pub wiki2: Option<WikiPage>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityCard {
-    pub slug: String,
+    pub handle: String,
     pub name: String,
     pub description: String,
-    pub image_url: String,
+    pub logo_url: String,
+    pub banner_url: String,
 }
 
 impl Community {
@@ -35,8 +49,11 @@ impl Community {
         if self.description.len() > 60 {
             panic!("Community description is limit to 60 characters");
         }
-        if self.labels.len() == 0 {
-            panic!("At least one primary label is required");
+        if self.handle.len() > 40 {
+            panic!("Community handle is limit to 40 characters");
+        }
+        if self.tag.len() > 20 {
+            panic!("Community tag is limit to 20 characters");
         }
     }
 
