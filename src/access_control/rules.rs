@@ -53,10 +53,12 @@ pub enum Rule {
     /// TODO: Add extra logic to prevent malicious rules creation by creating labels that mimic rules.
     ExactMatch(String),
     StartsWith(String),
+    Any(),
 }
 
 /// JSON string representation prefix of Rule::StartsWith variant.
 const STARTS_WITH: &str = "starts-with:";
+const ANY: &str = "any";
 
 impl From<String> for Rule {
     fn from(full_str: String) -> Self {
@@ -73,6 +75,7 @@ impl Into<String> for Rule {
         match self {
             Rule::ExactMatch(s) => s.to_string(),
             Rule::StartsWith(s) => format!("{}{}", STARTS_WITH, s).to_string(),
+            Rule::Any() => format!("{}", ANY).to_string(),
         }
     }
 }
@@ -83,6 +86,7 @@ impl Rule {
         match self {
             Rule::ExactMatch(rule) => rule == label,
             Rule::StartsWith(rule) => label.starts_with(rule),
+            Rule::Any() => true,
         }
     }
 }
@@ -103,6 +107,9 @@ impl RulesList {
                 }
                 Rule::StartsWith(rule) => {
                     labels.into_iter().filter(|label| label.starts_with(rule)).collect::<Vec<_>>()
+                }
+                Rule::Any() => {
+                    vec![]
                 }
             })
             .flatten()

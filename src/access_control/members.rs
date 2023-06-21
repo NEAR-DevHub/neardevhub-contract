@@ -151,6 +151,10 @@ impl MembersList {
                         // `.find` requires mutable argument.
                         labels.iter().filter(|label| label.starts_with(rule)).next().is_some()
                     }
+                    Rule::Any() => {
+                        // always permissions on Rule::Any
+                        true
+                    }
                 } {
                     for p in permissions {
                         res.insert(p.clone());
