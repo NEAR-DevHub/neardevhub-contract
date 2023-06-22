@@ -43,17 +43,17 @@ pub struct CommunityCard {
 
 impl Community {
     pub fn validate(&self) {
-        if self.name.len() > 30 {
-            panic!("Community name is limit to 30 characters");
+        if self.name.len() < 3 || self.name.len() > 30 {
+            panic!("Community name must contain from 3 to 30 characters");
         }
-        if self.description.len() > 60 {
-            panic!("Community description is limit to 60 characters");
+        if self.description.len() < 6 || self.description.len() > 60 {
+            panic!("Community description must contain from 6 to 60 characters");
         }
-        if self.handle.len() > 40 {
-            panic!("Community handle is limit to 40 characters");
+        if self.handle.len() < 3 || self.handle.len() > 40 {
+            panic!("Community handle must contain from 3 to 40 characters");
         }
-        if self.tag.len() > 20 {
-            panic!("Community tag is limit to 20 characters");
+        if self.tag.len() < 3 || self.tag.len() > 20 {
+            panic!("Community tag must contain from 3 to 20 characters");
         }
     }
 
