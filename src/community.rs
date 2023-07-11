@@ -33,6 +33,12 @@ pub struct Community {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct FeaturedCommunity {
+    pub handle: String
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct CommunityCard {
     pub handle: String,
     pub name: String,

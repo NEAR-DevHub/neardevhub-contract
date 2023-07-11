@@ -128,6 +128,7 @@ impl Contract {
             access_control,
             authors,
             communities: UnorderedMap::new(StorageKey::Communities),
+            featured_communities: Vector::new(StorageKey::FeaturedCommunities),
         });
     }
 }
