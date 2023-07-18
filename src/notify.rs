@@ -98,9 +98,9 @@ mod tests {
 
     use super::notify_mentions;
 
-    use near_sdk::test_utils::{VMContextBuilder,get_created_receipts};
+    use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
-    
+
     use regex::Regex;
 
     fn get_context(is_view: bool) -> VMContext {
@@ -129,12 +129,23 @@ mod tests {
 
             let args = &cap[2];
 
-            let method_name = method_name.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
-            let method_name = String::from_utf8(method_name).expect("Failed to convert method_name to String");
+            let method_name = method_name
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .split(", ")
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<u8>>();
+            let method_name =
+                String::from_utf8(method_name).expect("Failed to convert method_name to String");
 
             assert_eq!("set", method_name);
 
-            let args = args.trim_start_matches('[').trim_end_matches(']').split(", ").map(|s| s.parse().unwrap()).collect::<Vec<u8>>();
+            let args = args
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .split(", ")
+                .map(|s| s.parse().unwrap())
+                .collect::<Vec<u8>>();
             let args = String::from_utf8(args).expect("Failed to convert args to String");
 
             assert_eq!("{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"a.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}},{\\\"key\\\":\\\"bcdefg.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}}]\"}}}}", args);

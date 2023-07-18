@@ -120,7 +120,7 @@ impl Contract {
             access_control,
             authors,
         } = env::state_read().unwrap();
-        env::state_write(&Contract {
+        env::state_write(&OldContractV4 {
             posts,
             post_to_parent,
             post_to_children,
@@ -128,7 +128,43 @@ impl Contract {
             access_control,
             authors,
             communities: UnorderedMap::new(StorageKey::Communities),
-            featured_communities: Vector::new(StorageKey::FeaturedCommunities),
+        });
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct OldContractV4 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub communities: UnorderedMap<String, Community>,
+}
+
+// From OldContractV3 to Contract
+#[near_bindgen]
+impl Contract {
+    fn unsafe_add_featured_communities() {
+        let OldContractV4 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities,
+        } = env::state_read().unwrap();
+        env::state_write(&Contract {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities,
+            featured_communities: Vec::new(),
         });
     }
 }
@@ -139,6 +175,7 @@ pub(crate) enum StateVersion {
     V2,
     V3 { done: bool, migrated_count: u64 },
     V4,
+    V5,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -176,11 +213,11 @@ impl Contract {
 
     fn migration_done() {
         near_sdk::log!("Migration done.");
-        env::value_return(&b"\"done\"".to_vec());
+        env::value_return(b"\"done\"");
     }
 
     fn needs_migration() {
-        env::value_return(&b"\"needs-migration\"".to_vec());
+        env::value_return(b"\"needs-migration\"");
     }
 
     pub fn unsafe_migrate() {
@@ -204,7 +241,10 @@ impl Contract {
             StateVersion::V3 { done: true, migrated_count: _ } => {
                 Contract::unsafe_add_communities();
                 state_version_write(&StateVersion::V4);
-                return Contract::migration_done();
+            }
+            StateVersion::V4 => {
+                Contract::unsafe_add_featured_communities();
+                state_version_write(&StateVersion::V5);
             }
             _ => {
                 return Contract::migration_done();

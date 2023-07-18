@@ -12,7 +12,7 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard, WikiPage, FeaturedCommunity};
+use community::{Community, CommunityCard, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -41,7 +41,7 @@ pub struct Contract {
     pub access_control: AccessControl,
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<String, Community>,
-    pub featured_communities: Vector<FeaturedCommunity>,
+    pub featured_communities: Vec<FeaturedCommunity>,
 }
 
 #[near_bindgen]
@@ -57,7 +57,7 @@ impl Contract {
             access_control: AccessControl::default(),
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
-            featured_communities: Vector::new(StorageKey::FeaturedCommunities),
+            featured_communities: Vec::new(),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -421,11 +421,11 @@ impl Contract {
 
         // Check if the community already exists in the list
         if self.featured_communities.iter().any(|fc| fc.handle == handle) {
-        panic!("Featured community already exists");
+            panic!("Featured community already exists");
         }
 
         let featured_community = FeaturedCommunity { handle };
-        self.featured_communities.push(&featured_community);
+        self.featured_communities.push(featured_community);
     }
 
     pub fn get_featured_communities(&self) -> Vec<Community> {
@@ -446,19 +446,15 @@ impl Contract {
             self.is_moderator(env::predecessor_account_id()),
             "Only moderators can delete featured communities"
         );
-    
+
         // Find the index of the featured community to delete
-        let index = self
-            .featured_communities
-            .iter()
-            .position(|fc| fc.handle == handle);
-    
+        let index = self.featured_communities.iter().position(|fc| fc.handle == handle);
+
         // Remove the featured community if found
         if let Some(index) = index {
-            self.featured_communities.swap_remove(index as u64);
+            self.featured_communities.remove(index);
         }
     }
-    
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
