@@ -413,20 +413,26 @@ impl Contract {
         self.communities.get(&handle)
     }
 
-    pub fn add_featured_community(&mut self, handle: String) {
+    pub fn add_featured_communities(&mut self, handles: Vec<String>) {
         assert!(
             self.is_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
-
-        // Check if the community already exists in the list
-        if self.featured_communities.iter().any(|fc| fc.handle == handle) {
-            panic!("Featured community already exists");
+    
+        // Check if every handle corresponds to an existing community
+        for handle in &handles {
+            if !self.communities.get(&handle).is_some() {
+                panic!("Community '{}' does not exist.", handle);
+            }   
         }
-
-        let featured_community = FeaturedCommunity { handle };
-        self.featured_communities.push(featured_community);
+    
+        // Replace the existing featured communities with the new ones
+        self.featured_communities = handles
+            .into_iter()
+            .map(|handle| FeaturedCommunity { handle })
+            .collect();
     }
+    
 
     pub fn get_featured_communities(&self) -> Vec<Community> {
         self.featured_communities
@@ -440,21 +446,6 @@ impl Contract {
         moderators.contains(&Member::Account(account_id))
     }
 
-    pub fn delete_featured_community(&mut self, handle: String) {
-        // Check if the caller is a moderator
-        assert!(
-            self.is_moderator(env::predecessor_account_id()),
-            "Only moderators can delete featured communities"
-        );
-
-        // Find the index of the featured community to delete
-        let index = self.featured_communities.iter().position(|fc| fc.handle == handle);
-
-        // Remove the featured community if found
-        if let Some(index) = index {
-            self.featured_communities.remove(index);
-        }
-    }
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
