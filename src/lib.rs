@@ -413,7 +413,7 @@ impl Contract {
         self.communities.get(&handle)
     }
 
-    pub fn add_featured_communities(&mut self, handles: Vec<String>) {
+    pub fn set_featured_communities(&mut self, handles: Vec<String>) {
         assert!(
             self.is_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
