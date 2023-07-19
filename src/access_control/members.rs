@@ -151,6 +151,10 @@ impl MembersList {
                         // `.find` requires mutable argument.
                         labels.iter().filter(|label| label.starts_with(rule)).next().is_some()
                     }
+                    Rule::Any() => {
+                        // always permissions on Rule::Any
+                        true
+                    }
                 } {
                     for p in permissions {
                         res.insert(p.clone());
@@ -391,9 +395,40 @@ mod tests {
     }
 
     #[test]
+    fn check_permissions_rules_any() {
+        let mut list = create_list();
+        let given_permissions = HashSet::from([ActionType::EditPost, ActionType::UseLabels]);
+        list.add_member(
+            Member::Account("thomasguntenaar.near".to_string()),
+            MemberMetadata {
+                description: "Account has `Any` rules without labels".to_string(),
+                permissions: HashMap::from([
+                    (
+                        Rule::Any(),
+                        given_permissions.clone(),
+                    ),
+                ]),
+                ..Default::default()
+            }
+            .into(),
+        );
+        // Without labels
+        assert_eq!(
+            list.check_permissions("thomasguntenaar.near".to_string(), vec![]),
+            given_permissions,
+        );
+
+        // With labels
+        assert_eq!(
+            list.check_permissions("thomasguntenaar.near".to_string(), vec!["funding-requested".to_string()]),
+            given_permissions,
+        )
+    }
+
+    #[test]
     fn check_permissions_of_not_member() {
         let list = create_list();
-        let actual = list.check_permissions(
+        let actual: HashSet<ActionType> = list.check_permissions(
             "random.near".to_string(),
             vec!["wg-protocol".to_string(), "funding-requested".to_string()],
         );
