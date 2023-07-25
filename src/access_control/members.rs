@@ -402,12 +402,7 @@ mod tests {
             Member::Account("thomasguntenaar.near".to_string()),
             MemberMetadata {
                 description: "Account has `Any` rules without labels".to_string(),
-                permissions: HashMap::from([
-                    (
-                        Rule::Any(),
-                        given_permissions.clone(),
-                    ),
-                ]),
+                permissions: HashMap::from([(Rule::Any(), given_permissions.clone())]),
                 ..Default::default()
             }
             .into(),
@@ -420,7 +415,10 @@ mod tests {
 
         // With labels
         assert_eq!(
-            list.check_permissions("thomasguntenaar.near".to_string(), vec!["funding-requested".to_string()]),
+            list.check_permissions(
+                "thomasguntenaar.near".to_string(),
+                vec!["funding-requested".to_string()]
+            ),
             given_permissions,
         )
     }

@@ -11,7 +11,7 @@ pub struct WikiPage {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct Community {
+pub struct OldCommunityV1 {
     pub handle: String,
     pub admins: Vec<AccountId>,
     pub name: String,
@@ -31,6 +31,68 @@ pub struct Community {
     pub wiki2: Option<WikiPage>,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Community {
+    pub handle: String,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub bio_markdown: Option<String>,
+    pub logo_url: String,
+    pub banner_url: String,
+    pub tag: String,
+    pub github_handle: Option<String>,
+    pub telegram_handle: Vec<String>,
+    pub twitter_handle: Option<String>,
+    pub website_url: Option<String>,
+    /// JSON string of github board configuration
+    pub github: Option<String>,
+    pub sponsorship: Option<bool>,
+    pub wiki1: Option<WikiPage>,
+    pub wiki2: Option<WikiPage>,
+}
+
+impl From<OldCommunityV1> for Community {
+    fn from(old_community: OldCommunityV1) -> Self {
+        let OldCommunityV1 {
+            handle,
+            admins,
+            name,
+            description,
+            bio_markdown,
+            logo_url,
+            banner_url,
+            tag,
+            github_handle,
+            telegram_handle,
+            twitter_handle,
+            website_url,
+            github,
+            sponsorship,
+            wiki1,
+            wiki2,
+        } = old_community;
+        Community {
+            handle,
+            admins,
+            name,
+            description,
+            bio_markdown,
+            logo_url,
+            banner_url,
+            tag,
+            github_handle,
+            twitter_handle,
+            website_url,
+            github,
+            sponsorship,
+            wiki1,
+            wiki2,
+            telegram_handle: telegram_handle.iter().cloned().collect(),
+        }
+    }
+}
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FeaturedCommunity {
