@@ -10,7 +10,6 @@ pub struct ProjectInputs {
     pub tag: String,
     pub name: String,
     pub description: String,
-    pub author_community_handle: CommunityHandle,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -26,27 +25,23 @@ pub struct ProjectMetadata {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Project {
-    pub id: ProjectId,
-    pub tag: String,
-    pub name: String,
-    pub description: String,
-    pub owner_community_handles: Vec<CommunityHandle>,
+    pub metadata: ProjectMetadata,
     /// Configs for project views indexed by their ids and serialized as JSON string
     pub view_configs: String,
 }
 
 impl Project {
     pub fn validate(&self) {
-        if self.name.len() < 3 || self.name.len() > 30 {
+        if self.metadata.name.len() < 3 || self.metadata.name.len() > 30 {
             panic!("Project name must contain from 3 to 30 characters");
         }
-        if self.description.len() < 6 || self.description.len() > 60 {
+        if self.metadata.description.len() < 6 || self.metadata.description.len() > 60 {
             panic!("Project description must contain from 6 to 60 characters");
         }
-        if self.tag.len() < 3 || self.tag.len() > 20 {
+        if self.metadata.tag.len() < 3 || self.metadata.tag.len() > 20 {
             panic!("Project tag must contain from 3 to 20 characters");
         }
-        if self.owner_community_handles.len() < 1 {
+        if self.metadata.owner_community_handles.len() < 1 {
             panic!("Project must have at least one owner community");
         }
     }

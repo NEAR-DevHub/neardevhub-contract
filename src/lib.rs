@@ -345,20 +345,19 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    fn get_community_for_editing(&self, handle: &CommunityHandle) -> Community {
-        let community_old = self.communities.get(&handle).expect("Community does not exist");
-        let moderators = self.access_control.members_list.get_moderators();
-        let editor = env::predecessor_account_id();
-        if !community_old.admins.contains(&editor)
-            && !moderators.contains(&Member::Account(editor.clone()))
-        {
-            panic!("Only community admins or moderators can edit community");
-        }
-        return community_old;
+    fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
+        let caller_account_id = env::predecessor_account_id();
+        let community = self.communities.get(&handle).expect("Community does not exist");
+
+        if community.admins.contains(&caller_account_id) || self.has_moderator(caller_account_id) {
+            return Some(community);
+        } else {
+            return Option::None;
+        };
     }
 
     pub fn edit_community(&mut self, handle: CommunityHandle, mut community: Community) {
-        let _ = self.get_community_for_editing(&handle);
+        let _ = self.get_editable_community(&handle);
         community.validate();
         community.set_default_admin();
         if handle == community.handle {
@@ -373,21 +372,27 @@ impl Contract {
     }
 
     pub fn edit_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
-        let mut community = self.get_community_for_editing(&handle);
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure GitHub integrations");
 
         community.github = github;
         self.communities.insert(&handle, &community);
     }
 
     pub fn edit_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
-        let mut community = self.get_community_for_editing(&handle);
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can edit wiki");
 
         community.wiki1 = wiki1;
         self.communities.insert(&handle, &community);
     }
 
     pub fn edit_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
-        let mut community = self.get_community_for_editing(&handle);
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can edit wiki");
 
         community.wiki2 = wiki2;
         self.communities.insert(&handle, &community);
@@ -422,7 +427,7 @@ impl Contract {
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
         assert!(
-            self.is_moderator(env::predecessor_account_id()),
+            self.has_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
 
@@ -445,106 +450,105 @@ impl Contract {
             .collect()
     }
 
-    fn is_moderator(&self, account_id: AccountId) -> bool {
+    fn has_moderator(&self, account_id: AccountId) -> bool {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
 
-    pub fn create_project(&mut self, project_inputs: ProjectInputs) {
-        let admins =
-            self.communities.get(&project_inputs.author_community_handle).unwrap().admins.clone();
+    pub fn create_project(
+        &mut self,
+        author_community_handle: CommunityHandle,
+        project_inputs: ProjectInputs,
+    ) {
+        let mut author_community = self
+            .get_editable_community(&author_community_handle)
+            .expect("Only community admins and hub moderators can create projects");
 
-        if !admins.contains(&env::predecessor_account_id()) {
-            panic!("Community-owned projects can be created only by community admins");
-        }
+        let new_project = Project {
+            metadata: ProjectMetadata {
+                id: self.projects.len(),
+                name: project_inputs.name,
+                description: project_inputs.description,
+                tag: project_inputs.tag,
+                owner_community_handles: vec![author_community_handle],
+            },
 
-        let new_project: Project = Project {
-            id: self.projects.len(),
-            name: project_inputs.name,
-            description: project_inputs.description,
-            tag: project_inputs.tag,
-            owner_community_handles: vec![project_inputs.author_community_handle],
             view_configs: String::from("{}"),
         };
 
         new_project.validate();
         self.projects.push(&Some(new_project));
 
-        let author_community =
-            self.get_community_for_editing(&project_inputs.author_community_handle);
+        author_community.project_ids =
+            [author_community.project_ids, vec![new_project.metadata.id]].concat();
 
-        self.edit_community(
-            author_community.handle,
-            Community {
-                project_ids: [author_community.project_ids, vec![new_project.id]].concat(),
-                ..author_community
-            },
-        )
-    }
-
-    pub fn edit_project(&mut self, project: Project) {
-        let community_admins = self
-            .communities
-            .get(&self.get_project(project.id).unwrap().owner_community_handles[0])
-            .unwrap()
-            .admins
-            .clone();
-
-        if !community_admins.contains(&env::predecessor_account_id()) {
-            panic!("Community-owned projects can be edited only by community admins");
-        }
-
-        project.validate();
-        self.projects.replace(project.id, &Some(project));
-    }
-
-    pub fn delete_project(&mut self, id: ProjectId) {
-        let community_admins = self
-            .communities
-            .get(&self.get_project(id).unwrap().owner_community_handles[0])
-            .unwrap()
-            .admins
-            .clone();
-
-        if !community_admins.contains(&env::predecessor_account_id()) {
-            panic!("Community-owned projects can be deleted only by community admins");
-        }
-
-        self.projects.replace(id, &Option::None);
+        self.communities.insert(&author_community.handle, &author_community);
     }
 
     pub fn get_project(&self, id: ProjectId) -> Option<Project> {
-        let project = self.projects.get(id);
-
-        if project.is_none() {
-            return Option::None;
+        if let Some(project) = self.projects.get(id) {
+            return project;
         } else {
-            return project.unwrap();
+            return Option::None;
+        };
+    }
+
+    pub fn update_project(&mut self, project: Project) {
+        let target_project = if let Some(target_project) = self.get_project(project.metadata.id) {
+            target_project
+        } else {
+            panic!(format!("Project with id {id} does not exist", id = project.metadata.id));
+        };
+
+        if !self
+            // there should be forEach or something to iterate over all owner communities
+            .get_community(project.metadata.owner_community_handles[0])
+            .unwrap()
+            .admins
+            .contains(&env::predecessor_account_id())
+        {
+            panic!("Only community admins and hub moderators can configure projects");
         }
+
+        project.validate();
+        self.projects.replace(target_project.metadata.id, &Some(project));
+    }
+
+    pub fn delete_project(&mut self, id: ProjectId) {
+        let project = if let Some(project) = self.get_project(id) {
+            project
+        } else {
+            panic!(format!("Project with id {id} does not exist"));
+        };
+
+        if &project.metadata.owner_community_handles.len() > &1 {
+            panic!("Only projects owned by a single community can be deleted");
+        }
+
+        let mut owner_community = self
+            .get_editable_community(&project.metadata.owner_community_handles[0])
+            .expect("Only community admins and hub moderators can delete projects");
+
+        self.projects.replace(id, &Option::None);
+
+        owner_community.project_ids.binary_search(&id).ok().map(|index| {
+            owner_community.project_ids.remove(index);
+        });
+
+        self.communities.insert(&owner_community.handle, &owner_community);
     }
 
     pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
         self.projects
             .iter()
             .filter(|MaybeProject| MaybeProject.is_some())
-            .map(|existing_project| {
-                let project = existing_project.unwrap();
-
-                ProjectMetadata {
-                    id: project.id,
-                    tag: project.tag,
-                    name: project.name,
-                    description: project.description,
-                    owner_community_handles: project.owner_community_handles,
-                }
-            })
+            .map(|existing_project| existing_project.unwrap().metadata)
             .collect()
     }
 
     pub fn get_community_projects(&self, community_handle: CommunityHandle) -> Vec<Project> {
         self.projects
-            .to_vec()
-            .into_iter()
+            .iter()
             .filter(|project| project.is_some())
             .map(|project| project.unwrap())
             .collect()
