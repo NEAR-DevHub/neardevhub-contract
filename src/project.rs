@@ -35,5 +35,8 @@ impl Project {
         if self.tag.len() < 3 || self.tag.len() > 20 {
             panic!("Project tag must contain from 3 to 20 characters");
         }
+        if self.owners.len() < 1 {
+            panic!("Project must have at least one owner community");
+        }
     }
 }
