@@ -4,6 +4,7 @@ pub mod debug;
 pub mod migrations;
 mod notify;
 pub mod post;
+pub mod project;
 mod repost;
 mod social_db;
 pub mod stats;
@@ -12,11 +13,12 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard, FeaturedCommunity, WikiPage};
+use community::{Community, CommunityCard, CommunityHandle, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
+use project::Project;
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -40,8 +42,9 @@ pub struct Contract {
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
-    pub communities: UnorderedMap<String, Community>,
+    pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
+    pub projects: UnorderedMap<String, Project>,
 }
 
 #[near_bindgen]
@@ -58,6 +61,7 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
+            projects: UnorderedMap::new(StorageKey::Projects),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -329,7 +333,7 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    pub fn add_community(&mut self, handle: String, mut community: Community) {
+    pub fn add_community(&mut self, handle: CommunityHandle, mut community: Community) {
         if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
         }
@@ -338,7 +342,7 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    fn get_community_for_editing(&self, handle: &String) -> Community {
+    fn get_community_for_editing(&self, handle: &CommunityHandle) -> Community {
         let community_old = self.communities.get(&handle).expect("Community does not exist");
         let moderators = self.access_control.members_list.get_moderators();
         let editor = env::predecessor_account_id();
@@ -350,7 +354,7 @@ impl Contract {
         return community_old;
     }
 
-    pub fn edit_community(&mut self, handle: String, mut community: Community) {
+    pub fn edit_community(&mut self, handle: CommunityHandle, mut community: Community) {
         let _ = self.get_community_for_editing(&handle);
         community.validate();
         community.set_default_admin();
@@ -365,28 +369,28 @@ impl Contract {
         }
     }
 
-    pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
+    pub fn edit_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
         let mut community = self.get_community_for_editing(&handle);
 
         community.github = github;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki1(&mut self, handle: String, wiki1: Option<WikiPage>) {
+    pub fn edit_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
         let mut community = self.get_community_for_editing(&handle);
 
         community.wiki1 = wiki1;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki2(&mut self, handle: String, wiki2: Option<WikiPage>) {
+    pub fn edit_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
         let mut community = self.get_community_for_editing(&handle);
 
         community.wiki2 = wiki2;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn delete_community(&mut self, handle: String) {
+    pub fn delete_community(&mut self, handle: CommunityHandle) {
         let caller = env::predecessor_account_id();
         let moderators = self.access_control.members_list.get_moderators();
         if !moderators.contains(&Member::Account(caller.clone())) {
@@ -409,30 +413,27 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_community(&self, handle: String) -> Option<Community> {
+    pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
         self.communities.get(&handle)
     }
 
-    pub fn set_featured_communities(&mut self, handles: Vec<String>) {
+    pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
         assert!(
             self.is_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
-    
+
         // Check if every handle corresponds to an existing community
         for handle in &handles {
             if !self.communities.get(&handle).is_some() {
                 panic!("Community '{}' does not exist.", handle);
-            }   
+            }
         }
-    
+
         // Replace the existing featured communities with the new ones
-        self.featured_communities = handles
-            .into_iter()
-            .map(|handle| FeaturedCommunity { handle })
-            .collect();
+        self.featured_communities =
+            handles.into_iter().map(|handle| FeaturedCommunity { handle }).collect();
     }
-    
 
     pub fn get_featured_communities(&self) -> Vec<Community> {
         self.featured_communities
@@ -445,7 +446,6 @@ impl Contract {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
-
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]

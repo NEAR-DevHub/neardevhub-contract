@@ -2,6 +2,8 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId};
 
+pub type CommunityHandle = String;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct WikiPage {
@@ -12,7 +14,7 @@ pub struct WikiPage {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Community {
-    pub handle: String,
+    pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
     pub name: String,
     pub description: String,
@@ -34,13 +36,13 @@ pub struct Community {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FeaturedCommunity {
-    pub handle: String,
+    pub handle: CommunityHandle,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityCard {
-    pub handle: String,
+    pub handle: CommunityHandle,
     pub name: String,
     pub description: String,
     pub logo_url: String,
