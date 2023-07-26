@@ -2,10 +2,21 @@ use crate::community::CommunityHandle;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
+pub type ProjectId = u64;
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ProjectInputs {
+    pub tag: String,
+    pub name: String,
+    pub description: String,
+    pub community_handle: CommunityHandle,
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ProjectMetadata {
-    pub id: String,
+    pub id: ProjectId,
     pub tag: String,
     pub name: String,
     pub description: String,
@@ -15,7 +26,7 @@ pub struct ProjectMetadata {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Project {
-    pub id: String,
+    pub id: ProjectId,
     pub tag: String,
     pub name: String,
     pub description: String,

@@ -19,6 +19,8 @@ use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use project::Project;
+use project::ProjectId;
+use project::ProjectInputs;
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -44,7 +46,7 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub projects: UnorderedMap<String, Project>,
+    pub projects: Vector<Option<Project>>,
 }
 
 #[near_bindgen]
@@ -61,7 +63,7 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            projects: UnorderedMap::new(StorageKey::Projects),
+            projects: Vector::new(StorageKey::Projects),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -445,6 +447,88 @@ impl Contract {
     fn is_moderator(&self, account_id: AccountId) -> bool {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
+    }
+
+    pub fn create_project(&mut self, project_inputs: ProjectInputs) {
+        let caller = env::predecessor_account_id();
+        let admins = self.communities.get(&project_inputs.community_handle).unwrap().admins.clone();
+
+        if !admins.contains(&caller) {
+            panic!("Only community admins can create projects");
+        }
+
+        let project: Project = Project {
+            id: self.projects.len(),
+            name: project_inputs.name,
+            description: project_inputs.description,
+            tag: project_inputs.tag,
+            owners: vec![project_inputs.community_handle],
+            views: String::from("{}"),
+        };
+
+        project.validate();
+        self.projects.push(&Some(project));
+
+        // self.edit_community(project_inputs.community_handle)
+    }
+
+    pub fn edit_project(&mut self, project: Project) {
+        let caller = env::predecessor_account_id();
+
+        let community_admins = self
+            .communities
+            .get(&self.get_project(project.id).unwrap().owners[0])
+            .unwrap()
+            .admins
+            .clone();
+
+        if !community_admins.contains(&caller) {
+            panic!("Only community admins can edit projects");
+        }
+
+        project.validate();
+        self.projects.replace(project.id, &Some(project));
+    }
+
+    pub fn delete_project(&mut self, id: ProjectId) {
+        let caller = env::predecessor_account_id();
+
+        let community_admins =
+            self.communities.get(&self.get_project(id).unwrap().owners[0]).unwrap().admins.clone();
+
+        if !community_admins.contains(&caller) {
+            panic!("Only community admins can delete projects");
+        }
+
+        self.projects.replace(id, &Option::None);
+    }
+
+    pub fn get_project(&self, id: ProjectId) -> Option<Project> {
+        let project = self.projects.get(id);
+
+        if project.is_none() {
+            return Option::None;
+        } else {
+            return project.unwrap();
+        }
+    }
+
+    pub fn get_all_projects(&self) -> Vec<Project> {
+        self.projects
+            .to_vec()
+            .into_iter()
+            .filter(|project| project.is_some())
+            .map(|project| project.unwrap())
+            .collect()
+    }
+
+    pub fn get_community_projects(&self, community_handle: CommunityHandle) -> Vec<Project> {
+        self.projects
+            .to_vec()
+            .into_iter()
+            .filter(|project| project.is_some())
+            .map(|project| project.unwrap())
+            .collect()
     }
 }
 
