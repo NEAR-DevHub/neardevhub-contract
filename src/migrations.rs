@@ -193,14 +193,17 @@ impl Contract {
             label_to_posts,
             access_control,
             authors,
-            communities,
+            mut communities,
             featured_communities,
         } = env::state_read().unwrap();
 
+        let migrated_communties: Vec<(String, Community)> =
+            communities.iter().map(|(k, v)| (k, v.into())).collect();
+        communities.clear();
+
         let mut communities_new = UnorderedMap::new(StorageKey::Communities);
-        for (k, v) in communities.iter() {
-            let community_new = &v.into();
-            communities_new.insert(&k, community_new);
+        for (k, v) in migrated_communties {
+            communities_new.insert(&k, &v);
         }
 
         env::state_write(&Contract {
