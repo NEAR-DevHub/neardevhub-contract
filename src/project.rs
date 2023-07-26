@@ -20,7 +20,7 @@ pub struct Project {
     pub name: String,
     pub description: String,
     pub owners: Vec<CommunityHandle>,
-    /// Projects views indexed by their ids and serialized as JSON string
+    /// Project views indexed by their ids and serialized as JSON string
     pub views: String,
 }
 
