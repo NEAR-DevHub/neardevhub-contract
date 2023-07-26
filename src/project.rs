@@ -10,7 +10,7 @@ pub struct ProjectInputs {
     pub tag: String,
     pub name: String,
     pub description: String,
-    pub community_handle: CommunityHandle,
+    pub author_community_handle: CommunityHandle,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -20,7 +20,7 @@ pub struct ProjectMetadata {
     pub tag: String,
     pub name: String,
     pub description: String,
-    pub owners: Vec<CommunityHandle>,
+    pub owner_community_handles: Vec<CommunityHandle>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -30,9 +30,9 @@ pub struct Project {
     pub tag: String,
     pub name: String,
     pub description: String,
-    pub owners: Vec<CommunityHandle>,
-    /// Project views indexed by their ids and serialized as JSON string
-    pub views: String,
+    pub owner_community_handles: Vec<CommunityHandle>,
+    /// Configs for project views indexed by their ids and serialized as JSON string
+    pub view_configs: String,
 }
 
 impl Project {
@@ -46,7 +46,7 @@ impl Project {
         if self.tag.len() < 3 || self.tag.len() > 20 {
             panic!("Project tag must contain from 3 to 20 characters");
         }
-        if self.owners.len() < 1 {
+        if self.owner_community_handles.len() < 1 {
             panic!("Project must have at least one owner community");
         }
     }

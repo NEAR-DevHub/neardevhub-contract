@@ -21,6 +21,7 @@ use post::*;
 use project::Project;
 use project::ProjectId;
 use project::ProjectInputs;
+use project::ProjectMetadata;
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -450,40 +451,47 @@ impl Contract {
     }
 
     pub fn create_project(&mut self, project_inputs: ProjectInputs) {
-        let caller = env::predecessor_account_id();
-        let admins = self.communities.get(&project_inputs.community_handle).unwrap().admins.clone();
+        let admins =
+            self.communities.get(&project_inputs.author_community_handle).unwrap().admins.clone();
 
-        if !admins.contains(&caller) {
-            panic!("Only community admins can create projects");
+        if !admins.contains(&env::predecessor_account_id()) {
+            panic!("Community-owned projects can be created only by community admins");
         }
 
-        let project: Project = Project {
+        let new_project: Project = Project {
             id: self.projects.len(),
             name: project_inputs.name,
             description: project_inputs.description,
             tag: project_inputs.tag,
-            owners: vec![project_inputs.community_handle],
-            views: String::from("{}"),
+            owner_community_handles: vec![project_inputs.author_community_handle],
+            view_configs: String::from("{}"),
         };
 
-        project.validate();
-        self.projects.push(&Some(project));
+        new_project.validate();
+        self.projects.push(&Some(new_project));
 
-        // self.edit_community(project_inputs.community_handle)
+        let author_community =
+            self.get_community_for_editing(&project_inputs.author_community_handle);
+
+        self.edit_community(
+            author_community.handle,
+            Community {
+                project_ids: [author_community.project_ids, vec![new_project.id]].concat(),
+                ..author_community
+            },
+        )
     }
 
     pub fn edit_project(&mut self, project: Project) {
-        let caller = env::predecessor_account_id();
-
         let community_admins = self
             .communities
-            .get(&self.get_project(project.id).unwrap().owners[0])
+            .get(&self.get_project(project.id).unwrap().owner_community_handles[0])
             .unwrap()
             .admins
             .clone();
 
-        if !community_admins.contains(&caller) {
-            panic!("Only community admins can edit projects");
+        if !community_admins.contains(&env::predecessor_account_id()) {
+            panic!("Community-owned projects can be edited only by community admins");
         }
 
         project.validate();
@@ -491,13 +499,15 @@ impl Contract {
     }
 
     pub fn delete_project(&mut self, id: ProjectId) {
-        let caller = env::predecessor_account_id();
+        let community_admins = self
+            .communities
+            .get(&self.get_project(id).unwrap().owner_community_handles[0])
+            .unwrap()
+            .admins
+            .clone();
 
-        let community_admins =
-            self.communities.get(&self.get_project(id).unwrap().owners[0]).unwrap().admins.clone();
-
-        if !community_admins.contains(&caller) {
-            panic!("Only community admins can delete projects");
+        if !community_admins.contains(&env::predecessor_account_id()) {
+            panic!("Community-owned projects can be deleted only by community admins");
         }
 
         self.projects.replace(id, &Option::None);
@@ -513,12 +523,21 @@ impl Contract {
         }
     }
 
-    pub fn get_all_projects(&self) -> Vec<Project> {
+    pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
         self.projects
-            .to_vec()
-            .into_iter()
-            .filter(|project| project.is_some())
-            .map(|project| project.unwrap())
+            .iter()
+            .filter(|MaybeProject| MaybeProject.is_some())
+            .map(|existing_project| {
+                let project = existing_project.unwrap();
+
+                ProjectMetadata {
+                    id: project.id,
+                    tag: project.tag,
+                    name: project.name,
+                    description: project.description,
+                    owner_community_handles: project.owner_community_handles,
+                }
+            })
             .collect()
     }
 
