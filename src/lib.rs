@@ -498,7 +498,7 @@ impl Contract {
         };
 
         if !self
-            // there should be forEach or something to iterate over all owner communities
+            // TODO: there should be forEach or something to iterate over all owner communities
             .get_community(project.metadata.owner_community_handles[0])
             .unwrap()
             .admins
