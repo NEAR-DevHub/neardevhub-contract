@@ -2,6 +2,7 @@
 //! Should be invocable only by the owner and in most cases should be called only once though the
 //! latter is not asserted.
 
+use crate::community::OldCommunityV1;
 use crate::*;
 use near_sdk::{env, near_bindgen, Promise};
 use std::cmp::min;
@@ -140,10 +141,10 @@ pub struct OldContractV4 {
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
-    pub communities: UnorderedMap<String, Community>,
+    pub communities: UnorderedMap<String, OldCommunityV1>,
 }
 
-// From OldContractV3 to Contract
+// From OldContractV4 to Contract
 #[near_bindgen]
 impl Contract {
     fn unsafe_add_featured_communities() {
@@ -156,7 +157,7 @@ impl Contract {
             authors,
             communities,
         } = env::state_read().unwrap();
-        env::state_write(&Contract {
+        env::state_write(&OldContractV5 {
             posts,
             post_to_parent,
             post_to_children,
@@ -169,6 +170,55 @@ impl Contract {
     }
 }
 
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct OldContractV5 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub communities: UnorderedMap<String, OldCommunityV1>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+}
+
+// From OldContractV5 to Contract
+#[near_bindgen]
+impl Contract {
+    fn unsafe_multiple_telegrams() {
+        let OldContractV5 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            mut communities,
+            featured_communities,
+        } = env::state_read().unwrap();
+
+        let migrated_communties: Vec<(String, Community)> =
+            communities.iter().map(|(k, v)| (k, v.into())).collect();
+        communities.clear();
+
+        let mut communities_new = UnorderedMap::new(StorageKey::Communities);
+        for (k, v) in migrated_communties {
+            communities_new.insert(&k, &v);
+        }
+
+        env::state_write(&Contract {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities: communities_new,
+            featured_communities,
+        });
+    }
+}
+
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub(crate) enum StateVersion {
     V1,
@@ -176,6 +226,7 @@ pub(crate) enum StateVersion {
     V3 { done: bool, migrated_count: u64 },
     V4,
     V5,
+    V6,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -245,6 +296,10 @@ impl Contract {
             StateVersion::V4 => {
                 Contract::unsafe_add_featured_communities();
                 state_version_write(&StateVersion::V5);
+            }
+            StateVersion::V5 => {
+                Contract::unsafe_multiple_telegrams();
+                state_version_write(&StateVersion::V6);
             }
             _ => {
                 return Contract::migration_done();
