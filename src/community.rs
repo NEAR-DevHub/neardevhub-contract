@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId};
@@ -33,7 +35,7 @@ pub struct Community {
     pub sponsorship: Option<bool>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub project_ids: Vec<ProjectId>,
+    pub project_ids: HashSet<ProjectId>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

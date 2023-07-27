@@ -478,10 +478,7 @@ impl Contract {
 
         new_project.validate();
         self.projects.push(&Some(new_project));
-
-        author_community.project_ids =
-            [author_community.project_ids, vec![new_project.metadata.id]].concat();
-
+        author_community.project_ids.insert(new_project.metadata.id);
         self.communities.insert(&author_community.handle, &author_community);
     }
 
@@ -506,6 +503,7 @@ impl Contract {
             .unwrap()
             .admins
             .contains(&env::predecessor_account_id())
+            && !self.has_moderator(env::predecessor_account_id())
         {
             panic!("Only community admins and hub moderators can configure projects");
         }
@@ -530,11 +528,7 @@ impl Contract {
             .expect("Only community admins and hub moderators can delete projects");
 
         self.projects.replace(id, &Option::None);
-
-        owner_community.project_ids.binary_search(&id).ok().map(|index| {
-            owner_community.project_ids.remove(index);
-        });
-
+        owner_community.project_ids.remove(&id);
         self.communities.insert(&owner_community.handle, &owner_community);
     }
 
@@ -546,12 +540,8 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_community_projects(&self, community_handle: CommunityHandle) -> Vec<Project> {
-        self.projects
-            .iter()
-            .filter(|project| project.is_some())
-            .map(|project| project.unwrap())
-            .collect()
+    pub fn get_community_projects(&self, community_handle: CommunityHandle) {
+        let owner_community = self.get_community(community_handle);
     }
 }
 
