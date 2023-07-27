@@ -48,7 +48,7 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V4);
+        migrations::state_version_write(&migrations::StateVersion::V6);
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
@@ -418,21 +418,18 @@ impl Contract {
             self.is_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
-    
+
         // Check if every handle corresponds to an existing community
         for handle in &handles {
             if !self.communities.get(&handle).is_some() {
                 panic!("Community '{}' does not exist.", handle);
-            }   
+            }
         }
-    
+
         // Replace the existing featured communities with the new ones
-        self.featured_communities = handles
-            .into_iter()
-            .map(|handle| FeaturedCommunity { handle })
-            .collect();
+        self.featured_communities =
+            handles.into_iter().map(|handle| FeaturedCommunity { handle }).collect();
     }
-    
 
     pub fn get_featured_communities(&self) -> Vec<Community> {
         self.featured_communities
@@ -445,7 +442,6 @@ impl Contract {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
-
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
