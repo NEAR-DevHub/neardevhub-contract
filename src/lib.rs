@@ -23,6 +23,7 @@ use project::ProjectId;
 use project::ProjectInputs;
 use project::ProjectMetadata;
 use std::collections::HashSet;
+use std::convert::identity;
 
 near_sdk::setup_alloc!();
 
@@ -497,14 +498,16 @@ impl Contract {
             panic!(format!("Project with id {id} does not exist", id = project.metadata.id));
         };
 
-        if !self
-            // TODO: there should be forEach or something to iterate over all owner communities
-            .get_community(project.metadata.owner_community_handles[0])
-            .unwrap()
-            .admins
-            .contains(&env::predecessor_account_id())
-            && !self.has_moderator(env::predecessor_account_id())
-        {
+        let is_called_by_admin = target_project
+            .metadata
+            .owner_community_handles
+            .iter()
+            .map(|handle| self.get_community(handle.to_owned()))
+            .filter_map(identity)
+            .map(|owner_community| owner_community.admins.contains(&env::predecessor_account_id()))
+            .any(identity);
+
+        if !is_called_by_admin && !self.has_moderator(env::predecessor_account_id()) {
             panic!("Only community admins and hub moderators can configure projects");
         }
 
@@ -533,15 +536,21 @@ impl Contract {
     }
 
     pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
-        self.projects
-            .iter()
-            .filter(|MaybeProject| MaybeProject.is_some())
-            .map(|existing_project| existing_project.unwrap().metadata)
-            .collect()
+        self.projects.iter().filter_map(identity).map(|project| project.metadata).collect()
     }
 
-    pub fn get_community_projects(&self, community_handle: CommunityHandle) {
-        let owner_community = self.get_community(community_handle);
+    pub fn get_community_projects_metadata(&self, community_handle: CommunityHandle) {
+        self.get_community(community_handle)
+            .and_then(|community| {
+                Some(
+                    community
+                        .project_ids
+                        .iter()
+                        .filter_map(|id| self.get_project(*id))
+                        .map(|project| project.metadata),
+                )
+            })
+            .expect("Community does not exist");
     }
 }
 
