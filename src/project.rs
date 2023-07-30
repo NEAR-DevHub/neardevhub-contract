@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use crate::community::CommunityHandle;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
-pub type ProjectId = u64;
+pub type ProjectId = usize;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -19,7 +21,7 @@ pub struct ProjectMetadata {
     pub tag: String,
     pub name: String,
     pub description: String,
-    pub owner_community_handles: Vec<CommunityHandle>,
+    pub owner_community_handles: HashSet<CommunityHandle>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

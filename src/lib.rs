@@ -22,6 +22,7 @@ use project::Project;
 use project::ProjectId;
 use project::ProjectInputs;
 use project::ProjectMetadata;
+
 use std::collections::HashSet;
 use std::convert::identity;
 
@@ -48,7 +49,8 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub projects: Vector<Option<Project>>,
+    pub projects: UnorderedMap<ProjectId, Project>,
+    pub last_project_id: usize,
 }
 
 #[near_bindgen]
@@ -65,7 +67,8 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            projects: Vector::new(StorageKey::Projects),
+            projects: UnorderedMap::new(StorageKey::Projects),
+            last_project_id: 0,
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -456,6 +459,19 @@ impl Contract {
         moderators.contains(&Member::Account(account_id))
     }
 
+    fn has_community_admin_in(
+        &self,
+        account_id: AccountId,
+        community_handles: HashSet<CommunityHandle>,
+    ) -> bool {
+        community_handles
+            .iter()
+            .map(|handle| self.get_community(handle.to_owned()))
+            .filter_map(identity)
+            .map(|community| community.admins.contains(&account_id))
+            .any(identity)
+    }
+
     pub fn create_project(
         &mut self,
         author_community_handle: CommunityHandle,
@@ -465,30 +481,28 @@ impl Contract {
             .get_editable_community(&author_community_handle)
             .expect("Only community admins and hub moderators can create projects");
 
-        let new_project = Project {
+        let mut new_project = Project {
             metadata: ProjectMetadata {
-                id: self.projects.len(),
+                id: self.last_project_id + 1,
                 name: project_inputs.name,
                 description: project_inputs.description,
                 tag: project_inputs.tag,
-                owner_community_handles: vec![author_community_handle],
+                owner_community_handles: HashSet::new(),
             },
 
             view_configs: String::from("{}"),
         };
 
+        new_project.metadata.owner_community_handles.insert(author_community_handle);
         new_project.validate();
-        self.projects.push(&Some(new_project));
         author_community.project_ids.insert(new_project.metadata.id);
+        self.projects.insert(&new_project.metadata.id, &new_project);
         self.communities.insert(&author_community.handle, &author_community);
+        self.last_project_id = new_project.metadata.id
     }
 
     pub fn get_project(&self, id: ProjectId) -> Option<Project> {
-        if let Some(project) = self.projects.get(id) {
-            return project;
-        } else {
-            return Option::None;
-        };
+        self.projects.get(&id)
     }
 
     pub fn update_project(&mut self, project: Project) {
@@ -498,21 +512,16 @@ impl Contract {
             panic!(format!("Project with id {id} does not exist", id = project.metadata.id));
         };
 
-        let is_called_by_admin = target_project
-            .metadata
-            .owner_community_handles
-            .iter()
-            .map(|handle| self.get_community(handle.to_owned()))
-            .filter_map(identity)
-            .map(|owner_community| owner_community.admins.contains(&env::predecessor_account_id()))
-            .any(identity);
-
-        if !is_called_by_admin && !self.has_moderator(env::predecessor_account_id()) {
+        if !self.has_community_admin_in(
+            env::predecessor_account_id(),
+            target_project.metadata.owner_community_handles,
+        ) && !self.has_moderator(env::predecessor_account_id())
+        {
             panic!("Only community admins and hub moderators can configure projects");
         }
 
         project.validate();
-        self.projects.replace(target_project.metadata.id, &Some(project));
+        self.projects.insert(&target_project.metadata.id, &target_project);
     }
 
     pub fn delete_project(&mut self, id: ProjectId) {
@@ -527,16 +536,18 @@ impl Contract {
         }
 
         let mut owner_community = self
-            .get_editable_community(&project.metadata.owner_community_handles[0])
+            .get_editable_community(
+                &project.metadata.owner_community_handles.into_iter().next().unwrap(),
+            )
             .expect("Only community admins and hub moderators can delete projects");
 
-        self.projects.replace(id, &Option::None);
+        self.projects.remove(&id);
         owner_community.project_ids.remove(&id);
         self.communities.insert(&owner_community.handle, &owner_community);
     }
 
     pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
-        self.projects.iter().filter_map(identity).map(|project| project.metadata).collect()
+        self.projects.values().map(|project| project.metadata).collect()
     }
 
     pub fn get_community_projects_metadata(&self, community_handle: CommunityHandle) {
