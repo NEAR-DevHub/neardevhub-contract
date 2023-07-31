@@ -462,7 +462,7 @@ impl Contract {
     fn has_community_admin_in(
         &self,
         account_id: AccountId,
-        community_handles: HashSet<CommunityHandle>,
+        community_handles: &HashSet<CommunityHandle>,
     ) -> bool {
         community_handles
             .iter()
@@ -509,12 +509,12 @@ impl Contract {
         let target_project = if let Some(target_project) = self.get_project(project.metadata.id) {
             target_project
         } else {
-            panic!(format!("Project with id {id} does not exist", id = project.metadata.id));
+            panic!("Project with id {id} does not exist", id = project.metadata.id);
         };
 
         if !self.has_community_admin_in(
             env::predecessor_account_id(),
-            target_project.metadata.owner_community_handles,
+            &target_project.metadata.owner_community_handles,
         ) && !self.has_moderator(env::predecessor_account_id())
         {
             panic!("Only community admins and hub moderators can configure projects");
@@ -528,7 +528,7 @@ impl Contract {
         let project = if let Some(project) = self.get_project(id) {
             project
         } else {
-            panic!(format!("Project with id {id} does not exist"));
+            panic!("Project with id {} does not exist", id);
         };
 
         if &project.metadata.owner_community_handles.len() > &1 {
@@ -546,18 +546,20 @@ impl Contract {
         self.communities.insert(&owner_community.handle, &owner_community);
     }
 
-    pub fn get_community_projects_metadata(&self, community_handle: CommunityHandle) {
+    pub fn get_community_projects_metadata(
+        &self,
+        community_handle: CommunityHandle,
+    ) -> Vec<ProjectMetadata> {
         self.get_community(community_handle)
-            .and_then(|community| {
-                Some(
-                    community
-                        .project_ids
-                        .iter()
-                        .filter_map(|id| self.get_project(*id))
-                        .map(|project| project.metadata),
-                )
+            .map(|community| {
+                community
+                    .project_ids
+                    .iter()
+                    .filter_map(|id| self.get_project(*id))
+                    .map(|project| project.metadata)
+                    .collect()
             })
-            .expect("Community does not exist");
+            .unwrap_or_default()
     }
 }
 
