@@ -32,6 +32,12 @@ pub struct Project {
     pub view_configs: String,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ProjectPermissions {
+    pub can_configure: bool,
+}
+
 impl Project {
     pub fn validate(&self) {
         if self.metadata.name.len() < 3 || self.metadata.name.len() > 30 {

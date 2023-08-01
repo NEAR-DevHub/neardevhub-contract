@@ -22,6 +22,7 @@ use project::Project;
 use project::ProjectId;
 use project::ProjectInputs;
 use project::ProjectMetadata;
+use project::ProjectPermissions;
 
 use std::collections::HashSet;
 use std::convert::identity;
@@ -513,6 +514,17 @@ impl Contract {
 
     pub fn get_project(&self, id: ProjectId) -> Option<Project> {
         self.projects.get(&id)
+    }
+
+    pub fn check_project_permissions(&self, id: ProjectId) -> ProjectPermissions {
+        let project = self.get_project(id).expect("Project does not exist");
+
+        ProjectPermissions {
+            can_configure: !self.has_community_admin_in(
+                env::predecessor_account_id(),
+                &project.metadata.owner_community_handles,
+            ) && !self.has_moderator(env::predecessor_account_id()),
+        }
     }
 
     pub fn update_project(&mut self, project: Project) {
