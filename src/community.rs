@@ -46,7 +46,7 @@ pub struct FeaturedCommunity {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct CommunityCard {
+pub struct CommunityMetadata {
     pub handle: CommunityHandle,
     pub name: String,
     pub description: String,

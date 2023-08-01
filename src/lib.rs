@@ -13,7 +13,7 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard, CommunityHandle, FeaturedCommunity, WikiPage};
+use community::{Community, CommunityHandle, CommunityMetadata, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
@@ -411,11 +411,11 @@ impl Contract {
         self.communities.remove(&handle);
     }
 
-    pub fn get_all_communities(&self) -> Vec<CommunityCard> {
+    pub fn get_all_communities(&self) -> Vec<CommunityMetadata> {
         near_sdk::log!("get_all_communities");
         self.communities
             .iter()
-            .map(|(handle, community)| CommunityCard {
+            .map(|(handle, community)| CommunityMetadata {
                 handle,
                 name: community.name,
                 description: community.description,
@@ -427,6 +427,16 @@ impl Contract {
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
         self.communities.get(&handle)
+    }
+
+    pub fn get_community_metadata(&self, handle: CommunityHandle) -> Option<CommunityMetadata> {
+        self.communities.get(&handle).map(|community| CommunityMetadata {
+            handle: community.handle,
+            name: community.name,
+            description: community.description,
+            logo_url: community.logo_url,
+            banner_url: community.banner_url,
+        })
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
