@@ -50,15 +50,15 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub projects: UnorderedMap<ProjectId, Project>,
     pub last_project_id: usize,
+    pub projects: UnorderedMap<ProjectId, Project>,
 }
 
 #[near_bindgen]
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V6);
+        migrations::state_version_write(&migrations::StateVersion::V7);
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
@@ -68,8 +68,8 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            projects: UnorderedMap::new(StorageKey::Projects),
             last_project_id: 0,
+            projects: UnorderedMap::new(StorageKey::Projects),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract

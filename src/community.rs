@@ -17,6 +17,15 @@ pub struct WikiPage {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommunityFeatureFlags {
+    github_integration: bool,
+    projects: bool,
+    sponsorship: bool,
+    wiki: bool,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -32,10 +41,10 @@ pub struct Community {
     pub website_url: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
-    pub sponsorship: Option<bool>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub project_ids: HashSet<ProjectId>,
+    pub feature_flags: CommunityFeatureFlags,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

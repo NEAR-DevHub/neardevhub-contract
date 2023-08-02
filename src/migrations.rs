@@ -2,6 +2,7 @@
 //! Should be invocable only by the owner and in most cases should be called only once though the
 //! latter is not asserted.
 
+use crate::community::CommunityFeatureFlags;
 use crate::*;
 use near_sdk::{env, near_bindgen, Promise};
 use std::cmp::min;
@@ -212,7 +213,7 @@ impl Contract {
             featured_communities,
         } = env::state_read().unwrap();
 
-        let migrated_communties: Vec<(String, CommunityV2)> = communities
+        let migrated_communities: Vec<(String, CommunityV2)> = communities
             .iter()
             .map(|(community_handle, community)| {
                 (
@@ -242,7 +243,8 @@ impl Contract {
         communities.clear();
 
         let mut communities_new = UnorderedMap::new(StorageKey::Communities);
-        for (k, v) in migrated_communties {
+
+        for (k, v) in migrated_communities {
             communities_new.insert(&k, &v);
         }
 
@@ -292,7 +294,7 @@ pub struct ContractV6 {
     pub featured_communities: Vec<FeaturedCommunity>,
 }
 
-// From ContractV5 to ContractV6
+// From ContractV6 to ContractV7
 #[near_bindgen]
 impl Contract {
     fn unsafe_add_projects() {
@@ -307,12 +309,12 @@ impl Contract {
             featured_communities,
         } = env::state_read().unwrap();
 
-        let migrated_communties: Vec<(String, Community)> = communities
+        let migrated_communities: Vec<(String, CommunityV3)> = communities
             .iter()
             .map(|(community_handle, community)| {
                 (
                     community_handle,
-                    Community {
+                    CommunityV3 {
                         handle: community.handle,
                         admins: community.admins,
                         name: community.name,
@@ -326,18 +328,26 @@ impl Contract {
                         twitter_handle: community.twitter_handle,
                         website_url: community.website_url,
                         github: community.github,
-                        sponsorship: community.sponsorship,
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
                         project_ids: Default::default(),
+
+                        feature_flags: CommunityFeatureFlags {
+                            github_integration: true,
+                            projects: true,
+                            sponsorship: true,
+                            wiki: true,
+                        },
                     },
                 )
             })
             .collect();
+
         communities.clear();
 
         let mut communities_new = UnorderedMap::new(StorageKey::Communities);
-        for (k, v) in migrated_communties {
+
+        for (k, v) in migrated_communities {
             communities_new.insert(&k, &v);
         }
 
@@ -350,13 +360,46 @@ impl Contract {
             authors,
             communities: communities_new,
             featured_communities,
-            projects: UnorderedMap::new(StorageKey::Projects),
             last_project_id: 0,
+            projects: UnorderedMap::new(StorageKey::Projects),
         });
     }
 }
 
-type ContractV7 = Contract;
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
+pub struct CommunityV3 {
+    pub handle: CommunityHandle,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub bio_markdown: Option<String>,
+    pub logo_url: String,
+    pub banner_url: String,
+    pub tag: String,
+    pub github_handle: Option<String>,
+    pub telegram_handle: Vec<String>,
+    pub twitter_handle: Option<String>,
+    pub website_url: Option<String>,
+    /// JSON string of github board configuration
+    pub github: Option<String>,
+    pub wiki1: Option<WikiPage>,
+    pub wiki2: Option<WikiPage>,
+    pub project_ids: HashSet<ProjectId>,
+    pub feature_flags: CommunityFeatureFlags,
+}
+
+pub struct ContractV7 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub communities: UnorderedMap<String, CommunityV3>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+    pub last_project_id: usize,
+    pub projects: UnorderedMap<ProjectId, Project>,
+}
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub(crate) enum StateVersion {
