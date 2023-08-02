@@ -13,6 +13,7 @@ pub enum SponsorshipToken {
     Near,
     NEP141 { address: AccountId },
     USD,
+    USDT
 }
 
 impl FromStr for SponsorshipToken {
