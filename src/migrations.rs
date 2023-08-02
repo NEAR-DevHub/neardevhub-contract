@@ -388,6 +388,7 @@ pub struct CommunityV3 {
     pub feature_flags: CommunityFeatureFlags,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct ContractV7 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,

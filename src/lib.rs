@@ -341,6 +341,7 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
+    #[allow(unused_mut)]
     pub fn add_community(&mut self, handle: CommunityHandle, mut community: Community) {
         if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
@@ -361,6 +362,7 @@ impl Contract {
         };
     }
 
+    #[allow(unused_mut)]
     pub fn edit_community(&mut self, handle: CommunityHandle, mut community: Community) {
         let _ = self.get_editable_community(&handle);
         community.validate();

@@ -18,10 +18,10 @@ pub struct WikiPage {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityFeatureFlags {
-    github_integration: bool,
-    projects: bool,
-    sponsorship: bool,
-    wiki: bool,
+    pub github_integration: bool,
+    pub projects: bool,
+    pub sponsorship: bool,
+    pub wiki: bool,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
