@@ -518,7 +518,7 @@ impl Contract {
         self.projects.get(&id)
     }
 
-    pub fn check_project_permissions(&self, id: ProjectId) -> ProjectPermissions {
+    pub fn get_project_permissions(&self, id: ProjectId) -> ProjectPermissions {
         let project = self.get_project(id).expect("Project does not exist");
 
         ProjectPermissions {
