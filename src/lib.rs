@@ -570,6 +570,10 @@ impl Contract {
         self.communities.insert(&owner_community.handle, &owner_community);
     }
 
+    pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
+        self.projects.iter().map(|(_, project)| project.metadata).collect()
+    }
+
     pub fn get_community_projects_metadata(
         &self,
         community_handle: CommunityHandle,
