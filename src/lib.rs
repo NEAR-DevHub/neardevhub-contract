@@ -529,11 +529,11 @@ impl Contract {
         }
     }
 
-    pub fn update_project(&mut self, project: Project) {
-        let target_project = if let Some(target_project) = self.get_project(project.metadata.id) {
+    pub fn update_project_metadata(&mut self, metadata: ProjectMetadata) {
+        let mut target_project = if let Some(target_project) = self.get_project(metadata.id) {
             target_project
         } else {
-            panic!("Project with id {id} does not exist", id = project.metadata.id);
+            panic!("Project with id {id} does not exist", id = metadata.id);
         };
 
         if !self.has_community_admin_in(
@@ -544,7 +544,8 @@ impl Contract {
             panic!("Only community admins and hub moderators can configure projects");
         }
 
-        project.validate();
+        target_project.metadata = metadata;
+        target_project.validate();
         self.projects.insert(&target_project.metadata.id, &target_project);
     }
 
