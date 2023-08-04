@@ -10,15 +10,23 @@ crate-type = ["cdylib"]
 [dependencies]
 near-sdk = "3.1.0"
 near-contract-standards = "3.2.0"
-tests = { path = "tests" }
+#tests = { path = "tests" }
+
+
+
 
 [dev-dependencies]
 regex = "1"
+workspaces = { version = "0.7.0", features = ["unstable"]  }
+tokio = { version = "1.10.0", features = ["full"] }
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
+near-units = "0.2.0"
+anyhow = "1.0"
 
-[workspace]
-members = [
-    "tests"
-]
+#[workspace]
+#members = [
+#    "tests"
+#]
 
 [profile.release]
 codegen-units = 1
