@@ -343,6 +343,11 @@ impl Contract {
         if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
         }
+        let existing_tags: Vec<String> = self.communities.values().map(|c| c.tag).collect();
+        if existing_tags.contains(&community.tag) {
+            panic!("Community tag already in-use");
+        }
+
         community.validate();
         community.set_default_admin();
         self.communities.insert(&handle, &community);
