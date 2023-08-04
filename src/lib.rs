@@ -214,6 +214,16 @@ impl Contract {
         res
     }
 
+    pub fn is_allowed_to_moderate(&self) -> bool {
+      let moderators = self.access_control.members_list.get_moderators();
+      if !env::predecessor_account_id().eq(&env::current_account_id())
+          && !moderators.contains(&Member::Account(env::current_account_id().clone()))
+      {
+          return false;
+      }
+      true
+    }
+
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
         near_sdk::log!("is_allowed_to_edit");
         let post: Post = self
