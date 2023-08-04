@@ -46,7 +46,13 @@ impl Contract {
     }
 
     pub fn add_member(&mut self, member: Member, metadata: VersionedMemberMetadata) {
-        near_sdk::assert_self();
+        let moderators = self.access_control.members_list.get_moderators();
+        if !env::predecessor_account_id().eq(&env::current_account_id())
+            && !moderators.contains(&Member::Account(env::current_account_id().clone()))
+        {
+            panic!("Only moderators can add members");
+        }
+
         self.access_control.members_list.add_member(member, metadata)
     }
 
