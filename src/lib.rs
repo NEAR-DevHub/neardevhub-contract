@@ -16,6 +16,7 @@ use crate::access_control::AccessControl;
 use community::{Community, CommunityHandle, CommunityMetadata, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
+use near_sdk::BlockHeight;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use project::Project;
@@ -29,6 +30,7 @@ use project::ProjectViewInputs;
 
 use std::collections::HashSet;
 use std::convert::identity;
+use std::hash;
 
 near_sdk::setup_alloc!();
 
@@ -596,11 +598,13 @@ impl Contract {
             .unwrap_or_default()
     }
 
-    pub fn create_project_view(ProjectViewInputs { metadata, config }: ProjectViewInputs) {
-        let mut target_project = if let Some(target_project) = self.get_project(metadata.id) {
+    pub fn create_project_view(
+        ProjectViewInputs { project_id, metadata, config }: ProjectViewInputs,
+    ) {
+        let mut target_project = if let Some(target_project) = self.get_project(project_id) {
             target_project
         } else {
-            panic!("Project with id {id} does not exist", id = metadata.id);
+            panic!("Project with id {id} does not exist", id = project_id);
         };
 
         if !self.has_community_admin_in(
@@ -608,11 +612,16 @@ impl Contract {
             &target_project.metadata.owner_community_handles,
         ) && !self.has_moderator(env::predecessor_account_id())
         {
-            panic!("Only community admins and hub moderators can configure projects");
+            panic!("Only community admins and hub moderators can create project views");
         }
 
-        target_project.metadata = metadata;
-        target_project.validate();
+        let new_project_view = ProjectView {
+            metadata: ProjectMetadata { id: String.from(env::block_index()), ..metadata },
+            config,
+        };
+
+        self.project_views.insert(metadata.id, new_project_view);
+        target_project.view_ids.insert(metadata.id);
         self.projects.insert(&target_project.metadata.id, &target_project);
     }
 

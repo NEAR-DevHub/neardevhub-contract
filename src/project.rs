@@ -34,9 +34,17 @@ pub struct Project {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct ProjectViewInputsMetadata {
+    pub kind: String,
+    pub title: String,
+    pub description: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct ProjectViewInputs {
     pub project_id: ProjectId,
-    pub metadata: ProjectViewMetadata,
+    pub metadata: ProjectViewInputsMetadata,
     pub config: ProjectViewConfig,
 }
 
