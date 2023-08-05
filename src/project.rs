@@ -29,7 +29,36 @@ pub struct ProjectMetadata {
 pub struct Project {
     pub metadata: ProjectMetadata,
     /// Configs for project views indexed by their ids and serialized as JSON string
-    pub view_configs: String,
+    pub view_ids: Vec<String>,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ProjectViewInputs {
+    pub project_id: ProjectId,
+    pub metadata: ProjectViewMetadata,
+    pub config: ProjectViewConfig,
+}
+
+pub type ProjectViewId = String;
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ProjectViewMetadata {
+    pub id: ProjectViewId,
+    pub kind: String,
+    pub title: String,
+    pub description: String,
+}
+
+/// Project view configuration serialized as JSON string
+pub type ProjectViewConfig = String;
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ProjectView {
+    pub metadata: ProjectViewMetadata,
+    pub config: ProjectViewConfig,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

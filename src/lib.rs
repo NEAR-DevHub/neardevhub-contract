@@ -23,6 +23,9 @@ use project::ProjectId;
 use project::ProjectInputs;
 use project::ProjectMetadata;
 use project::ProjectPermissions;
+use project::ProjectView;
+use project::ProjectViewId;
+use project::ProjectViewInputs;
 
 use std::collections::HashSet;
 use std::convert::identity;
@@ -50,8 +53,9 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub last_project_id: usize,
+    pub next_project_id: usize,
     pub projects: UnorderedMap<ProjectId, Project>,
+    pub project_views: UnorderedMap<ProjectViewId, ProjectView>,
 }
 
 #[near_bindgen]
@@ -68,8 +72,9 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            last_project_id: 0,
+            next_project_id: 0,
             projects: UnorderedMap::new(StorageKey::Projects),
+            project_views: UnorderedMap::new(StorageKey::ProjectViews),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -496,14 +501,14 @@ impl Contract {
 
         let mut new_project = Project {
             metadata: ProjectMetadata {
-                id: self.last_project_id + 1,
+                id: self.next_project_id,
                 name: project_inputs.name,
                 description: project_inputs.description,
                 tag: project_inputs.tag,
                 owner_community_handles: HashSet::new(),
             },
 
-            view_configs: String::from("{}"),
+            view_ids: String::from("{}"),
         };
 
         new_project.metadata.owner_community_handles.insert(author_community_handle);
@@ -511,7 +516,7 @@ impl Contract {
         author_community.project_ids.insert(new_project.metadata.id);
         self.projects.insert(&new_project.metadata.id, &new_project);
         self.communities.insert(&author_community.handle, &author_community);
-        self.last_project_id = new_project.metadata.id
+        self.next_project_id = new_project.metadata.id + 1
     }
 
     pub fn get_project(&self, id: ProjectId) -> Option<Project> {
@@ -589,6 +594,48 @@ impl Contract {
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    pub fn create_project_view(ProjectViewInputs { metadata, config }: ProjectViewInputs) {
+        let mut target_project = if let Some(target_project) = self.get_project(metadata.id) {
+            target_project
+        } else {
+            panic!("Project with id {id} does not exist", id = metadata.id);
+        };
+
+        if !self.has_community_admin_in(
+            env::predecessor_account_id(),
+            &target_project.metadata.owner_community_handles,
+        ) && !self.has_moderator(env::predecessor_account_id())
+        {
+            panic!("Only community admins and hub moderators can configure projects");
+        }
+
+        target_project.metadata = metadata;
+        target_project.validate();
+        self.projects.insert(&target_project.metadata.id, &target_project);
+    }
+
+    pub fn delete_project_view(&mut self, id: ProjectId) {
+        let project = if let Some(project) = self.get_project(id) {
+            project
+        } else {
+            panic!("Project with id {} does not exist", id);
+        };
+
+        if &project.metadata.owner_community_handles.len() > &1 {
+            panic!("Only projects owned by a single community can be deleted");
+        }
+
+        let mut owner_community = self
+            .get_editable_community(
+                &project.metadata.owner_community_handles.into_iter().next().unwrap(),
+            )
+            .expect("Only community admins and hub moderators can delete projects");
+
+        self.projects.remove(&id);
+        owner_community.project_ids.remove(&id);
+        self.communities.insert(&owner_community.handle, &owner_community);
     }
 }
 
