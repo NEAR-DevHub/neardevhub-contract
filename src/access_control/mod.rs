@@ -32,12 +32,16 @@ impl Contract {
     }
 
     pub fn set_restricted_rules(&mut self, rules: RulesList) {
-        near_sdk::assert_self();
+        if !self.is_allowed_to_moderate() {
+            panic!("Only the admin and moderators can set restricted rules");
+        }
         self.access_control.rules_list.set_restricted(rules)
     }
 
     pub fn unset_restricted_rules(&mut self, rules: Vec<Rule>) {
-        near_sdk::assert_self();
+        if !self.is_allowed_to_moderate() {
+            panic!("Only the admin and moderators can unset restricted rules");
+        }
         self.access_control.rules_list.unset_restricted(rules)
     }
 
@@ -46,17 +50,23 @@ impl Contract {
     }
 
     pub fn add_member(&mut self, member: Member, metadata: VersionedMemberMetadata) {
-        near_sdk::assert_self();
+        if !self.is_allowed_to_moderate() {
+            panic!("Only the admin and moderators can add members");
+        }
         self.access_control.members_list.add_member(member, metadata)
     }
 
     pub fn remove_member(&mut self, member: &Member) {
-        near_sdk::assert_self();
+        if !self.is_allowed_to_moderate() {
+            panic!("Only the admin and moderators can remove members");
+        }
         self.access_control.members_list.remove_member(member)
     }
 
     pub fn edit_member(&mut self, member: Member, metadata: VersionedMemberMetadata) {
-        near_sdk::assert_self();
+        if !self.is_allowed_to_moderate() {
+            panic!("Only the admin and moderators can edit members");
+        }
         self.access_control.members_list.edit_member(member, metadata)
     }
 }
