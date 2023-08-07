@@ -16,7 +16,6 @@ use crate::access_control::AccessControl;
 use community::{Community, CommunityHandle, CommunityMetadata, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::BlockHeight;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 use project::Project;
@@ -25,12 +24,14 @@ use project::ProjectInputs;
 use project::ProjectMetadata;
 use project::ProjectPermissions;
 use project::ProjectView;
+use project::ProjectViewConfig;
 use project::ProjectViewId;
 use project::ProjectViewInputs;
+use project::ProjectViewMetadata;
+use sha3::{Digest, Sha3_256};
 
 use std::collections::HashSet;
 use std::convert::identity;
-use std::hash;
 
 near_sdk::setup_alloc!();
 
@@ -516,7 +517,7 @@ impl Contract {
                 owner_community_handles: HashSet::new(),
             },
 
-            view_ids: String::from("{}"),
+            view_ids: HashSet::new(),
         };
 
         new_project.metadata.owner_community_handles.insert(author_community_handle);
@@ -604,53 +605,107 @@ impl Contract {
             .unwrap_or_default()
     }
 
-    pub fn create_project_view(
-        ProjectViewInputs { project_id, metadata, config }: ProjectViewInputs,
-    ) {
-        let mut target_project = if let Some(target_project) = self.get_project(project_id) {
-            target_project
+    pub fn create_project_view(&mut self, project_id: ProjectId, view: ProjectViewInputs) {
+        let mut project = if let Some(project) = self.get_project(project_id) {
+            project
         } else {
-            panic!("Project with id {id} does not exist", id = project_id);
+            panic!("Project with id {} does not exist", project_id);
         };
 
         if !self.has_community_admin_in(
             env::predecessor_account_id(),
-            &target_project.metadata.owner_community_handles,
+            &project.metadata.owner_community_handles,
         ) && !self.has_moderator(env::predecessor_account_id())
         {
             panic!("Only community admins and hub moderators can create project views");
         }
 
+        let mut hasher = Sha3_256::new();
+
+        hasher.update(format!(
+            "{}-{}-{}",
+            &env::block_index().to_string(),
+            &env::random_seed().iter().map(|number| number.to_string()).collect::<String>(),
+            &env::predecessor_account_id(),
+        ));
+
         let new_project_view = ProjectView {
-            metadata: ProjectMetadata { id: String.from(env::block_index()), ..metadata },
-            config,
+            config: view.config,
+
+            metadata: ProjectViewMetadata {
+                id: hasher.finalize().to_vec().iter().map(|number| number.to_string()).collect(),
+                kind: view.metadata.kind,
+                title: view.metadata.title,
+                description: view.metadata.description,
+            },
         };
 
-        self.project_views.insert(metadata.id, new_project_view);
-        target_project.view_ids.insert(metadata.id);
-        self.projects.insert(&target_project.metadata.id, &target_project);
+        project.view_ids.insert(new_project_view.metadata.id.clone());
+        self.project_views.insert(&new_project_view.metadata.id, &new_project_view);
+        self.projects.insert(&project.metadata.id, &project);
     }
 
-    pub fn delete_project_view(&mut self, id: ProjectId) {
-        let project = if let Some(project) = self.get_project(id) {
+    pub fn get_project_view(&self, id: ProjectViewId) -> Option<ProjectView> {
+        self.project_views.get(&id)
+    }
+
+    pub fn get_project_view_config(&self, id: ProjectViewId) -> Option<ProjectViewConfig> {
+        self.project_views.get(&id).map(|view| view.config)
+    }
+
+    pub fn update_project_view(&mut self, project_id: ProjectId, view: ProjectView) {
+        let project = if let Some(project) = self.get_project(project_id) {
             project
         } else {
-            panic!("Project with id {} does not exist", id);
+            panic!("Project with id {} does not exist", project_id);
         };
 
-        if &project.metadata.owner_community_handles.len() > &1 {
-            panic!("Only projects owned by a single community can be deleted");
+        if !self.has_community_admin_in(
+            env::predecessor_account_id(),
+            &project.metadata.owner_community_handles,
+        ) && !self.has_moderator(env::predecessor_account_id())
+        {
+            panic!("Only community admins and hub moderators can update project views");
         }
 
-        let mut owner_community = self
-            .get_editable_community(
-                &project.metadata.owner_community_handles.into_iter().next().unwrap(),
-            )
-            .expect("Only community admins and hub moderators can delete projects");
+        let mut project_view = if let Some(project_view) =
+            self.get_project_view(view.metadata.id.clone())
+        {
+            if project.view_ids.contains(&project_view.metadata.id) {
+                project_view
+            } else {
+                panic!(
+                    "Project view with id {view_id} does not correspond for the project with id {project_id}",
+                    view_id = view.metadata.id,
+                );
+            }
+        } else {
+            panic!("Project view with id {} does not exist", view.metadata.id);
+        };
 
-        self.projects.remove(&id);
-        owner_community.project_ids.remove(&id);
-        self.communities.insert(&owner_community.handle, &owner_community);
+        project_view.config = view.config.clone();
+        project_view.metadata = view.metadata.clone();
+        self.project_views.insert(&view.metadata.id, &project_view);
+    }
+
+    pub fn delete_project_view(&mut self, project_id: ProjectId, view_id: ProjectViewId) {
+        let mut project = if let Some(project) = self.get_project(project_id) {
+            project
+        } else {
+            panic!("Project with id {} does not exist", project_id);
+        };
+
+        if !self.has_community_admin_in(
+            env::predecessor_account_id(),
+            &project.metadata.owner_community_handles,
+        ) && !self.has_moderator(env::predecessor_account_id())
+        {
+            panic!("Only community admins and hub moderators can delete project views");
+        }
+
+        self.project_views.remove(&view_id);
+        project.view_ids.remove(&view_id);
+        self.projects.insert(&project.metadata.id, &project);
     }
 }
 

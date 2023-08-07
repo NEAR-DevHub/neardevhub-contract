@@ -155,6 +155,7 @@ dependencies = [
  "near-contract-standards",
  "near-sdk",
  "regex",
+ "sha3",
 ]
 
 [[package]]
