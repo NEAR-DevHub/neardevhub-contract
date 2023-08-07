@@ -653,6 +653,21 @@ impl Contract {
         self.project_views.get(&id).map(|view| view.config)
     }
 
+    pub fn get_project_views_metadata(&self, project_id: ProjectId) -> Vec<ProjectViewMetadata> {
+        let project = if let Some(project) = self.get_project(project_id) {
+            project
+        } else {
+            panic!("Project with id {} does not exist", project_id);
+        };
+
+        project
+            .view_ids
+            .iter()
+            .filter_map(|id| self.get_project_view(id.to_owned()))
+            .map(|view| view.metadata)
+            .collect()
+    }
+
     pub fn update_project_view(&mut self, project_id: ProjectId, view: ProjectView) {
         let project = if let Some(project) = self.get_project(project_id) {
             project
