@@ -360,7 +360,7 @@ impl Contract {
             authors,
             communities: communities_new,
             featured_communities,
-            next_project_id: 0,
+            last_project_id: 0,
             projects: UnorderedMap::new(StorageKey::Projects),
             project_views: UnorderedMap::new(StorageKey::Projects),
         });
@@ -399,7 +399,7 @@ pub struct ContractV7 {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<String, CommunityV3>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub next_project_id: usize,
+    pub last_project_id: usize,
     pub projects: UnorderedMap<ProjectId, Project>,
     pub project_views: UnorderedMap<ProjectViewId, ProjectView>,
 }

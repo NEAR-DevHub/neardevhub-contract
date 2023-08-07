@@ -56,7 +56,7 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub next_project_id: usize,
+    pub last_project_id: usize,
     pub projects: UnorderedMap<ProjectId, Project>,
     pub project_views: UnorderedMap<ProjectViewId, ProjectView>,
 }
@@ -75,7 +75,7 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            next_project_id: 0,
+            last_project_id: 0,
             projects: UnorderedMap::new(StorageKey::Projects),
             project_views: UnorderedMap::new(StorageKey::ProjectViews),
         };
@@ -510,7 +510,7 @@ impl Contract {
 
         let mut new_project = Project {
             metadata: ProjectMetadata {
-                id: self.next_project_id,
+                id: self.last_project_id + 1,
                 name: metadata.name,
                 description: metadata.description,
                 tag: metadata.tag,
@@ -525,21 +525,25 @@ impl Contract {
         author_community.project_ids.insert(new_project.metadata.id);
         self.projects.insert(&new_project.metadata.id, &new_project);
         self.communities.insert(&author_community.handle, &author_community);
-        self.next_project_id = new_project.metadata.id + 1
+        self.last_project_id = new_project.metadata.id
     }
 
     pub fn get_project(&self, id: ProjectId) -> Option<Project> {
         self.projects.get(&id)
     }
 
-    pub fn get_project_permissions(&self, id: ProjectId) -> ProjectPermissions {
-        let project = self.get_project(id).expect("Project does not exist");
+    pub fn get_account_project_permissions(
+        &self,
+        account_id: AccountId,
+        project_id: ProjectId,
+    ) -> ProjectPermissions {
+        let project = self.get_project(project_id).expect("Project does not exist");
 
         ProjectPermissions {
-            can_configure: !self.has_community_admin_in(
-                env::predecessor_account_id(),
+            can_configure: self.has_community_admin_in(
+                account_id.clone(),
                 &project.metadata.owner_community_handles,
-            ) && !self.has_moderator(env::predecessor_account_id()),
+            ) || self.has_moderator(account_id),
         }
     }
 
