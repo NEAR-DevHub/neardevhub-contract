@@ -28,7 +28,6 @@ use project::ProjectViewConfig;
 use project::ProjectViewId;
 use project::ProjectViewInputs;
 use project::ProjectViewMetadata;
-use sha3::{Digest, Sha3_256};
 
 use std::collections::HashSet;
 use std::convert::identity;
@@ -623,20 +622,11 @@ impl Contract {
             panic!("Only community admins and hub moderators can create project views");
         }
 
-        let mut hasher = Sha3_256::new();
-
-        hasher.update(format!(
-            "{}-{}-{}",
-            &env::block_index().to_string(),
-            &env::random_seed().iter().map(|number| number.to_string()).collect::<String>(),
-            &env::predecessor_account_id(),
-        ));
-
         let new_project_view = ProjectView {
             config: view.config,
 
             metadata: ProjectViewMetadata {
-                id: hasher.finalize().to_vec().iter().map(|number| number.to_string()).collect(),
+                id: (env::block_timestamp() + self.project_views.len() + 1).to_string(),
                 project_id: project.metadata.id,
                 kind: view.metadata.kind,
                 title: view.metadata.title,

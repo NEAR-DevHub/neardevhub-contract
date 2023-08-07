@@ -10,7 +10,6 @@ crate-type = ["cdylib"]
 [dependencies]
 near-sdk = "3.1.0"
 near-contract-standards = "3.2.0"
-sha3 = "0.10.8"
 
 [dev-dependencies]
 regex = "1"
