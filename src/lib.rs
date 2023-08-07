@@ -502,7 +502,7 @@ impl Contract {
     pub fn create_project(
         &mut self,
         author_community_handle: CommunityHandle,
-        project_inputs: ProjectInputs,
+        metadata: ProjectInputs,
     ) {
         let mut author_community = self
             .get_editable_community(&author_community_handle)
@@ -511,9 +511,9 @@ impl Contract {
         let mut new_project = Project {
             metadata: ProjectMetadata {
                 id: self.next_project_id,
-                name: project_inputs.name,
-                description: project_inputs.description,
-                tag: project_inputs.tag,
+                name: metadata.name,
+                description: metadata.description,
+                tag: metadata.tag,
                 owner_community_handles: HashSet::new(),
             },
 
