@@ -82,8 +82,8 @@ impl Project {
         if self.metadata.description.len() < 6 || self.metadata.description.len() > 60 {
             panic!("Project description must contain from 6 to 60 characters");
         }
-        if self.metadata.tag.len() < 3 || self.metadata.tag.len() > 20 {
-            panic!("Project tag must contain from 3 to 20 characters");
+        if self.metadata.tag.len() < 3 || self.metadata.tag.len() > 30 {
+            panic!("Project tag must contain from 3 to 30 characters");
         }
         if self.metadata.owner_community_handles.len() < 1 {
             panic!("Project must have at least one owner community");
