@@ -13,6 +13,8 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
+use community::CommunityFeatureFlags;
+use community::CommunityInputs;
 use community::{Community, CommunityHandle, CommunityMetadata, FeaturedCommunity, WikiPage};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
@@ -355,13 +357,40 @@ impl Contract {
     }
 
     #[allow(unused_mut)]
-    pub fn add_community(&mut self, handle: CommunityHandle, mut community: Community) {
+    pub fn add_community(&mut self, handle: CommunityHandle, mut community: CommunityInputs) {
         if self.communities.get(&handle).is_some() {
             panic!("Community already exists");
         }
-        community.validate();
-        community.set_default_admin();
-        self.communities.insert(&handle, &community);
+
+        let mut new_community = Community {
+            handle: handle.clone(),
+            admins: community.admins,
+            name: community.name,
+            description: community.description,
+            bio_markdown: community.bio_markdown,
+            logo_url: community.logo_url,
+            banner_url: community.banner_url,
+            tag: community.tag,
+            github_handle: community.github_handle,
+            telegram_handle: community.telegram_handle,
+            twitter_handle: community.twitter_handle,
+            website_url: community.website_url,
+            github: community.github,
+            wiki1: community.wiki1,
+            wiki2: community.wiki2,
+            project_ids: HashSet::new(),
+
+            feature_flags: CommunityFeatureFlags {
+                github_integration: true,
+                projects: true,
+                sponsorship: true,
+                wiki: true,
+            },
+        };
+
+        new_community.validate();
+        new_community.set_default_admin();
+        self.communities.insert(&new_community.handle, &new_community);
     }
 
     fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
@@ -626,7 +655,7 @@ impl Contract {
             config: view.config,
 
             metadata: ProjectViewMetadata {
-                id: (env::block_timestamp() + self.project_views.len() + 1).to_string(),
+                id: format!("{:X}", env::block_timestamp() + self.project_views.len()),
                 project_id: project.metadata.id,
                 kind: view.metadata.kind,
                 title: view.metadata.title,

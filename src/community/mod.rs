@@ -26,6 +26,27 @@ pub struct CommunityFeatureFlags {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommunityInputs {
+    pub handle: CommunityHandle,
+    pub admins: Vec<AccountId>,
+    pub name: String,
+    pub description: String,
+    pub bio_markdown: Option<String>,
+    pub logo_url: String,
+    pub banner_url: String,
+    pub tag: String,
+    pub github_handle: Option<String>,
+    pub telegram_handle: Vec<String>,
+    pub twitter_handle: Option<String>,
+    pub website_url: Option<String>,
+    /// JSON string of github board configuration
+    pub github: Option<String>,
+    pub wiki1: Option<WikiPage>,
+    pub wiki2: Option<WikiPage>,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
