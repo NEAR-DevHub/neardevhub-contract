@@ -454,11 +454,30 @@ impl Contract {
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
-        let caller = env::predecessor_account_id();
-        let moderators = self.access_control.members_list.get_moderators();
-        if !moderators.contains(&Member::Account(caller.clone())) {
+        if !self.has_moderator(env::predecessor_account_id()) {
             panic!("Only moderators can delete community");
         }
+
+        let target_community = self
+            .get_community(handle.clone())
+            .expect(&format!("Community with handle `{}` does not exist", handle));
+
+        target_community.project_ids.iter().for_each(|project_id| {
+            let maybe_project = self.get_project(*project_id);
+
+            if maybe_project.is_none() {
+                return;
+            };
+
+            let project = maybe_project.unwrap();
+
+            if project.metadata.owner_community_handles.len() == 1
+                && project.metadata.owner_community_handles.contains(&target_community.handle)
+            {
+                self.delete_project(project.metadata.id)
+            }
+        });
+
         self.communities.remove(&handle);
     }
 
@@ -573,7 +592,7 @@ impl Contract {
     ) -> ProjectPermissions {
         let project = self
             .get_project(project_id)
-            .expect(&format!("Project with id {} does not exist", project_id));
+            .expect(&format!("Project with id `{}` does not exist", project_id));
 
         ProjectPermissions {
             can_configure: self.has_community_admin_in(
@@ -586,7 +605,7 @@ impl Contract {
     pub fn update_project_metadata(&mut self, metadata: ProjectMetadata) {
         let mut target_project = self
             .get_project(metadata.id)
-            .expect(&format!("Project with id {id} does not exist", id = metadata.id));
+            .expect(&format!("Project with id `{}` does not exist", metadata.id));
 
         if !self.has_community_admin_in(
             env::predecessor_account_id(),
@@ -603,7 +622,7 @@ impl Contract {
 
     pub fn delete_project(&mut self, id: ProjectId) {
         let project =
-            self.get_project(id).expect(&format!("Project with id {} does not exist", id));
+            self.get_project(id).expect(&format!("Project with id `{}` does not exist", id));
 
         if &project.metadata.owner_community_handles.len() > &1 {
             panic!("Only projects owned by a single community can be deleted");
@@ -647,7 +666,7 @@ impl Contract {
     pub fn create_project_view(&mut self, view: ProjectViewInputs) {
         let mut project = self
             .get_project(view.metadata.project_id)
-            .expect(&format!("Project with id {} does not exist", view.metadata.project_id));
+            .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
 
         if !self.has_community_admin_in(
             env::predecessor_account_id(),
@@ -685,7 +704,7 @@ impl Contract {
     pub fn get_project_views_metadata(&self, project_id: ProjectId) -> Vec<ProjectViewMetadata> {
         let project = self
             .get_project(project_id)
-            .expect(&format!("Project with id {} does not exist", project_id));
+            .expect(&format!("Project with id `{}` does not exist", project_id));
 
         project
             .view_ids
@@ -698,7 +717,7 @@ impl Contract {
     pub fn update_project_view(&mut self, view: ProjectView) {
         let project = self
             .get_project(view.metadata.project_id)
-            .expect(&format!("Project with id {} does not exist", view.metadata.project_id));
+            .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
 
         if !self.has_community_admin_in(
             env::predecessor_account_id(),
@@ -713,7 +732,7 @@ impl Contract {
         {
             if !project.view_ids.contains(&project_view.metadata.id) {
                 panic!(
-                    "Project view with id {view_id} does not correspond to the project with id {project_id}",
+                    "Project view with id `{view_id}` does not correspond to the project with id `{project_id}`",
                     view_id = view.metadata.id,
 										project_id = project.metadata.id
                 );
@@ -721,7 +740,7 @@ impl Contract {
 
             project_view
         } else {
-            panic!("Project view with id {} does not exist", view.metadata.id);
+            panic!("Project view with id `{}` does not exist", view.metadata.id);
         };
 
         project_view.config = view.config.clone();
@@ -732,10 +751,10 @@ impl Contract {
     pub fn delete_project_view(&mut self, id: ProjectViewId) {
         let project_view = self
             .get_project_view(id.clone())
-            .expect(&format!("Project view with id {} does not exist", id));
+            .expect(&format!("Project view with id `{}` does not exist", id));
 
         let mut project = self.get_project(project_view.metadata.project_id).expect(&format!(
-            "Project with id {} does not exist",
+            "Project with id `{}` does not exist",
             project_view.metadata.project_id
         ));
 
