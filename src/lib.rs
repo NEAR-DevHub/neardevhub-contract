@@ -458,11 +458,11 @@ impl Contract {
             panic!("Only moderators can delete community");
         }
 
-        let target_community = self
+        let community = self
             .get_community(handle.clone())
             .expect(&format!("Community with handle `{}` does not exist", handle));
 
-        target_community.project_ids.iter().for_each(|project_id| {
+        community.project_ids.iter().for_each(|project_id| {
             let maybe_project = self.get_project(*project_id);
 
             if maybe_project.is_none() {
@@ -472,13 +472,13 @@ impl Contract {
             let project = maybe_project.unwrap();
 
             if project.metadata.owner_community_handles.len() == 1
-                && project.metadata.owner_community_handles.contains(&target_community.handle)
+                && project.metadata.owner_community_handles.contains(&community.handle)
             {
                 self.delete_project(project.metadata.id)
             }
         });
 
-        self.communities.remove(&handle);
+        self.communities.remove(&community.handle);
     }
 
     pub fn get_all_communities(&self) -> Vec<CommunityMetadata> {
@@ -603,21 +603,20 @@ impl Contract {
     }
 
     pub fn update_project_metadata(&mut self, metadata: ProjectMetadata) {
-        let mut target_project = self
+        let mut project = self
             .get_project(metadata.id)
             .expect(&format!("Project with id `{}` does not exist", metadata.id));
 
-        if !self.has_community_admin_in(
-            env::predecessor_account_id(),
-            &target_project.metadata.owner_community_handles,
-        ) && !self.has_moderator(env::predecessor_account_id())
+        if !self
+            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .can_configure
         {
             panic!("Only community admins and hub moderators can configure projects");
         }
 
-        target_project.metadata = metadata;
-        target_project.validate();
-        self.projects.insert(&target_project.metadata.id, &target_project);
+        project.metadata = metadata;
+        project.validate();
+        self.projects.insert(&project.metadata.id, &project);
     }
 
     pub fn delete_project(&mut self, id: ProjectId) {
@@ -668,12 +667,11 @@ impl Contract {
             .get_project(view.metadata.project_id)
             .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
 
-        if !self.has_community_admin_in(
-            env::predecessor_account_id(),
-            &project.metadata.owner_community_handles,
-        ) && !self.has_moderator(env::predecessor_account_id())
+        if !self
+            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .can_configure
         {
-            panic!("Only community admins and hub moderators can create project views");
+            panic!("Only community admins and hub moderators can create projects");
         }
 
         let new_project_view = ProjectView {
@@ -719,10 +717,9 @@ impl Contract {
             .get_project(view.metadata.project_id)
             .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
 
-        if !self.has_community_admin_in(
-            env::predecessor_account_id(),
-            &project.metadata.owner_community_handles,
-        ) && !self.has_moderator(env::predecessor_account_id())
+        if !self
+            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .can_configure
         {
             panic!("Only community admins and hub moderators can update project views");
         }
@@ -758,10 +755,9 @@ impl Contract {
             project_view.metadata.project_id
         ));
 
-        if !self.has_community_admin_in(
-            env::predecessor_account_id(),
-            &project.metadata.owner_community_handles,
-        ) && !self.has_moderator(env::predecessor_account_id())
+        if !self
+            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .can_configure
         {
             panic!("Only community admins and hub moderators can delete project views");
         }
