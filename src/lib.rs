@@ -400,7 +400,7 @@ impl Contract {
         if community.admins.contains(&caller_account_id) || self.has_moderator(caller_account_id) {
             return Some(community);
         } else {
-            return Option::None;
+            return None;
         };
     }
 
