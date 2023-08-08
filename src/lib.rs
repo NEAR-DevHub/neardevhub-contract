@@ -406,9 +406,15 @@ impl Contract {
 
     #[allow(unused_mut)]
     pub fn edit_community(&mut self, handle: CommunityHandle, mut community: Community) {
-        let _ = self.get_editable_community(&handle);
+        let target_community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+
+        // Prevent direct manipulations on relations
+        community.project_ids = target_community.project_ids;
         community.validate();
         community.set_default_admin();
+
         if handle == community.handle {
             self.communities.insert(&handle, &community);
         } else {
