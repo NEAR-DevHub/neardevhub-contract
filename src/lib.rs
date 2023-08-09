@@ -678,7 +678,7 @@ impl Contract {
             config: view.config,
 
             metadata: ProjectViewMetadata {
-                id: format!("{:X}", env::block_timestamp() + self.project_views.len()),
+                id: format!("{:X}", env::block_timestamp() - self.project_views.len()),
                 project_id: project.metadata.id,
                 kind: view.metadata.kind,
                 title: view.metadata.title,
