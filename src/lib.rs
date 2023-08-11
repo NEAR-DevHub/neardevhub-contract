@@ -555,7 +555,6 @@ impl Contract {
                 id: self.last_workspace_id + 1,
                 name: metadata.name,
                 description: metadata.description,
-                tag: metadata.tag,
                 owner_community_handles: HashSet::new(),
             },
 

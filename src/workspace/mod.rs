@@ -9,7 +9,6 @@ pub type WorkspaceId = usize;
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct WorkspaceInputs {
-    pub tag: String,
     pub name: String,
     pub description: String,
 }
@@ -18,7 +17,6 @@ pub struct WorkspaceInputs {
 #[serde(crate = "near_sdk::serde")]
 pub struct WorkspaceMetadata {
     pub id: WorkspaceId,
-    pub tag: String,
     pub name: String,
     pub description: String,
     pub owner_community_handles: HashSet<CommunityHandle>,
@@ -83,9 +81,6 @@ impl Workspace {
         }
         if self.metadata.description.len() < 6 || self.metadata.description.len() > 60 {
             panic!("Workspace description must contain from 6 to 60 characters");
-        }
-        if self.metadata.tag.len() < 3 || self.metadata.tag.len() > 30 {
-            panic!("Workspace tag must contain from 3 to 30 characters");
         }
         if self.metadata.owner_community_handles.len() < 1 {
             panic!("Workspace must have at least one owner community");
