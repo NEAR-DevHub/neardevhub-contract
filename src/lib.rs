@@ -373,7 +373,6 @@ impl Contract {
             feature_flags: CommunityFeatureFlags {
                 github_integration: true,
                 workspaces: true,
-                sponsorship: true,
                 wiki: true,
             },
         };
