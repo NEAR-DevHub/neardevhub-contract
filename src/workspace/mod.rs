@@ -4,11 +4,11 @@ use crate::community::CommunityHandle;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
-pub type ProjectId = usize;
+pub type WorkspaceId = usize;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectInputs {
+pub struct WorkspaceInputs {
     pub tag: String,
     pub name: String,
     pub description: String,
@@ -16,8 +16,8 @@ pub struct ProjectInputs {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectMetadata {
-    pub id: ProjectId,
+pub struct WorkspaceMetadata {
+    pub id: WorkspaceId,
     pub tag: String,
     pub name: String,
     pub description: String,
@@ -26,16 +26,16 @@ pub struct ProjectMetadata {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct Project {
-    pub metadata: ProjectMetadata,
-    /// Configs for project views indexed by their ids and serialized as JSON string
+pub struct Workspace {
+    pub metadata: WorkspaceMetadata,
+    /// Configs for workspace views indexed by their ids and serialized as JSON string
     pub view_ids: HashSet<String>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectViewInputsMetadata {
-    pub project_id: ProjectId,
+pub struct WorkspaceViewInputsMetadata {
+    pub workspace_id: WorkspaceId,
     pub kind: String,
     pub title: String,
     pub description: String,
@@ -43,52 +43,52 @@ pub struct ProjectViewInputsMetadata {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectViewInputs {
-    pub metadata: ProjectViewInputsMetadata,
-    pub config: ProjectViewConfig,
+pub struct WorkspaceViewInputs {
+    pub metadata: WorkspaceViewInputsMetadata,
+    pub config: WorkspaceViewConfig,
 }
 
-pub type ProjectViewId = String;
+pub type WorkspaceViewId = String;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectViewMetadata {
-    pub id: ProjectViewId,
-    pub project_id: ProjectId,
+pub struct WorkspaceViewMetadata {
+    pub id: WorkspaceViewId,
+    pub workspace_id: WorkspaceId,
     pub kind: String,
     pub title: String,
     pub description: String,
 }
 
-/// Project view configuration serialized as JSON string
-pub type ProjectViewConfig = String;
+/// Workspace view configuration serialized as JSON string
+pub type WorkspaceViewConfig = String;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectView {
-    pub metadata: ProjectViewMetadata,
-    pub config: ProjectViewConfig,
+pub struct WorkspaceView {
+    pub metadata: WorkspaceViewMetadata,
+    pub config: WorkspaceViewConfig,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ProjectPermissions {
+pub struct WorkspacePermissions {
     pub can_configure: bool,
 }
 
-impl Project {
+impl Workspace {
     pub fn validate(&self) {
         if self.metadata.name.len() < 3 || self.metadata.name.len() > 30 {
-            panic!("Project name must contain from 3 to 30 characters");
+            panic!("Workspace name must contain from 3 to 30 characters");
         }
         if self.metadata.description.len() < 6 || self.metadata.description.len() > 60 {
-            panic!("Project description must contain from 6 to 60 characters");
+            panic!("Workspace description must contain from 6 to 60 characters");
         }
         if self.metadata.tag.len() < 3 || self.metadata.tag.len() > 30 {
-            panic!("Project tag must contain from 3 to 30 characters");
+            panic!("Workspace tag must contain from 3 to 30 characters");
         }
         if self.metadata.owner_community_handles.len() < 1 {
-            panic!("Project must have at least one owner community");
+            panic!("Workspace must have at least one owner community");
         }
     }
 }

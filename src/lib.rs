@@ -4,32 +4,22 @@ pub mod debug;
 pub mod migrations;
 mod notify;
 pub mod post;
-pub mod project;
 mod repost;
 mod social_db;
 pub mod stats;
 pub mod str_serializers;
+pub mod workspace;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::CommunityFeatureFlags;
-use community::CommunityInputs;
-use community::{Community, CommunityHandle, CommunityMetadata, FeaturedCommunity, WikiPage};
+use community::*;
+use post::*;
+use workspace::*;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
-use post::*;
-use project::Project;
-use project::ProjectId;
-use project::ProjectInputs;
-use project::ProjectMetadata;
-use project::ProjectPermissions;
-use project::ProjectView;
-use project::ProjectViewConfig;
-use project::ProjectViewId;
-use project::ProjectViewInputs;
-use project::ProjectViewMetadata;
 
 use std::collections::HashSet;
 use std::convert::identity;
@@ -57,9 +47,9 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub last_project_id: usize,
-    pub projects: UnorderedMap<ProjectId, Project>,
-    pub project_views: UnorderedMap<ProjectViewId, ProjectView>,
+    pub last_workspace_id: usize,
+    pub workspaces: UnorderedMap<WorkspaceId, Workspace>,
+    pub workspace_views: UnorderedMap<WorkspaceViewId, WorkspaceView>,
 }
 
 #[near_bindgen]
@@ -76,9 +66,9 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            last_project_id: 0,
-            projects: UnorderedMap::new(StorageKey::Projects),
-            project_views: UnorderedMap::new(StorageKey::ProjectViews),
+            last_workspace_id: 0,
+            workspaces: UnorderedMap::new(StorageKey::Workspaces),
+            workspace_views: UnorderedMap::new(StorageKey::WorkspaceViews),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -378,11 +368,11 @@ impl Contract {
             github: community.github,
             wiki1: community.wiki1,
             wiki2: community.wiki2,
-            project_ids: HashSet::new(),
+            workspace_ids: HashSet::new(),
 
             feature_flags: CommunityFeatureFlags {
                 github_integration: true,
-                projects: true,
+                workspaces: true,
                 sponsorship: true,
                 wiki: true,
             },
@@ -411,7 +401,7 @@ impl Contract {
             .expect("Only community admins and hub moderators can configure communities");
 
         // Prevent direct manipulations on relations
-        community.project_ids = target_community.project_ids;
+        community.workspace_ids = target_community.workspace_ids;
         community.validate();
         community.set_default_admin();
 
@@ -462,19 +452,19 @@ impl Contract {
             .get_community(handle.clone())
             .expect(&format!("Community with handle `{}` does not exist", handle));
 
-        community.project_ids.iter().for_each(|project_id| {
-            let maybe_project = self.get_project(*project_id);
+        community.workspace_ids.iter().for_each(|workspace_id| {
+            let maybe_workspace = self.get_workspace(*workspace_id);
 
-            if maybe_project.is_none() {
+            if maybe_workspace.is_none() {
                 return;
             };
 
-            let project = maybe_project.unwrap();
+            let workspace = maybe_workspace.unwrap();
 
-            if project.metadata.owner_community_handles.len() == 1
-                && project.metadata.owner_community_handles.contains(&community.handle)
+            if workspace.metadata.owner_community_handles.len() == 1
+                && workspace.metadata.owner_community_handles.contains(&community.handle)
             {
-                self.delete_project(project.metadata.id)
+                self.delete_workspace(workspace.metadata.id)
             }
         });
 
@@ -552,18 +542,18 @@ impl Contract {
             .any(identity)
     }
 
-    pub fn create_project(
+    pub fn create_workspace(
         &mut self,
         author_community_handle: CommunityHandle,
-        metadata: ProjectInputs,
+        metadata: WorkspaceInputs,
     ) {
         let mut author_community = self
             .get_editable_community(&author_community_handle)
-            .expect("Only community admins and hub moderators can create projects");
+            .expect("Only community admins and hub moderators can create workspaces");
 
-        let mut new_project = Project {
-            metadata: ProjectMetadata {
-                id: self.last_project_id + 1,
+        let mut new_workspace = Workspace {
+            metadata: WorkspaceMetadata {
+                id: self.last_workspace_id + 1,
                 name: metadata.name,
                 description: metadata.description,
                 tag: metadata.tag,
@@ -573,198 +563,200 @@ impl Contract {
             view_ids: HashSet::new(),
         };
 
-        new_project.metadata.owner_community_handles.insert(author_community_handle);
-        new_project.validate();
-        author_community.project_ids.insert(new_project.metadata.id);
-        self.projects.insert(&new_project.metadata.id, &new_project);
+        new_workspace.metadata.owner_community_handles.insert(author_community_handle);
+        new_workspace.validate();
+        author_community.workspace_ids.insert(new_workspace.metadata.id);
+        self.workspaces.insert(&new_workspace.metadata.id, &new_workspace);
         self.communities.insert(&author_community.handle, &author_community);
-        self.last_project_id = new_project.metadata.id
+        self.last_workspace_id = new_workspace.metadata.id
     }
 
-    pub fn get_project(&self, id: ProjectId) -> Option<Project> {
-        self.projects.get(&id)
+    pub fn get_workspace(&self, id: WorkspaceId) -> Option<Workspace> {
+        self.workspaces.get(&id)
     }
 
-    pub fn get_account_project_permissions(
+    pub fn get_account_workspace_permissions(
         &self,
         account_id: AccountId,
-        project_id: ProjectId,
-    ) -> ProjectPermissions {
-        let project = self
-            .get_project(project_id)
-            .expect(&format!("Project with id `{}` does not exist", project_id));
+        workspace_id: WorkspaceId,
+    ) -> WorkspacePermissions {
+        let workspace = self
+            .get_workspace(workspace_id)
+            .expect(&format!("Workspace with id `{}` does not exist", workspace_id));
 
-        ProjectPermissions {
+        WorkspacePermissions {
             can_configure: self.has_community_admin_in(
                 account_id.clone(),
-                &project.metadata.owner_community_handles,
+                &workspace.metadata.owner_community_handles,
             ) || self.has_moderator(account_id),
         }
     }
 
-    pub fn update_project_metadata(&mut self, metadata: ProjectMetadata) {
-        let mut project = self
-            .get_project(metadata.id)
-            .expect(&format!("Project with id `{}` does not exist", metadata.id));
+    pub fn update_workspace_metadata(&mut self, metadata: WorkspaceMetadata) {
+        let mut workspace = self
+            .get_workspace(metadata.id)
+            .expect(&format!("Workspace with id `{}` does not exist", metadata.id));
 
         if !self
-            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
             .can_configure
         {
-            panic!("Only community admins and hub moderators can configure projects");
+            panic!("Only community admins and hub moderators can configure workspaces");
         }
 
-        project.metadata = metadata;
-        project.validate();
-        self.projects.insert(&project.metadata.id, &project);
+        workspace.metadata = metadata;
+        workspace.validate();
+        self.workspaces.insert(&workspace.metadata.id, &workspace);
     }
 
-    pub fn delete_project(&mut self, id: ProjectId) {
-        let project =
-            self.get_project(id).expect(&format!("Project with id `{}` does not exist", id));
+    pub fn delete_workspace(&mut self, id: WorkspaceId) {
+        let workspace =
+            self.get_workspace(id).expect(&format!("Workspace with id `{}` does not exist", id));
 
-        if &project.metadata.owner_community_handles.len() > &1 {
-            panic!("Only projects owned by a single community can be deleted");
+        if &workspace.metadata.owner_community_handles.len() > &1 {
+            panic!("Only workspaces owned by a single community can be deleted");
         }
 
         let mut owner_community = self
             .get_editable_community(
-                &project.metadata.owner_community_handles.into_iter().next().unwrap(),
+                &workspace.metadata.owner_community_handles.into_iter().next().unwrap(),
             )
-            .expect("Only community admins and hub moderators can delete projects");
+            .expect("Only community admins and hub moderators can delete workspaces");
 
-        project.view_ids.iter().for_each(|view_id| {
-            self.project_views.remove(view_id);
+        workspace.view_ids.iter().for_each(|view_id| {
+            self.workspace_views.remove(view_id);
         });
 
-        self.projects.remove(&id);
-        owner_community.project_ids.remove(&id);
+        self.workspaces.remove(&id);
+        owner_community.workspace_ids.remove(&id);
         self.communities.insert(&owner_community.handle, &owner_community);
     }
 
-    pub fn get_all_projects_metadata(&self) -> Vec<ProjectMetadata> {
-        self.projects.iter().map(|(_, project)| project.metadata).collect()
+    pub fn get_all_workspaces_metadata(&self) -> Vec<WorkspaceMetadata> {
+        self.workspaces.iter().map(|(_, workspace)| workspace.metadata).collect()
     }
 
-    pub fn get_community_projects_metadata(
+    pub fn get_community_workspaces_metadata(
         &self,
         community_handle: CommunityHandle,
-    ) -> Vec<ProjectMetadata> {
+    ) -> Vec<WorkspaceMetadata> {
         self.get_community(community_handle)
             .map(|community| {
                 community
-                    .project_ids
+                    .workspace_ids
                     .iter()
-                    .filter_map(|id| self.get_project(*id))
-                    .map(|project| project.metadata)
+                    .filter_map(|id| self.get_workspace(*id))
+                    .map(|workspace| workspace.metadata)
                     .collect()
             })
             .unwrap_or_default()
     }
 
-    pub fn create_project_view(&mut self, view: ProjectViewInputs) {
-        let mut project = self
-            .get_project(view.metadata.project_id)
-            .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
+    pub fn create_workspace_view(&mut self, view: WorkspaceViewInputs) {
+        let mut workspace = self
+            .get_workspace(view.metadata.workspace_id)
+            .expect(&format!("Workspace with id `{}` does not exist", view.metadata.workspace_id));
 
         if !self
-            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
             .can_configure
         {
-            panic!("Only community admins and hub moderators can create projects");
+            panic!("Only community admins and hub moderators can create workspaces");
         }
 
-        let new_project_view = ProjectView {
+        let new_workspace_view = WorkspaceView {
             config: view.config,
 
-            metadata: ProjectViewMetadata {
-                id: format!("{:X}", env::block_timestamp() - self.project_views.len()),
-                project_id: project.metadata.id,
+            metadata: WorkspaceViewMetadata {
+                id: format!("{:X}", env::block_timestamp() - self.workspace_views.len()),
+                workspace_id: workspace.metadata.id,
                 kind: view.metadata.kind,
                 title: view.metadata.title,
                 description: view.metadata.description,
             },
         };
 
-        project.view_ids.insert(new_project_view.metadata.id.clone());
-        self.project_views.insert(&new_project_view.metadata.id, &new_project_view);
-        self.projects.insert(&project.metadata.id, &project);
+        workspace.view_ids.insert(new_workspace_view.metadata.id.clone());
+        self.workspace_views.insert(&new_workspace_view.metadata.id, &new_workspace_view);
+        self.workspaces.insert(&workspace.metadata.id, &workspace);
     }
 
-    pub fn get_project_view(&self, id: ProjectViewId) -> Option<ProjectView> {
-        self.project_views.get(&id)
+    pub fn get_workspace_view(&self, id: WorkspaceViewId) -> Option<WorkspaceView> {
+        self.workspace_views.get(&id)
     }
 
-    pub fn get_project_view_config(&self, id: ProjectViewId) -> Option<ProjectViewConfig> {
-        self.project_views.get(&id).map(|view| view.config)
+    pub fn get_workspace_view_config(&self, id: WorkspaceViewId) -> Option<WorkspaceViewConfig> {
+        self.workspace_views.get(&id).map(|view| view.config)
     }
 
-    pub fn get_project_views_metadata(&self, project_id: ProjectId) -> Vec<ProjectViewMetadata> {
-        let project = self
-            .get_project(project_id)
-            .expect(&format!("Project with id `{}` does not exist", project_id));
+    pub fn get_workspace_views_metadata(
+        &self,
+        workspace_id: WorkspaceId,
+    ) -> Vec<WorkspaceViewMetadata> {
+        let workspace = self
+            .get_workspace(workspace_id)
+            .expect(&format!("Workspace with id `{}` does not exist", workspace_id));
 
-        project
+        workspace
             .view_ids
             .iter()
-            .filter_map(|id| self.get_project_view(id.to_owned()))
+            .filter_map(|id| self.get_workspace_view(id.to_owned()))
             .map(|view| view.metadata)
             .collect()
     }
 
-    pub fn update_project_view(&mut self, view: ProjectView) {
-        let project = self
-            .get_project(view.metadata.project_id)
-            .expect(&format!("Project with id `{}` does not exist", view.metadata.project_id));
+    pub fn update_workspace_view(&mut self, view: WorkspaceView) {
+        let workspace = self
+            .get_workspace(view.metadata.workspace_id)
+            .expect(&format!("Workspace with id `{}` does not exist", view.metadata.workspace_id));
 
         if !self
-            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
             .can_configure
         {
-            panic!("Only community admins and hub moderators can update project views");
+            panic!("Only community admins and hub moderators can update workspace views");
         }
 
-        let mut project_view = if let Some(project_view) =
-            self.get_project_view(view.metadata.id.clone())
+        let mut workspace_view = if let Some(workspace_view) =
+            self.get_workspace_view(view.metadata.id.clone())
         {
-            if !project.view_ids.contains(&project_view.metadata.id) {
+            if !workspace.view_ids.contains(&workspace_view.metadata.id) {
                 panic!(
-                    "Project view with id `{view_id}` does not correspond to the project with id `{project_id}`",
+                    "Workspace view with id `{view_id}` does not correspond to the workspace with id `{workspace_id}`",
                     view_id = view.metadata.id,
-										project_id = project.metadata.id
+										workspace_id = workspace.metadata.id
                 );
             }
 
-            project_view
+            workspace_view
         } else {
-            panic!("Project view with id `{}` does not exist", view.metadata.id);
+            panic!("Workspace view with id `{}` does not exist", view.metadata.id);
         };
 
-        project_view.config = view.config.clone();
-        project_view.metadata = view.metadata.clone();
-        self.project_views.insert(&view.metadata.id, &project_view);
+        workspace_view.config = view.config.clone();
+        workspace_view.metadata = view.metadata.clone();
+        self.workspace_views.insert(&view.metadata.id, &workspace_view);
     }
 
-    pub fn delete_project_view(&mut self, id: ProjectViewId) {
-        let project_view = self
-            .get_project_view(id.clone())
-            .expect(&format!("Project view with id `{}` does not exist", id));
+    pub fn delete_workspace_view(&mut self, id: WorkspaceViewId) {
+        let workspace_view = self
+            .get_workspace_view(id.clone())
+            .expect(&format!("Workspace view with id `{}` does not exist", id));
 
-        let mut project = self.get_project(project_view.metadata.project_id).expect(&format!(
-            "Project with id `{}` does not exist",
-            project_view.metadata.project_id
-        ));
+        let mut workspace = self.get_workspace(workspace_view.metadata.workspace_id).expect(
+            &format!("Workspace with id `{}` does not exist", workspace_view.metadata.workspace_id),
+        );
 
         if !self
-            .get_account_project_permissions(env::predecessor_account_id(), project.metadata.id)
+            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
             .can_configure
         {
-            panic!("Only community admins and hub moderators can delete project views");
+            panic!("Only community admins and hub moderators can delete workspace views");
         }
 
-        self.project_views.remove(&project_view.metadata.id);
-        project.view_ids.remove(&project_view.metadata.id);
-        self.projects.insert(&project.metadata.id, &project);
+        self.workspace_views.remove(&workspace_view.metadata.id);
+        workspace.view_ids.remove(&workspace_view.metadata.id);
+        self.workspaces.insert(&workspace.metadata.id, &workspace);
     }
 }
 

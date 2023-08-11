@@ -297,7 +297,7 @@ pub struct ContractV6 {
 // From ContractV6 to ContractV7
 #[near_bindgen]
 impl Contract {
-    fn unsafe_add_projects() {
+    fn unsafe_add_workspaces() {
         let ContractV6 {
             posts,
             post_to_parent,
@@ -330,12 +330,11 @@ impl Contract {
                         github: community.github,
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
-                        project_ids: Default::default(),
+                        workspace_ids: Default::default(),
 
                         feature_flags: CommunityFeatureFlags {
                             github_integration: true,
-                            projects: true,
-                            sponsorship: true,
+                            workspaces: true,
                             wiki: true,
                         },
                     },
@@ -360,9 +359,9 @@ impl Contract {
             authors,
             communities: communities_new,
             featured_communities,
-            last_project_id: 0,
-            projects: UnorderedMap::new(StorageKey::Projects),
-            project_views: UnorderedMap::new(StorageKey::Projects),
+            last_workspace_id: 0,
+            workspaces: UnorderedMap::new(StorageKey::Workspaces),
+            workspace_views: UnorderedMap::new(StorageKey::Workspaces),
         });
     }
 }
@@ -385,7 +384,7 @@ pub struct CommunityV3 {
     pub github: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub project_ids: HashSet<ProjectId>,
+    pub workspace_ids: HashSet<WorkspaceId>,
     pub feature_flags: CommunityFeatureFlags,
 }
 
@@ -399,9 +398,9 @@ pub struct ContractV7 {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<String, CommunityV3>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub last_project_id: usize,
-    pub projects: UnorderedMap<ProjectId, Project>,
-    pub project_views: UnorderedMap<ProjectViewId, ProjectView>,
+    pub last_workspace_id: usize,
+    pub workspaces: UnorderedMap<WorkspaceId, Workspace>,
+    pub workspace_views: UnorderedMap<WorkspaceViewId, WorkspaceView>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
@@ -488,7 +487,7 @@ impl Contract {
                 state_version_write(&StateVersion::V6);
             }
             StateVersion::V6 => {
-                Contract::unsafe_add_projects();
+                Contract::unsafe_add_workspaces();
                 state_version_write(&StateVersion::V7);
             }
             _ => {

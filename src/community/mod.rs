@@ -4,7 +4,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId};
 
-use crate::project::ProjectId;
+use crate::workspace::WorkspaceId;
 
 pub type CommunityHandle = String;
 
@@ -19,8 +19,7 @@ pub struct WikiPage {
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityFeatureFlags {
     pub github_integration: bool,
-    pub projects: bool,
-    pub sponsorship: bool,
+    pub workspaces: bool,
     pub wiki: bool,
 }
 
@@ -64,7 +63,7 @@ pub struct Community {
     pub github: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub project_ids: HashSet<ProjectId>,
+    pub workspace_ids: HashSet<WorkspaceId>,
     pub feature_flags: CommunityFeatureFlags,
 }
 
