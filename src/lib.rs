@@ -358,6 +358,7 @@ impl Contract {
             twitter_handle: None,
             website_url: None,
             github: None,
+            board: None,
             wiki1: None,
             wiki2: None,
         };
@@ -367,12 +368,29 @@ impl Contract {
         self.communities.insert(&new_community.handle, &new_community);
     }
 
-    fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
-        let caller_account_id = env::predecessor_account_id();
-        let community = self.communities.get(&handle).expect("Community does not exist");
+    pub fn get_account_community_permissions(
+        &self,
+        account_id: AccountId,
+        community_handle: CommunityHandle,
+    ) -> CommunityPermissions {
+        let community = self.get_community(community_handle.to_owned()).expect(
+            format!("Community with handle `{}` does not exist", community_handle).as_str(),
+        );
 
-        if community.admins.contains(&caller_account_id) || self.has_moderator(caller_account_id) {
-            return Some(community);
+        CommunityPermissions {
+            can_configure: community.admins.contains(&account_id)
+                || self.has_moderator(account_id.to_owned()),
+
+            can_delete: self.has_moderator(account_id),
+        }
+    }
+
+    fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
+        if self
+            .get_account_community_permissions(env::predecessor_account_id(), handle.to_owned())
+            .can_configure
+        {
+            return self.get_community(handle.to_owned());
         } else {
             return None;
         };
@@ -387,13 +405,14 @@ impl Contract {
         community.validate();
         community.set_default_admin();
 
-        if handle == community.handle {
-            self.communities.insert(&handle, &community);
+        if target_community.handle == community.handle {
+            self.communities.insert(&target_community.handle, &community);
         } else {
             if self.communities.get(&community.handle).is_some() {
-                panic!("Community handle '{}' is already taken", community.handle);
+                panic!("Community handle `{}` is already taken", community.handle);
             }
-            self.communities.remove(&handle);
+
+            self.communities.remove(&target_community.handle);
             self.communities.insert(&community.handle, &community);
         }
     }

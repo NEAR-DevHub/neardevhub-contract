@@ -13,10 +13,9 @@ pub struct WikiPage {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct CommunityFeatureFlags {
-    pub github_integration: bool,
-    pub workspaces: bool,
-    pub wiki: bool,
+pub struct CommunityPermissions {
+    pub can_configure: bool,
+    pub can_delete: bool,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
