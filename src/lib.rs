@@ -20,7 +20,6 @@ use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
-use std::convert::identity;
 
 near_sdk::setup_alloc!();
 
