@@ -8,14 +8,12 @@ mod repost;
 mod social_db;
 pub mod stats;
 pub mod str_serializers;
-pub mod workspace;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
 use post::*;
-use workspace::*;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
@@ -47,9 +45,6 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub last_workspace_id: usize,
-    pub workspaces: UnorderedMap<WorkspaceId, Workspace>,
-    pub workspace_views: UnorderedMap<WorkspaceViewId, WorkspaceView>,
 }
 
 #[near_bindgen]
@@ -66,9 +61,6 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
-            last_workspace_id: 0,
-            workspaces: UnorderedMap::new(StorageKey::Workspaces),
-            workspace_views: UnorderedMap::new(StorageKey::WorkspaceViews),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -354,27 +346,20 @@ impl Contract {
 
         let mut new_community = Community {
             handle: handle.clone(),
-            admins: community.admins,
+            admins: vec![],
             name: community.name,
             description: community.description,
             bio_markdown: community.bio_markdown,
             logo_url: community.logo_url,
             banner_url: community.banner_url,
             tag: community.tag,
-            github_handle: community.github_handle,
-            telegram_handle: community.telegram_handle,
-            twitter_handle: community.twitter_handle,
-            website_url: community.website_url,
-            github: community.github,
-            wiki1: community.wiki1,
-            wiki2: community.wiki2,
-            workspace_ids: HashSet::new(),
-
-            feature_flags: CommunityFeatureFlags {
-                github_integration: true,
-                workspaces: true,
-                wiki: true,
-            },
+            github_handle: None,
+            telegram_handle: vec![],
+            twitter_handle: None,
+            website_url: None,
+            github: None,
+            wiki1: None,
+            wiki2: None,
         };
 
         new_community.validate();
@@ -399,8 +384,6 @@ impl Contract {
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");
 
-        // Prevent direct manipulations on relations
-        community.workspace_ids = target_community.workspace_ids;
         community.validate();
         community.set_default_admin();
 
@@ -418,9 +401,18 @@ impl Contract {
     pub fn edit_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
         let mut community = self
             .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can configure GitHub integrations");
+            .expect("Only community admins and hub moderators can configure boards");
 
         community.github = github;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn edit_community_board(&mut self, handle: CommunityHandle, board: Option<String>) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure boards");
+
+        community.board = board;
         self.communities.insert(&handle, &community);
     }
 
@@ -450,22 +442,6 @@ impl Contract {
         let community = self
             .get_community(handle.clone())
             .expect(&format!("Community with handle `{}` does not exist", handle));
-
-        community.workspace_ids.iter().for_each(|workspace_id| {
-            let maybe_workspace = self.get_workspace(*workspace_id);
-
-            if maybe_workspace.is_none() {
-                return;
-            };
-
-            let workspace = maybe_workspace.unwrap();
-
-            if workspace.metadata.owner_community_handles.len() == 1
-                && workspace.metadata.owner_community_handles.contains(&community.handle)
-            {
-                self.delete_workspace(workspace.metadata.id)
-            }
-        });
 
         self.communities.remove(&community.handle);
     }
@@ -523,238 +499,9 @@ impl Contract {
             .collect()
     }
 
-    fn has_moderator(&self, account_id: AccountId) -> bool {
+    pub fn has_moderator(&self, account_id: AccountId) -> bool {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
-    }
-
-    fn has_community_admin_in(
-        &self,
-        account_id: AccountId,
-        community_handles: &HashSet<CommunityHandle>,
-    ) -> bool {
-        community_handles
-            .iter()
-            .map(|handle| self.get_community(handle.to_owned()))
-            .filter_map(identity)
-            .map(|community| community.admins.contains(&account_id))
-            .any(identity)
-    }
-
-    pub fn create_workspace(
-        &mut self,
-        author_community_handle: CommunityHandle,
-        metadata: WorkspaceInputs,
-    ) {
-        let mut author_community = self
-            .get_editable_community(&author_community_handle)
-            .expect("Only community admins and hub moderators can create workspaces");
-
-        let mut new_workspace = Workspace {
-            metadata: WorkspaceMetadata {
-                id: self.last_workspace_id + 1,
-                name: metadata.name,
-                description: metadata.description,
-                owner_community_handles: HashSet::new(),
-            },
-
-            view_ids: HashSet::new(),
-        };
-
-        new_workspace.metadata.owner_community_handles.insert(author_community_handle);
-        new_workspace.validate();
-        author_community.workspace_ids.insert(new_workspace.metadata.id);
-        self.workspaces.insert(&new_workspace.metadata.id, &new_workspace);
-        self.communities.insert(&author_community.handle, &author_community);
-        self.last_workspace_id = new_workspace.metadata.id
-    }
-
-    pub fn get_workspace(&self, id: WorkspaceId) -> Option<Workspace> {
-        self.workspaces.get(&id)
-    }
-
-    pub fn get_account_workspace_permissions(
-        &self,
-        account_id: AccountId,
-        workspace_id: WorkspaceId,
-    ) -> WorkspacePermissions {
-        let workspace = self
-            .get_workspace(workspace_id)
-            .expect(&format!("Workspace with id `{}` does not exist", workspace_id));
-
-        WorkspacePermissions {
-            can_configure: self.has_community_admin_in(
-                account_id.clone(),
-                &workspace.metadata.owner_community_handles,
-            ) || self.has_moderator(account_id),
-        }
-    }
-
-    pub fn update_workspace_metadata(&mut self, metadata: WorkspaceMetadata) {
-        let mut workspace = self
-            .get_workspace(metadata.id)
-            .expect(&format!("Workspace with id `{}` does not exist", metadata.id));
-
-        if !self
-            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
-            .can_configure
-        {
-            panic!("Only community admins and hub moderators can configure workspaces");
-        }
-
-        workspace.metadata = metadata;
-        workspace.validate();
-        self.workspaces.insert(&workspace.metadata.id, &workspace);
-    }
-
-    pub fn delete_workspace(&mut self, id: WorkspaceId) {
-        let workspace =
-            self.get_workspace(id).expect(&format!("Workspace with id `{}` does not exist", id));
-
-        if &workspace.metadata.owner_community_handles.len() > &1 {
-            panic!("Only workspaces owned by a single community can be deleted");
-        }
-
-        let mut owner_community = self
-            .get_editable_community(
-                &workspace.metadata.owner_community_handles.into_iter().next().unwrap(),
-            )
-            .expect("Only community admins and hub moderators can delete workspaces");
-
-        workspace.view_ids.iter().for_each(|view_id| {
-            self.workspace_views.remove(view_id);
-        });
-
-        self.workspaces.remove(&id);
-        owner_community.workspace_ids.remove(&id);
-        self.communities.insert(&owner_community.handle, &owner_community);
-    }
-
-    pub fn get_all_workspaces_metadata(&self) -> Vec<WorkspaceMetadata> {
-        self.workspaces.iter().map(|(_, workspace)| workspace.metadata).collect()
-    }
-
-    pub fn get_community_workspaces_metadata(
-        &self,
-        community_handle: CommunityHandle,
-    ) -> Vec<WorkspaceMetadata> {
-        self.get_community(community_handle)
-            .map(|community| {
-                community
-                    .workspace_ids
-                    .iter()
-                    .filter_map(|id| self.get_workspace(*id))
-                    .map(|workspace| workspace.metadata)
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    pub fn create_workspace_view(&mut self, view: WorkspaceViewInputs) {
-        let mut workspace = self
-            .get_workspace(view.metadata.workspace_id)
-            .expect(&format!("Workspace with id `{}` does not exist", view.metadata.workspace_id));
-
-        if !self
-            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
-            .can_configure
-        {
-            panic!("Only community admins and hub moderators can create workspaces");
-        }
-
-        let new_workspace_view = WorkspaceView {
-            config: view.config,
-
-            metadata: WorkspaceViewMetadata {
-                id: format!("{:X}", env::block_timestamp() - self.workspace_views.len()),
-                workspace_id: workspace.metadata.id,
-                kind: view.metadata.kind,
-                title: view.metadata.title,
-                description: view.metadata.description,
-            },
-        };
-
-        workspace.view_ids.insert(new_workspace_view.metadata.id.clone());
-        self.workspace_views.insert(&new_workspace_view.metadata.id, &new_workspace_view);
-        self.workspaces.insert(&workspace.metadata.id, &workspace);
-    }
-
-    pub fn get_workspace_view(&self, id: WorkspaceViewId) -> Option<WorkspaceView> {
-        self.workspace_views.get(&id)
-    }
-
-    pub fn get_workspace_view_config(&self, id: WorkspaceViewId) -> Option<WorkspaceViewConfig> {
-        self.workspace_views.get(&id).map(|view| view.config)
-    }
-
-    pub fn get_workspace_views_metadata(
-        &self,
-        workspace_id: WorkspaceId,
-    ) -> Vec<WorkspaceViewMetadata> {
-        let workspace = self
-            .get_workspace(workspace_id)
-            .expect(&format!("Workspace with id `{}` does not exist", workspace_id));
-
-        workspace
-            .view_ids
-            .iter()
-            .filter_map(|id| self.get_workspace_view(id.to_owned()))
-            .map(|view| view.metadata)
-            .collect()
-    }
-
-    pub fn update_workspace_view(&mut self, view: WorkspaceView) {
-        let workspace = self
-            .get_workspace(view.metadata.workspace_id)
-            .expect(&format!("Workspace with id `{}` does not exist", view.metadata.workspace_id));
-
-        if !self
-            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
-            .can_configure
-        {
-            panic!("Only community admins and hub moderators can update workspace views");
-        }
-
-        let mut workspace_view = if let Some(workspace_view) =
-            self.get_workspace_view(view.metadata.id.clone())
-        {
-            if !workspace.view_ids.contains(&workspace_view.metadata.id) {
-                panic!(
-                    "Workspace view with id `{view_id}` does not correspond to the workspace with id `{workspace_id}`",
-                    view_id = view.metadata.id,
-										workspace_id = workspace.metadata.id
-                );
-            }
-
-            workspace_view
-        } else {
-            panic!("Workspace view with id `{}` does not exist", view.metadata.id);
-        };
-
-        workspace_view.config = view.config.clone();
-        workspace_view.metadata = view.metadata.clone();
-        self.workspace_views.insert(&view.metadata.id, &workspace_view);
-    }
-
-    pub fn delete_workspace_view(&mut self, id: WorkspaceViewId) {
-        let workspace_view = self
-            .get_workspace_view(id.clone())
-            .expect(&format!("Workspace view with id `{}` does not exist", id));
-
-        let mut workspace = self.get_workspace(workspace_view.metadata.workspace_id).expect(
-            &format!("Workspace with id `{}` does not exist", workspace_view.metadata.workspace_id),
-        );
-
-        if !self
-            .get_account_workspace_permissions(env::predecessor_account_id(), workspace.metadata.id)
-            .can_configure
-        {
-            panic!("Only community admins and hub moderators can delete workspace views");
-        }
-
-        self.workspace_views.remove(&workspace_view.metadata.id);
-        workspace.view_ids.remove(&workspace_view.metadata.id);
-        self.workspaces.insert(&workspace.metadata.id, &workspace);
     }
 }
 

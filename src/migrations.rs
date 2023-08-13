@@ -2,7 +2,6 @@
 //! Should be invocable only by the owner and in most cases should be called only once though the
 //! latter is not asserted.
 
-use crate::community::CommunityFeatureFlags;
 use crate::*;
 use near_sdk::{env, near_bindgen, Promise};
 use std::cmp::min;
@@ -330,13 +329,7 @@ impl Contract {
                         github: community.github,
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
-                        workspace_ids: Default::default(),
-
-                        feature_flags: CommunityFeatureFlags {
-                            github_integration: true,
-                            workspaces: true,
-                            wiki: true,
-                        },
+                        board: None,
                     },
                 )
             })
@@ -359,9 +352,6 @@ impl Contract {
             authors,
             communities: communities_new,
             featured_communities,
-            last_workspace_id: 0,
-            workspaces: UnorderedMap::new(StorageKey::Workspaces),
-            workspace_views: UnorderedMap::new(StorageKey::Workspaces),
         });
     }
 }
@@ -382,10 +372,10 @@ pub struct CommunityV3 {
     pub website_url: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
+    /// JSON string of kanban board configuration
+    pub board: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub workspace_ids: HashSet<WorkspaceId>,
-    pub feature_flags: CommunityFeatureFlags,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -398,9 +388,6 @@ pub struct ContractV7 {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<String, CommunityV3>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub last_workspace_id: usize,
-    pub workspaces: UnorderedMap<WorkspaceId, Workspace>,
-    pub workspace_views: UnorderedMap<WorkspaceViewId, WorkspaceView>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]

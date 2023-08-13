@@ -1,10 +1,6 @@
-use std::collections::HashSet;
-
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId};
-
-use crate::workspace::WorkspaceId;
 
 pub type CommunityHandle = String;
 
@@ -25,23 +21,24 @@ pub struct CommunityFeatureFlags {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommunityMetadata {
+    pub handle: CommunityHandle,
+    pub name: String,
+    pub description: String,
+    pub logo_url: String,
+    pub banner_url: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct CommunityInputs {
     pub handle: CommunityHandle,
-    pub admins: Vec<AccountId>,
     pub name: String,
     pub description: String,
     pub bio_markdown: Option<String>,
     pub logo_url: String,
     pub banner_url: String,
     pub tag: String,
-    pub github_handle: Option<String>,
-    pub telegram_handle: Vec<String>,
-    pub twitter_handle: Option<String>,
-    pub website_url: Option<String>,
-    /// JSON string of github board configuration
-    pub github: Option<String>,
-    pub wiki1: Option<WikiPage>,
-    pub wiki2: Option<WikiPage>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -61,26 +58,16 @@ pub struct Community {
     pub website_url: Option<String>,
     /// JSON string of github board configuration
     pub github: Option<String>,
+    /// JSON string of kanban board configuration
+    pub board: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
-    pub workspace_ids: HashSet<WorkspaceId>,
-    pub feature_flags: CommunityFeatureFlags,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FeaturedCommunity {
     pub handle: CommunityHandle,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct CommunityMetadata {
-    pub handle: CommunityHandle,
-    pub name: String,
-    pub description: String,
-    pub logo_url: String,
-    pub banner_url: String,
 }
 
 impl Community {
