@@ -338,20 +338,20 @@ impl Contract {
     }
 
     #[allow(unused_mut)]
-    pub fn create_community(&mut self, mut community: CommunityInputs) {
-        if self.get_community(community.handle.to_owned()).is_some() {
+    pub fn create_community(&mut self, mut inputs: CommunityInputs) {
+        if self.get_community(inputs.handle.to_owned()).is_some() {
             panic!("Community already exists");
         }
 
         let mut new_community = Community {
             admins: vec![],
-            handle: community.handle,
-            name: community.name,
-            tag: community.tag,
-            description: community.description,
-            logo_url: community.logo_url,
-            banner_url: community.banner_url,
-            bio_markdown: community.bio_markdown,
+            handle: inputs.handle,
+            name: inputs.name,
+            tag: inputs.tag,
+            description: inputs.description,
+            logo_url: inputs.logo_url,
+            banner_url: inputs.banner_url,
+            bio_markdown: inputs.bio_markdown,
             github_handle: None,
             telegram_handle: vec![],
             twitter_handle: None,
