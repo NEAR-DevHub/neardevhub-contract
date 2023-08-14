@@ -430,7 +430,7 @@ impl Contract {
     }
 
     #[allow(unused_mut)]
-    pub fn edit_community(&mut self, handle: CommunityHandle, mut community: Community) {
+    pub fn update_community(&mut self, handle: CommunityHandle, mut community: Community) {
         let target_community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");
@@ -450,7 +450,7 @@ impl Contract {
         }
     }
 
-    pub fn edit_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
+    pub fn update_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
         let mut community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure boards");
@@ -459,7 +459,7 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_board(&mut self, handle: CommunityHandle, board: Option<String>) {
+    pub fn update_community_board(&mut self, handle: CommunityHandle, board: Option<String>) {
         let mut community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure boards");
@@ -468,7 +468,7 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
+    pub fn update_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
         let mut community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can edit wiki");
@@ -477,7 +477,7 @@ impl Contract {
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
+    pub fn update_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
         let mut community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can edit wiki");
