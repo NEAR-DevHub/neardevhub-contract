@@ -31,6 +31,15 @@ pub struct CommunityMetadata {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommunityFeatureFlags {
+    pub telegram: bool,
+    pub github: bool,
+    pub board: bool,
+    pub wiki: bool,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct WikiPage {
     name: String,
     content_markdown: String,
@@ -57,6 +66,7 @@ pub struct Community {
     pub board: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
+    pub features: CommunityFeatureFlags,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

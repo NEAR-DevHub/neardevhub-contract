@@ -330,6 +330,13 @@ impl Contract {
                         board: None,
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
+
+                        features: CommunityFeatureFlags {
+                            telegram: true,
+                            github: true,
+                            board: true,
+                            wiki: true,
+                        },
                     },
                 )
             })
@@ -376,6 +383,7 @@ pub struct CommunityV3 {
     pub board: Option<String>,
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
+    pub features: CommunityFeatureFlags,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]

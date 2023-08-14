@@ -360,6 +360,13 @@ impl Contract {
             board: None,
             wiki1: None,
             wiki2: None,
+
+            features: CommunityFeatureFlags {
+                telegram: true,
+                github: true,
+                board: true,
+                wiki: true,
+            },
         };
 
         new_community.validate();
@@ -448,6 +455,19 @@ impl Contract {
             self.communities.remove(&target_community.handle);
             self.communities.insert(&community.handle, &community);
         }
+    }
+
+    pub fn update_community_feature_flags(
+        &mut self,
+        handle: CommunityHandle,
+        features: CommunityFeatureFlags,
+    ) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+
+        community.features = features;
+        self.communities.insert(&handle, &community);
     }
 
     pub fn update_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
