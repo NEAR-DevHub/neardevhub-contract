@@ -314,22 +314,22 @@ impl Contract {
                 (
                     community_handle,
                     CommunityV3 {
-                        handle: community.handle,
                         admins: community.admins,
+                        handle: community.handle,
                         name: community.name,
+                        tag: community.tag,
                         description: community.description,
-                        bio_markdown: community.bio_markdown,
                         logo_url: community.logo_url,
                         banner_url: community.banner_url,
-                        tag: community.tag,
+                        bio_markdown: community.bio_markdown,
                         github_handle: community.github_handle,
                         telegram_handle: community.telegram_handle,
                         twitter_handle: community.twitter_handle,
                         website_url: community.website_url,
                         github: community.github,
+                        board: None,
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
-                        board: None,
                     },
                 )
             })
@@ -358,14 +358,14 @@ impl Contract {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub struct CommunityV3 {
-    pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
+    pub handle: CommunityHandle,
     pub name: String,
+    pub tag: String,
     pub description: String,
-    pub bio_markdown: Option<String>,
     pub logo_url: String,
     pub banner_url: String,
-    pub tag: String,
+    pub bio_markdown: Option<String>,
     pub github_handle: Option<String>,
     pub telegram_handle: Vec<String>,
     pub twitter_handle: Option<String>,

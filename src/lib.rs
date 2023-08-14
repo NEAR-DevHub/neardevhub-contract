@@ -338,13 +338,13 @@ impl Contract {
     }
 
     #[allow(unused_mut)]
-    pub fn add_community(&mut self, handle: CommunityHandle, mut community: CommunityInputs) {
-        if self.communities.get(&handle).is_some() {
+    pub fn create_community(&mut self, mut community: CommunityInputs) {
+        if self.get_community(community.handle.to_owned()).is_some() {
             panic!("Community already exists");
         }
 
         let mut new_community = Community {
-            handle: handle.clone(),
+            handle: community.handle,
             admins: vec![],
             name: community.name,
             description: community.description,
@@ -367,6 +367,23 @@ impl Contract {
         self.communities.insert(&new_community.handle, &new_community);
     }
 
+    pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
+        self.communities.get(&handle)
+    }
+
+    pub fn get_community_metadata(&self, handle: CommunityHandle) -> Option<CommunityMetadata> {
+        self.communities.get(&handle).map(|community| CommunityMetadata {
+            admins: community.admins,
+            handle: community.handle,
+            name: community.name,
+            tag: community.tag,
+            description: community.description,
+            logo_url: community.logo_url,
+            banner_url: community.banner_url,
+            bio_markdown: community.bio_markdown,
+        })
+    }
+
     pub fn get_account_community_permissions(
         &self,
         account_id: AccountId,
@@ -382,6 +399,23 @@ impl Contract {
 
             can_delete: self.has_moderator(account_id),
         }
+    }
+
+    pub fn get_all_communities_metadata(&self) -> Vec<CommunityMetadata> {
+        near_sdk::log!("get_all_communities");
+        self.communities
+            .iter()
+            .map(|(handle, community)| CommunityMetadata {
+                admins: community.admins,
+                handle,
+                name: community.name,
+                tag: community.tag,
+                description: community.description,
+                logo_url: community.logo_url,
+                banner_url: community.banner_url,
+                bio_markdown: community.bio_markdown,
+            })
+            .collect()
     }
 
     fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
@@ -462,34 +496,6 @@ impl Contract {
             .expect(&format!("Community with handle `{}` does not exist", handle));
 
         self.communities.remove(&community.handle);
-    }
-
-    pub fn get_all_communities(&self) -> Vec<CommunityMetadata> {
-        near_sdk::log!("get_all_communities");
-        self.communities
-            .iter()
-            .map(|(handle, community)| CommunityMetadata {
-                handle,
-                name: community.name,
-                description: community.description,
-                logo_url: community.logo_url,
-                banner_url: community.banner_url,
-            })
-            .collect()
-    }
-
-    pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
-        self.communities.get(&handle)
-    }
-
-    pub fn get_community_metadata(&self, handle: CommunityHandle) -> Option<CommunityMetadata> {
-        self.communities.get(&handle).map(|community| CommunityMetadata {
-            handle: community.handle,
-            name: community.name,
-            description: community.description,
-            logo_url: community.logo_url,
-            banner_url: community.banner_url,
-        })
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
