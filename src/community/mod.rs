@@ -92,8 +92,8 @@ impl Community {
             panic!("Community name must contain from 3 to 30 characters");
         }
 
-        if self.tag.len() < 3 || self.tag.len() > 20 {
-            panic!("Community tag must contain from 3 to 20 characters");
+        if self.tag.len() < 3 || self.tag.len() > 30 {
+            panic!("Community tag must contain from 3 to 30 characters");
         }
 
         if self.description.len() < 6 || self.description.len() > 60 {
