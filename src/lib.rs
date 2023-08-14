@@ -344,14 +344,14 @@ impl Contract {
         }
 
         let mut new_community = Community {
-            handle: community.handle,
             admins: vec![],
+            handle: community.handle,
             name: community.name,
+            tag: community.tag,
             description: community.description,
-            bio_markdown: community.bio_markdown,
             logo_url: community.logo_url,
             banner_url: community.banner_url,
-            tag: community.tag,
+            bio_markdown: community.bio_markdown,
             github_handle: None,
             telegram_handle: vec![],
             twitter_handle: None,
