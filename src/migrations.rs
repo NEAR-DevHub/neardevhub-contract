@@ -296,7 +296,7 @@ pub struct ContractV6 {
 // From ContractV6 to ContractV7
 #[near_bindgen]
 impl Contract {
-    fn unsafe_add_workspaces() {
+    fn unsafe_add_board_and_feature_flags() {
         let ContractV6 {
             posts,
             post_to_parent,
@@ -482,7 +482,7 @@ impl Contract {
                 state_version_write(&StateVersion::V6);
             }
             StateVersion::V6 => {
-                Contract::unsafe_add_workspaces();
+                Contract::unsafe_add_board_and_feature_flags();
                 state_version_write(&StateVersion::V7);
             }
             _ => {
