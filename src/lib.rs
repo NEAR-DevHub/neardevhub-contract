@@ -12,11 +12,13 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::{Community, CommunityCard, FeaturedCommunity, WikiPage};
+use community::*;
+use post::*;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
-use post::*;
+
 use std::collections::HashSet;
 
 near_sdk::setup_alloc!();
@@ -40,7 +42,7 @@ pub struct Contract {
     pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
     pub access_control: AccessControl,
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
-    pub communities: UnorderedMap<String, Community>,
+    pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
 }
 
@@ -48,7 +50,7 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V6);
+        migrations::state_version_write(&migrations::StateVersion::V7);
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
             post_to_parent: LookupMap::new(StorageKey::PostToParent),
@@ -335,93 +337,190 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    pub fn add_community(&mut self, handle: String, mut community: Community) {
-        if self.communities.get(&handle).is_some() {
+    #[allow(unused_mut)]
+    pub fn create_community(&mut self, mut inputs: CommunityInputs) {
+        if self.get_community(inputs.handle.to_owned()).is_some() {
             panic!("Community already exists");
         }
-        community.validate();
-        community.set_default_admin();
-        self.communities.insert(&handle, &community);
+
+        let mut new_community = Community {
+            admins: vec![],
+            handle: inputs.handle,
+            name: inputs.name,
+            tag: inputs.tag,
+            description: inputs.description,
+            logo_url: inputs.logo_url,
+            banner_url: inputs.banner_url,
+            bio_markdown: inputs.bio_markdown,
+            github_handle: None,
+            telegram_handle: vec![],
+            twitter_handle: None,
+            website_url: None,
+            github: None,
+            board: None,
+            wiki1: None,
+            wiki2: None,
+
+            features: CommunityFeatureFlags {
+                telegram: true,
+                github: true,
+                board: true,
+                wiki: true,
+            },
+        };
+
+        new_community.validate();
+        new_community.set_default_admin();
+        self.communities.insert(&new_community.handle, &new_community);
     }
 
-    fn get_community_for_editing(&self, handle: &String) -> Community {
-        let community_old = self.communities.get(&handle).expect("Community does not exist");
-        let moderators = self.access_control.members_list.get_moderators();
-        let editor = env::predecessor_account_id();
-        if !community_old.admins.contains(&editor)
-            && !moderators.contains(&Member::Account(editor.clone()))
-        {
-            panic!("Only community admins or moderators can edit community");
+    pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
+        self.communities.get(&handle)
+    }
+
+    pub fn get_community_metadata(&self, handle: CommunityHandle) -> Option<CommunityMetadata> {
+        self.communities.get(&handle).map(|community| CommunityMetadata {
+            admins: community.admins,
+            handle: community.handle,
+            name: community.name,
+            tag: community.tag,
+            description: community.description,
+            logo_url: community.logo_url,
+            banner_url: community.banner_url,
+            bio_markdown: community.bio_markdown,
+        })
+    }
+
+    pub fn get_account_community_permissions(
+        &self,
+        account_id: AccountId,
+        community_handle: CommunityHandle,
+    ) -> CommunityPermissions {
+        let community = self.get_community(community_handle.to_owned()).expect(
+            format!("Community with handle `{}` does not exist", community_handle).as_str(),
+        );
+
+        CommunityPermissions {
+            can_configure: community.admins.contains(&account_id)
+                || self.has_moderator(account_id.to_owned()),
+
+            can_delete: self.has_moderator(account_id),
         }
-        return community_old;
     }
 
-    pub fn edit_community(&mut self, handle: String, mut community: Community) {
-        let _ = self.get_community_for_editing(&handle);
+    pub fn get_all_communities_metadata(&self) -> Vec<CommunityMetadata> {
+        near_sdk::log!("get_all_communities");
+        self.communities
+            .iter()
+            .map(|(handle, community)| CommunityMetadata {
+                admins: community.admins,
+                handle,
+                name: community.name,
+                tag: community.tag,
+                description: community.description,
+                logo_url: community.logo_url,
+                banner_url: community.banner_url,
+                bio_markdown: community.bio_markdown,
+            })
+            .collect()
+    }
+
+    fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
+        if self
+            .get_account_community_permissions(env::predecessor_account_id(), handle.to_owned())
+            .can_configure
+        {
+            return self.get_community(handle.to_owned());
+        } else {
+            return None;
+        };
+    }
+
+    #[allow(unused_mut)]
+    pub fn update_community(&mut self, handle: CommunityHandle, mut community: Community) {
+        let target_community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+
         community.validate();
         community.set_default_admin();
-        if handle == community.handle {
-            self.communities.insert(&handle, &community);
+
+        if target_community.handle == community.handle {
+            self.communities.insert(&target_community.handle, &community);
         } else {
             if self.communities.get(&community.handle).is_some() {
-                panic!("Community handle '{}' is already taken", community.handle);
+                panic!("Community handle `{}` is already taken", community.handle);
             }
-            self.communities.remove(&handle);
+
+            self.communities.remove(&target_community.handle);
             self.communities.insert(&community.handle, &community);
         }
     }
 
-    pub fn edit_community_github(&mut self, handle: String, github: Option<String>) {
-        let mut community = self.get_community_for_editing(&handle);
+    pub fn update_community_feature_flags(
+        &mut self,
+        handle: CommunityHandle,
+        features: CommunityFeatureFlags,
+    ) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+
+        community.features = features;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn update_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure boards");
 
         community.github = github;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki1(&mut self, handle: String, wiki1: Option<WikiPage>) {
-        let mut community = self.get_community_for_editing(&handle);
+    pub fn update_community_board(&mut self, handle: CommunityHandle, board: Option<String>) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure boards");
+
+        community.board = board;
+        self.communities.insert(&handle, &community);
+    }
+
+    pub fn update_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can edit wiki");
 
         community.wiki1 = wiki1;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn edit_community_wiki2(&mut self, handle: String, wiki2: Option<WikiPage>) {
-        let mut community = self.get_community_for_editing(&handle);
+    pub fn update_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
+        let mut community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can edit wiki");
 
         community.wiki2 = wiki2;
         self.communities.insert(&handle, &community);
     }
 
-    pub fn delete_community(&mut self, handle: String) {
-        let caller = env::predecessor_account_id();
-        let moderators = self.access_control.members_list.get_moderators();
-        if !moderators.contains(&Member::Account(caller.clone())) {
+    pub fn delete_community(&mut self, handle: CommunityHandle) {
+        if !self.has_moderator(env::predecessor_account_id()) {
             panic!("Only moderators can delete community");
         }
-        self.communities.remove(&handle);
+
+        let community = self
+            .get_community(handle.clone())
+            .expect(&format!("Community with handle `{}` does not exist", handle));
+
+        self.communities.remove(&community.handle);
     }
 
-    pub fn get_all_communities(&self) -> Vec<CommunityCard> {
-        near_sdk::log!("get_all_communities");
-        self.communities
-            .iter()
-            .map(|(handle, community)| CommunityCard {
-                handle,
-                name: community.name,
-                description: community.description,
-                logo_url: community.logo_url,
-                banner_url: community.banner_url,
-            })
-            .collect()
-    }
-
-    pub fn get_community(&self, handle: String) -> Option<Community> {
-        self.communities.get(&handle)
-    }
-
-    pub fn set_featured_communities(&mut self, handles: Vec<String>) {
+    pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
         assert!(
-            self.is_moderator(env::predecessor_account_id()),
+            self.has_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
 
@@ -444,7 +543,7 @@ impl Contract {
             .collect()
     }
 
-    fn is_moderator(&self, account_id: AccountId) -> bool {
+    pub fn has_moderator(&self, account_id: AccountId) -> bool {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
