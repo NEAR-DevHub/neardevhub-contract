@@ -100,10 +100,7 @@ impl Community {
             panic!("Community description must contain from 6 to 60 characters");
         }
 
-        if self.bio_markdown.is_some()
-            && (self.bio_markdown.as_ref().unwrap().len() < 3
-                || self.bio_markdown.as_ref().unwrap().len() > 200)
-        {
+        if !matches!(self.bio_markdown.to_owned().map_or(0, |text| text.chars().count()), 3..=200) {
             panic!("Community bio must contain from 3 to 200 characters");
         }
     }
