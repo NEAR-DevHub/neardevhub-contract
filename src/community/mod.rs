@@ -84,19 +84,19 @@ pub struct CommunityPermissions {
 
 impl Community {
     pub fn validate(&self) {
-        if !matches(self.handle.chars().count(),  3..=40) {
+        if matches!(self.handle.chars().count(), 3..=40) {
             panic!("Community handle must contain from 3 to 40 characters");
         }
 
-        if self.name.chars().count() < 3 || self.name.chars().count() > 30 {
+        if matches!(self.handle.chars().count(), 3..=30) {
             panic!("Community name must contain from 3 to 30 characters");
         }
 
-        if self.tag.chars().count() < 3 || self.tag.chars().count() > 30 {
+        if matches!(self.handle.chars().count(), 3..=30) {
             panic!("Community tag must contain from 3 to 30 characters");
         }
 
-        if self.description.chars().count() < 6 || self.description.chars().count() > 60 {
+        if matches!(self.handle.chars().count(), 6..=60) {
             panic!("Community description must contain from 6 to 60 characters");
         }
 
