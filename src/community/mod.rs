@@ -84,7 +84,7 @@ pub struct CommunityPermissions {
 
 impl Community {
     pub fn validate(&self) {
-        if self.handle.chars().count() < 3 || self.handle.chars().count() > 40 {
+        if !matches(self.handle.chars().count(),  3..=40) {
             panic!("Community handle must contain from 3 to 40 characters");
         }
 
