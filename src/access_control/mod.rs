@@ -23,12 +23,12 @@ impl Contract {
         &self.access_control
     }
 
-    pub fn is_restricted_label(&self, label: &String) -> bool {
-        self.access_control.rules_list.is_restricted(label)
+    pub fn is_restricted_label(&self, label: String) -> bool {
+        self.access_control.rules_list.is_restricted(&label)
     }
 
     pub fn find_restricted_labels(&self, labels: Vec<String>) -> HashSet<String> {
-        self.access_control.rules_list.find_restricted(labels)
+        self.access_control.rules_list.find_restricted(&labels)
     }
 
     pub fn set_restricted_rules(&mut self, rules: RulesList) {
