@@ -437,7 +437,7 @@ impl Contract {
                 b"unsafe_migrate".to_vec(),
                 Vec::new(),
                 0u128,
-                env::prepaid_gas() - 150_000_000_000_000u64,
+                env::prepaid_gas() - 100_000_000_000_000u64,
             ))
             .as_return();
     }
