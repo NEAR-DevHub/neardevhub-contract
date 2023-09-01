@@ -1,82 +1,25 @@
 use near_units::parse_near;
 use serde_json::json;
-use std::env;
-use std::process::Command;
 use workspaces::AccountId;
-use workspaces::BlockHeight;
+
+const DEVHUB_CONTRACT: &str = "devgovgigs.near";
+const NEAR_SOCIAL: &str = "social.near";
 
 #[tokio::test]
 async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
-    const CONTRACT_ACCOUNT: &str = "devgovgigs.near";
-    const NEAR_SOCIAL: &str = "social.near";
-    let worker = workspaces::sandbox().await?;
+    //Test Flow
+    // 1.Deploy devhub and near social contract on sandbox
+    // 2. Add all kinds of posts and add a community.
+    // 3. Upgrade the contract.
+    // 4. Get all the posts and community and check if migration was succesfull.
 
-    let mainnet = workspaces::mainnet_archival().await?;
-
-    //near social deployment
-    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
-
-    //To use block height if needed
-    const BLOCK_HEIGHT: BlockHeight = 98902482;
-
-    let near_social = worker
-        .import_contract(&near_social_id, &mainnet)
-        .initial_balance(parse_near!("10000 N"))
-        //.block_height(BLOCK_HEIGHT)
-        .transact()
-        .await?;
-
-    println!("{}", format!("{:?}", near_social));
-
-    // let near_social_outcome = near_social
-    //     .call("new")
-    //     .args_json(json!({}))
-    //     .transact() // note: we use the contract's keys here to sign the transaction
-    //     .await?;
-
-    // println!("Near social outcome: {:#?}", near_social_outcome);
-
-    near_social.call("new").transact().await?.into_result()?;
-    let near_social_outcome = near_social
-        .as_account()
-        .call(near_social.id(), "set_status")
-        .args_json(json!({
-            "status": "Live"
-        }))
-        .transact()
-        .await?
-        .into_result()?;
-
-    println!("Near social outcome: {:#?}", near_social_outcome);
-
-
-    // devhub contract deployment
-    let contract_id: AccountId = CONTRACT_ACCOUNT.parse()?;
-
-    //To use block height if needed
-    //const BLOCK_HEIGHT: BlockHeight = 97416242;
-
-    let contract = worker
-        .import_contract(&contract_id, &mainnet)
-        .initial_balance(parse_near!("1000 N"))
-        .block_height(BLOCK_HEIGHT)
-        .transact()
-        .await?;
-
-    println!("{}", format!("{:?}", contract));
-
-    let outcome = contract
-        .call("new")
-        .args_json(json!({}))
-        .transact() // note: we use the contract's keys here to sign the transaction
-        .await?;
-
-    assert!(outcome.is_success());
-    assert!(format!("{:?}", outcome).contains("Migrated to version:"));
-
-    println!("Init outcome: {:#?}", outcome);
+    // Initialize the devhub and near social contract on chain,
+    //contract is devhub contract instance.
+    let contract = init_contracts().await?;
 
     let deposit_amount = near_units::parse_near!("0.1");
+
+    //Add Posts
     let idea_post = contract
         .call("add_post")
         .args_json(json!({
@@ -94,24 +37,116 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .await?;
 
     assert!(idea_post.is_success());
-    println!("Idea Post: {:#?}", idea_post);
+
+    let submission_post = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": null,
+            "labels": [],
+            "body": {
+            "name": "Solution Test",
+            "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test submission. ",
+            "post_type": "Submission",
+            "submission_version": "V1"
+        }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(submission_post.is_success());
+
+    let comment = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": 0,
+            "labels": [],
+            "body": {
+            "description": "This is test Comment.",
+            "comment_version": "V2",
+            "post_type": "Comment"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(comment.is_success());
+
+    let attestation = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+            "name": "Attestation",
+            "description": "Description",
+            "attestation_version": "V1",
+            "post_type": "Attestation"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(attestation.is_success());
+
+    let sponsorship = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+            "name": "Contributor fellowship",
+            "description": "Funding approved",
+            "amount": "1000",
+            "sponsorship_token": "Near",
+            "supervisor": "john.near",
+            "sponsorship_version": "V1",
+            "post_type": "Sponsorship"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(sponsorship.is_success());
+
+    //Add a community
+    let community = contract
+        .call("create_community")
+        .args_json(json!({
+                "inputs": {
+                  "handle": "gotham",
+                  "name": "Gotham",
+                  "tag": "some",
+                  "description": "This is a test community.",
+                  "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+                  "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+                  "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4"
+                }
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    println!("{}", format!("{:?}", community));
+
+    assert!(community.is_success());
+
+    //Call self upgrade with current branch code
     //compile the current code
-    // non-working function from workspaces, needs more debugging.
-    //let wasm = workspaces::compile_project("./").await?;
-
-    //temporary solution using cargo build
-    //checkout comment here - https://github.com/near/neardevhub-contract/pull/46#issuecomment-1666830434
-    let result = compile_project("./").await;
-    assert!(result.is_ok(), "Compilation failed with error: {:?}", result.err().unwrap());
-
-    let wasm = std::fs::read("./target/wasm32-unknown-unknown/release/devgovgigs.wasm")?;
+    let wasm = workspaces::compile_project("./").await?;
 
     let self_upgrade = contract.call("unsafe_self_upgrade").args(wasm).max_gas().transact().await?;
 
-    println!("Unsafe self upgrade: {:#?}", self_upgrade);
-
-    //check if upgrade was success
     assert!(self_upgrade.is_success());
+
+    //needs migration or not
     if format!("{:?}", self_upgrade).contains("needs-migration") {
         let migrate =
             contract.call("unsafe_migrate").args_json(json!({})).max_gas().transact().await?;
@@ -120,31 +155,88 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         assert!(format!("{:?}", self_upgrade).contains("Migration done."));
     }
 
+    let get_idea: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert!(get_idea.to_string().contains("This is a test idea."));
+
+    let get_comment: serde_json::Value = contract
+        .call("get_posts")
+        .args_json(json!({
+            "parent_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert!(get_comment.to_string().contains("This is test Comment."));
+
+    let get_submission: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 1
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert!(get_submission.to_string().contains("This is a test submission"));
+
+    let get_attestation_sponsorship: serde_json::Value = contract
+        .call("get_posts")
+        .args_json(json!({
+            "parent_id" : 1
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert!(get_attestation_sponsorship.to_string().contains("Attestation"));
+    assert!(get_attestation_sponsorship.to_string().contains("Sponsorship"));
+
+    let get_community: serde_json::Value = contract
+        .call("get_community")
+        .args_json(json!({
+            "handle" : "gotham"
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert!(get_community.to_string().contains("This is a test community."));
+
     Ok(())
 }
 
-pub async fn compile_project(project_path: &str) -> Result<(), std::io::Error> {
-    // Set RUSTFLAGS environment variable
-    env::set_var("RUSTFLAGS", "-C link-arg=-s");
-    // Change current directory to parent directory
-    env::set_current_dir(project_path)?;
+async fn init_contracts() -> anyhow::Result<workspaces::Contract> {
+    let worker = workspaces::sandbox().await?;
+    let mainnet = workspaces::mainnet_archival().await?;
 
-    // Run the command
-    let output = Command::new("cargo")
-        .arg("build")
-        .arg("--target")
-        .arg("wasm32-unknown-unknown")
-        .arg("--release")
-        .output()
-        .expect("failed to execute process");
+    // NEAR social deployment
+    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
+    let near_social = worker
+        .import_contract(&near_social_id, &mainnet)
+        .initial_balance(parse_near!("10000 N"))
+        .transact()
+        .await?;
+    near_social.call("new").transact().await?.into_result()?;
 
-    if output.status.success() {
-        let text = String::from_utf8(output.stdout).unwrap();
-        println!("Build successful: {}", text);
-        Ok(())
-    } else {
-        let err = String::from_utf8(output.stderr).unwrap();
-        println!("Build failed: {}", err);
-        Err(std::io::Error::new(std::io::ErrorKind::Other, "Build failed"))
-    }
+    // Devhub contract deployment
+    let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
+    let contract = worker
+        .import_contract(&contract_id, &mainnet)
+        .initial_balance(parse_near!("1000 N"))
+        .transact()
+        .await?;
+    let outcome = contract.call("new").args_json(json!({})).transact().await?;
+    assert!(outcome.is_success());
+    assert!(format!("{:?}", outcome).contains("Migrated to version:"));
+
+    Ok(contract)
 }
