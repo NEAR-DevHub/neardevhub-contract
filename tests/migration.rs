@@ -1,6 +1,6 @@
 use near_units::parse_near;
+use near_workspaces::AccountId;
 use serde_json::json;
-use workspaces::AccountId;
 
 const DEVHUB_CONTRACT: &str = "devgovgigs.near";
 const NEAR_SOCIAL: &str = "social.near";
@@ -132,7 +132,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     // Call self upgrade with current branch code
     // compile the current code
-    let wasm = workspaces::compile_project("./").await?;
+    let wasm = near_workspaces::compile_project("./").await?;
 
     let mut contract_upgrade_result =
         contract.call("unsafe_self_upgrade").args(wasm).max_gas().transact().await?;
@@ -195,9 +195,9 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn init_contracts() -> anyhow::Result<workspaces::Contract> {
-    let worker = workspaces::sandbox().await?;
-    let mainnet = workspaces::mainnet_archival().await?;
+async fn init_contracts() -> anyhow::Result<near_workspaces::Contract> {
+    let worker = near_workspaces::sandbox().await?;
+    let mainnet = near_workspaces::mainnet_archival().await?;
 
     // NEAR social deployment
     let near_social_id: AccountId = NEAR_SOCIAL.parse()?;

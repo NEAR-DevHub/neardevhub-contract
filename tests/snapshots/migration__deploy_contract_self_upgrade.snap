@@ -1,5 +1,5 @@
 ---
-source: tests/workspaces.rs
+source: tests/migration.rs
 expression: get_idea_post
 ---
 {

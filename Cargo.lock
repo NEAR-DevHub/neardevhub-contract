@@ -688,10 +688,10 @@ dependencies = [
  "near-contract-standards",
  "near-sdk",
  "near-units",
+ "near-workspaces",
  "regex",
  "serde_json",
  "tokio",
- "workspaces",
 ]
 
 [[package]]
@@ -1774,6 +1774,40 @@ dependencies = [
  "serde",
  "sha2 0.9.9",
  "sha3",
+]
+
+[[package]]
+name = "near-workspaces"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcd3394d2e96f0d527310951a2f4d04b22cc82d567f2e0fc898305e1900c8eaf"
+dependencies = [
+ "async-process",
+ "async-trait",
+ "base64 0.13.1",
+ "borsh 0.9.3",
+ "bs58",
+ "cargo_metadata",
+ "chrono",
+ "dirs 3.0.2",
+ "hex 0.4.3",
+ "libc",
+ "near-account-id",
+ "near-crypto",
+ "near-jsonrpc-client",
+ "near-jsonrpc-primitives",
+ "near-primitives",
+ "near-sandbox-utils",
+ "portpicker",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-retry",
+ "tracing",
+ "url",
 ]
 
 [[package]]
@@ -3210,40 +3244,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
-]
-
-[[package]]
-name = "workspaces"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73b13d249618f197811e3673decc81459730cf5cc09ee7246dc4bede1e9333bc"
-dependencies = [
- "async-process",
- "async-trait",
- "base64 0.13.1",
- "borsh 0.9.3",
- "bs58",
- "cargo_metadata",
- "chrono",
- "dirs 3.0.2",
- "hex 0.4.3",
- "libc",
- "near-account-id",
- "near-crypto",
- "near-jsonrpc-client",
- "near-jsonrpc-primitives",
- "near-primitives",
- "near-sandbox-utils",
- "portpicker",
- "rand 0.8.5",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-retry",
- "tracing",
- "url",
 ]
 
 [[package]]
