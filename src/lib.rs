@@ -517,6 +517,7 @@ impl Contract {
             self.has_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
+
         // Check if every handle corresponds to an existing community
         for handle in &handles {
             if !self.communities.get(&handle).is_some() {
