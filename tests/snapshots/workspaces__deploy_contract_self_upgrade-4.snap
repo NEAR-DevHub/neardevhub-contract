@@ -1,0 +1,45 @@
+---
+source: tests/workspaces.rs
+expression: get_attestation_sponsorship_posts
+---
+[
+  {
+    "post_version": "V0",
+    "id": {
+      "$serde_json::private::Number": "3"
+    },
+    "author_id": "devgovgigs.near",
+    "likes": [],
+    "snapshot": {
+      "editor_id": "devgovgigs.near",
+      "timestamp": "[timestamp]",
+      "labels": [],
+      "post_type": "Attestation",
+      "attestation_version": "V1",
+      "name": "Attestation",
+      "description": "Description"
+    },
+    "snapshot_history": []
+  },
+  {
+    "post_version": "V0",
+    "id": {
+      "$serde_json::private::Number": "4"
+    },
+    "author_id": "devgovgigs.near",
+    "likes": [],
+    "snapshot": {
+      "editor_id": "devgovgigs.near",
+      "timestamp": "[timestamp]",
+      "labels": [],
+      "post_type": "Sponsorship",
+      "sponsorship_version": "V1",
+      "name": "Contributor fellowship",
+      "description": "Funding approved",
+      "sponsorship_token": "Near",
+      "amount": "1000",
+      "supervisor": "john.near"
+    },
+    "snapshot_history": []
+  }
+]

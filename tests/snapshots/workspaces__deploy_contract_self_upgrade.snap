@@ -1,0 +1,22 @@
+---
+source: tests/workspaces.rs
+expression: get_idea_post
+---
+{
+  "post_version": "V0",
+  "id": {
+    "$serde_json::private::Number": "0"
+  },
+  "author_id": "devgovgigs.near",
+  "likes": [],
+  "snapshot": {
+    "editor_id": "devgovgigs.near",
+    "timestamp": "[timestamp]",
+    "labels": [],
+    "post_type": "Idea",
+    "idea_version": "V1",
+    "name": "This is a test idea.",
+    "description": "This is a test description."
+  },
+  "snapshot_history": []
+}

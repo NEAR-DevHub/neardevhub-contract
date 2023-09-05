@@ -1,0 +1,22 @@
+---
+source: tests/workspaces.rs
+expression: get_submission_post
+---
+{
+  "post_version": "V0",
+  "id": {
+    "$serde_json::private::Number": "1"
+  },
+  "author_id": "devgovgigs.near",
+  "likes": [],
+  "snapshot": {
+    "editor_id": "devgovgigs.near",
+    "timestamp": "[timestamp]",
+    "labels": [],
+    "post_type": "Submission",
+    "submission_version": "V1",
+    "name": "Solution Test",
+    "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test submission. "
+  },
+  "snapshot_history": []
+}
