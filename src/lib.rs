@@ -229,10 +229,7 @@ impl Contract {
             .get(post_id)
             .unwrap_or_else(|| panic!("Post id {} not found", post_id))
             .into();
-        let editor = match editor {
-            None => env::predecessor_account_id(),
-            Some(e) => e,
-        };
+        let editor = editor.unwrap_or_else(env::predecessor_account_id);
         // First check for simple cases.
         if editor == env::current_account_id() || editor == post.author_id {
             return true;
@@ -241,26 +238,23 @@ impl Contract {
         // Then check for complex case.
         self.access_control
             .members_list
-            .check_permissions(editor, post.snapshot.labels.iter().cloned().collect())
+            .check_permissions(editor, &post.snapshot.labels.into_iter().collect::<Vec<_>>())
             .contains(&ActionType::EditPost)
     }
 
     pub fn is_allowed_to_use_labels(&self, editor: Option<AccountId>, labels: Vec<String>) -> bool {
-        let editor = match editor {
-            None => env::predecessor_account_id(),
-            Some(e) => e,
-        };
+        let editor = editor.unwrap_or_else(env::predecessor_account_id);
         // First check for simple cases.
         if editor == env::current_account_id() {
             return true;
         }
-        let restricted_labels = self.access_control.rules_list.find_restricted(labels.clone());
+        let restricted_labels = self.access_control.rules_list.find_restricted(&labels);
         if restricted_labels.is_empty() {
             return true;
         }
         self.access_control
             .members_list
-            .check_permissions(editor, labels)
+            .check_permissions(editor, &labels)
             .contains(&ActionType::UseLabels)
     }
 

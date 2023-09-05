@@ -58,11 +58,13 @@ pub enum Rule {
 
 /// JSON string representation prefix of Rule::StartsWith variant.
 const STARTS_WITH: &str = "starts-with:";
-const ANY: &str = "any";
+const ANY: &str = "*";
 
 impl From<String> for Rule {
     fn from(full_str: String) -> Self {
-        if let Some(s) = full_str.strip_prefix(STARTS_WITH) {
+        if full_str == ANY {
+            Rule::Any()
+        } else if let Some(s) = full_str.strip_prefix(STARTS_WITH) {
             Rule::StartsWith(s.to_string())
         } else {
             Rule::ExactMatch(full_str)
@@ -75,17 +77,26 @@ impl Into<String> for Rule {
         match self {
             Rule::ExactMatch(s) => s.to_string(),
             Rule::StartsWith(s) => format!("{}{}", STARTS_WITH, s).to_string(),
-            Rule::Any() => format!("{}", ANY).to_string(),
+            Rule::Any() => ANY.to_string(),
         }
     }
 }
 
 impl Rule {
     /// Check if this rule applies to a label.
-    pub fn applies(&self, label: &String) -> bool {
+    pub fn applies(&self, label: &str) -> bool {
         match self {
-            Rule::ExactMatch(rule) => rule == label,
+            Rule::ExactMatch(rule) => label == rule,
             Rule::StartsWith(rule) => label.starts_with(rule),
+            Rule::Any() => true,
+        }
+    }
+
+    /// Check if this rule applies to any of the labels.
+    pub fn applies_to_any(&self, labels: &[String]) -> bool {
+        match self {
+            Rule::ExactMatch(rule) => labels.iter().any(|label| label == rule),
+            Rule::StartsWith(rule) => labels.iter().any(|label| label.starts_with(rule.as_str())),
             Rule::Any() => true,
         }
     }
@@ -93,20 +104,20 @@ impl Rule {
 
 impl RulesList {
     /// Is this a restricted label.
-    pub fn is_restricted(&self, label: &String) -> bool {
-        self.rules.keys().find(|key| key.applies(label)).is_some()
+    pub fn is_restricted(&self, label: &str) -> bool {
+        self.rules.keys().any(|rule| rule.applies(label))
     }
 
     /// Get restricted labels out of this list.
-    pub fn find_restricted(&self, ref labels: Vec<String>) -> HashSet<String> {
+    pub fn find_restricted(&self, labels: &[String]) -> HashSet<String> {
         self.rules
             .keys()
             .map(|key| match key {
                 Rule::ExactMatch(rule) => {
-                    labels.into_iter().filter(|label| rule == *label).collect::<Vec<_>>()
+                    labels.iter().filter(|label| label == &rule).collect::<Vec<_>>()
                 }
                 Rule::StartsWith(rule) => {
-                    labels.into_iter().filter(|label| label.starts_with(rule)).collect::<Vec<_>>()
+                    labels.iter().filter(|label| label.starts_with(rule)).collect::<Vec<_>>()
                 }
                 Rule::Any() => {
                     vec![]
@@ -213,7 +224,7 @@ mod tests {
     #[test]
     fn find_restricted() {
         let list = create_list();
-        let actual = list.find_restricted(vec![
+        let actual = list.find_restricted(&[
             "wg-protocol".to_string(),
             "wg-tools".to_string(),
             "wg-wallet".to_string(),

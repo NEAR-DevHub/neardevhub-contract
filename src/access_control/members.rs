@@ -123,15 +123,16 @@ impl MembersList {
 
     /// Whether given account has special permissions for a post with the given labels.
     /// Labels are restricted labels.
-    pub fn check_permissions(&self, account: String, labels: Vec<String>) -> HashSet<ActionType> {
-        if !self.members.contains_key(&Member::Account(account.clone())) {
+    pub fn check_permissions(&self, account: String, labels: &[String]) -> HashSet<ActionType> {
+        let account = Member::Account(account);
+        if !self.members.contains_key(&account) {
             return HashSet::new();
         }
 
         let mut stack = HashSet::new();
-        stack.insert(Member::Account(account));
+        stack.insert(account);
 
-        let mut res = HashSet::new();
+        let mut permissions = HashSet::new();
         while let Some(member) = stack.iter().next().cloned() {
             stack.remove(&member);
 
@@ -141,32 +142,15 @@ impl MembersList {
                 .unwrap_or_else(|| panic!("Metadata not found for {:#?}", member))
                 .last_version();
 
-            for (rule, permissions) in metadata.permissions.iter() {
-                if match rule {
-                    Rule::ExactMatch(rule) => {
-                        // `.find` requires mutable argument.
-                        labels.iter().filter(|label| rule == *label).next().is_some()
-                    }
-                    Rule::StartsWith(rule) => {
-                        // `.find` requires mutable argument.
-                        labels.iter().filter(|label| label.starts_with(rule)).next().is_some()
-                    }
-                    Rule::Any() => {
-                        // always permissions on Rule::Any
-                        true
-                    }
-                } {
-                    for p in permissions {
-                        res.insert(p.clone());
-                    }
+            for (member_rule, member_permissions) in metadata.permissions {
+                if member_rule.applies_to_any(labels) {
+                    permissions.extend(member_permissions);
                 }
             }
 
-            for add_member in metadata.parents.iter() {
-                stack.insert(add_member.clone());
-            }
+            stack.extend(metadata.parents);
         }
-        res
+        permissions
     }
 
     pub fn add_member(&mut self, member: Member, metadata: VersionedMemberMetadata) {
@@ -378,7 +362,7 @@ mod tests {
         let list = create_list();
         let actual = list.check_permissions(
             "max.near".to_string(),
-            vec!["wg-protocol".to_string(), "funding-requested".to_string()],
+            &["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert_eq!(
             actual,
@@ -390,7 +374,7 @@ mod tests {
         );
 
         let actual =
-            list.check_permissions("max.near".to_string(), vec!["funding-requested".to_string()]);
+            list.check_permissions("max.near".to_string(), &["funding-requested".to_string()]);
         assert!(actual.is_empty());
     }
 
@@ -409,7 +393,7 @@ mod tests {
         );
         // Without labels
         assert_eq!(
-            list.check_permissions("thomasguntenaar.near".to_string(), vec![]),
+            list.check_permissions("thomasguntenaar.near".to_string(), &[]),
             given_permissions,
         );
 
@@ -417,7 +401,7 @@ mod tests {
         assert_eq!(
             list.check_permissions(
                 "thomasguntenaar.near".to_string(),
-                vec!["funding-requested".to_string()]
+                &["funding-requested".to_string()]
             ),
             given_permissions,
         )
@@ -428,7 +412,7 @@ mod tests {
         let list = create_list();
         let actual: HashSet<ActionType> = list.check_permissions(
             "random.near".to_string(),
-            vec!["wg-protocol".to_string(), "funding-requested".to_string()],
+            &["wg-protocol".to_string(), "funding-requested".to_string()],
         );
         assert!(actual.is_empty());
     }
