@@ -17,4 +17,6 @@ contract=i.zxcvn.testnet
 
 # near call $contract unsafe_self_upgrade --accountId $contract --args $(base64 < res/devgovgigs.wasm ) --base64 --gas 300000000000000
 
-near call $contract unsafe_migrate --accountId $contract --gas 300000000000000
+#near call contract.devhubopen.testnet unsafe_self_upgrade --accountId contract.devhubopen.testnet --args $(base64 < res/devgovgigs.wasm ) --base64 --gas 300000000000000
+
+# near call $contract unsafe_migrate --accountId $contract --gas 300000000000000

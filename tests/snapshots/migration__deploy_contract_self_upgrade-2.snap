@@ -1,0 +1,23 @@
+---
+source: tests/migration.rs
+expression: get_comment_posts
+---
+[
+  {
+    "post_version": "V0",
+    "id": {
+      "$serde_json::private::Number": "2"
+    },
+    "author_id": "devgovgigs.near",
+    "likes": [],
+    "snapshot": {
+      "editor_id": "devgovgigs.near",
+      "timestamp": "[timestamp]",
+      "labels": [],
+      "post_type": "Comment",
+      "comment_version": "V2",
+      "description": "This is test Comment."
+    },
+    "snapshot_history": []
+  }
+]
