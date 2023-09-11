@@ -36,7 +36,7 @@ expression: get_attestation_sponsorship_posts
       "sponsorship_version": "V1",
       "name": "Contributor fellowship",
       "description": "Funding approved",
-      "sponsorship_token": "Near",
+      "sponsorship_token": "NEAR",
       "amount": "1000",
       "supervisor": "john.near"
     },
