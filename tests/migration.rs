@@ -99,7 +99,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "name": "Contributor fellowship",
                 "description": "Funding approved",
                 "amount": "1000",
-                "sponsorship_token": "Near",
+                "sponsorship_token": "NEAR",
                 "supervisor": "john.near",
                 "sponsorship_version": "V1",
                 "post_type": "Sponsorship"
