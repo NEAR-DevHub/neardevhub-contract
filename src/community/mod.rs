@@ -4,6 +4,8 @@ use near_sdk::{env, AccountId};
 
 pub type CommunityHandle = String;
 
+pub type CommunityAddOnId = String;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityInputs {
@@ -47,6 +49,26 @@ pub struct WikiPage {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct CommunityAddOnConfig {
+    id: CommunityAddOnId,
+    parameters: String,
+    enabled: bool,
+    name: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CommunityAddOn {
+    id: CommunityAddOnId,
+    title: String,
+    description: String,
+    src: String,
+    schema: String,
+    icon: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -67,6 +89,7 @@ pub struct Community {
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
+    pub add_on_list: Vec<CommunityAddOn>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

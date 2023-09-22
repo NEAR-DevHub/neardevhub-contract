@@ -44,6 +44,7 @@ pub struct Contract {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
+    pub available_addons: UnorderedMap<CommunityAddOnId, CommunityAddOn>,
 }
 
 #[near_bindgen]
@@ -60,6 +61,7 @@ impl Contract {
             authors: UnorderedMap::new(StorageKey::AuthorToAuthorPosts),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
+            available_addons: UnorderedMap::new(StorageKey::AddOns),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -355,6 +357,7 @@ impl Contract {
                 board: true,
                 wiki: true,
             },
+            add_on_list: vec![],
         };
 
         new_community.validate();
