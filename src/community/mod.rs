@@ -62,8 +62,8 @@ pub struct CommunityAddOn {
     id: CommunityAddOnId,
     title: String,
     description: String,
-    src: String,
-    schema: String,
+    viewer: String,
+    configurator: String,
     icon: String,
 }
 
