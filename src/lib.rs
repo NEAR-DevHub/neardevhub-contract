@@ -357,7 +357,7 @@ impl Contract {
                 board: true,
                 wiki: true,
             },
-            add_on_list: vec![],
+            addon_list: vec![],
         };
 
         new_community.validate();
@@ -414,6 +414,84 @@ impl Contract {
                 bio_markdown: community.bio_markdown,
             })
             .collect()
+    }
+
+    pub fn get_addon(&self, id: CommunityAddOnId) -> Option<CommunityAddOn> {
+        self.available_addons.get(&id)
+    }
+
+    pub fn get_available_addons(&self) -> Vec<CommunityAddOn> {
+        self.available_addons.iter().map(|(_id, add_on)| add_on).collect()
+    }
+
+    pub fn create_new_addon(&mut self, input: CommunityAddOn) {
+        if self.get_addon(input.id.to_owned()).is_some() {
+            panic!("Add-on with this id already exists");
+        }
+        self.available_addons.insert(&input.id, &input);
+    }
+
+    // TODO also delete from every community they are in!
+    pub fn delete_addon(&mut self, id: CommunityAddOnId) {
+        // Also delete from communities
+        if !self.has_moderator(env::predecessor_account_id()) {
+            panic!("Only moderators can delete add-ons");
+        }
+
+        let addon =
+            self.get_addon(id.clone()).expect(&format!("Add-on with id `{}` does not exist", id));
+
+        self.available_addons.remove(&addon.id);
+    }
+
+    pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
+        let community = self
+            .get_community(handle.to_owned())
+            .expect(format!("Community with handle `{}` does not exist", handle).as_str());
+        community
+            .addon_list
+            .iter()
+            .map(|addon_config| {
+                self.get_addon(addon_config.addon_id.clone()).expect("add-on missing")
+                // TODO add-on should never be missing because they are removed from community when they are removed from available add-ons
+            })
+            .collect()
+    }
+
+    pub fn add_community_addon(
+        &self,
+        community_handle: CommunityHandle,
+        &mut addon_config: CommunityAddOnConfig,
+    ) {
+        if self.get_addon(addon_config.addon_id.to_owned()).is_none() {
+            panic!("No add-on exists with this id")
+        }
+
+        let community = self.get_community(community_handle.to_owned()).expect(
+            format!("Community with handle `{}` does not exist", community_handle).as_str(),
+        );
+        community.addon_list.push(addon_config);
+    }
+
+    pub fn edit_community_addon(
+        &self,
+        community_handle: CommunityHandle,
+        addon_config: CommunityAddOnConfig,
+    ) {
+        self.remove_community_addon(community_handle, addon_config.config_id);
+        self.add_community_addon(community_handle, addon_config);
+    }
+
+    pub fn remove_community_addon(
+        &self,
+        community_handle: CommunityHandle,
+        config_id: CommunityAddOnConfigId,
+    ) {
+        let community = self.get_community(community_handle.to_owned()).expect(
+            format!("Community with handle `{}` does not exist", community_handle).as_str(),
+        );
+        // TODO retain
+        community.addon_list.retain(|&config| config.id != config_id);
     }
 
     fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {

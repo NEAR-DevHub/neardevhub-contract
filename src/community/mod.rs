@@ -6,6 +6,8 @@ pub type CommunityHandle = String;
 
 pub type CommunityAddOnId = String;
 
+pub type CommunityAddOnConfigId = String;
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityInputs {
@@ -50,21 +52,22 @@ pub struct WikiPage {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOnConfig {
-    id: CommunityAddOnId,
-    parameters: String,
-    enabled: bool,
-    name: String,
+    pub config_id: CommunityAddOnConfigId,
+    pub addon_id: CommunityAddOnId,
+    pub parameters: String,
+    pub enabled: bool,
+    pub name: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
-    id: CommunityAddOnId,
-    title: String,
-    description: String,
-    viewer: String,
-    configurator: String,
-    icon: String,
+    pub id: CommunityAddOnId,
+    pub title: String,
+    pub description: String,
+    pub viewer: String,
+    pub configurator: String,
+    pub icon: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -89,7 +92,7 @@ pub struct Community {
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
-    pub add_on_list: Vec<CommunityAddOn>,
+    pub addon_list: Vec<CommunityAddOnConfig>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
