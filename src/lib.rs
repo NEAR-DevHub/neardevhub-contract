@@ -446,17 +446,17 @@ impl Contract {
         let addon =
             self.get_addon(id.clone()).expect(&format!("Add-on with id `{}` does not exist", id));
 
-        for community in self.communities {
+        for (_id, community) in self.communities.iter() {
             // Try to remove add on from community
-            self.remove_community_addon(community.handle, addon.config_id)
+            self.remove_community_addon(community.handle, addon.id.clone())
         }
 
         self.available_addons.remove(&addon.id);
     }
 
-    pub fn edit_addon(&mut self, input: CommunityAddOn) {
-        self.available_addons.replace(input.id, input);
-    }
+    // pub fn edit_addon(&mut self, input: CommunityAddOn) {
+    //     self.available_addons.replace(input.id.clone(), input);
+    // }
 
     pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
         let community = self
