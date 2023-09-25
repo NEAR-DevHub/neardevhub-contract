@@ -425,23 +425,37 @@ impl Contract {
     }
 
     pub fn create_new_addon(&mut self, input: CommunityAddOn) {
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+        {
+            panic!("Only the admin and moderators can create new add-ons");
+        }
         if self.get_addon(input.id.to_owned()).is_some() {
             panic!("Add-on with this id already exists");
         }
         self.available_addons.insert(&input.id, &input);
     }
 
-    // TODO also delete from every community they are in!
     pub fn delete_addon(&mut self, id: CommunityAddOnId) {
         // Also delete from communities
-        if !self.has_moderator(env::predecessor_account_id()) {
-            panic!("Only moderators can delete add-ons");
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+        {
+            panic!("Only the admin and moderators can delete add-ons");
         }
-
         let addon =
             self.get_addon(id.clone()).expect(&format!("Add-on with id `{}` does not exist", id));
 
+        for community in self.communities {
+            // Try to remove add on from community
+            self.remove_community_addon(community.handle, addon.config_id)
+        }
+
         self.available_addons.remove(&addon.id);
+    }
+
+    pub fn edit_addon(&mut self, input: CommunityAddOn) {
+        self.available_addons.replace(input.id, input);
     }
 
     pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
