@@ -461,13 +461,13 @@ impl Contract {
     pub fn add_community_addon(
         &self,
         community_handle: CommunityHandle,
-        &mut addon_config: CommunityAddOnConfig,
+        addon_config: CommunityAddOnConfig,
     ) {
         if self.get_addon(addon_config.addon_id.to_owned()).is_none() {
-            panic!("No add-on exists with this id")
+            panic!("No add-on exists with this id");
         }
 
-        let community = self.get_community(community_handle.to_owned()).expect(
+        let mut community = self.get_community(community_handle.to_owned()).expect(
             format!("Community with handle `{}` does not exist", community_handle).as_str(),
         );
         community.addon_list.push(addon_config);
@@ -478,7 +478,7 @@ impl Contract {
         community_handle: CommunityHandle,
         addon_config: CommunityAddOnConfig,
     ) {
-        self.remove_community_addon(community_handle, addon_config.config_id);
+        self.remove_community_addon(community_handle.clone(), addon_config.config_id.clone());
         self.add_community_addon(community_handle, addon_config);
     }
 
@@ -487,11 +487,11 @@ impl Contract {
         community_handle: CommunityHandle,
         config_id: CommunityAddOnConfigId,
     ) {
-        let community = self.get_community(community_handle.to_owned()).expect(
+        let mut community = self.get_community(community_handle.to_owned()).expect(
             format!("Community with handle `{}` does not exist", community_handle).as_str(),
         );
         // TODO retain
-        community.addon_list.retain(|&config| config.id != config_id);
+        community.addon_list.retain(|config| config.config_id != config_id);
     }
 
     fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
