@@ -474,6 +474,7 @@ impl Contract {
             .map(|addon_config| {
                 self.get_addon(addon_config.addon_id.clone()).expect("add-on missing")
                 // TODO add-on should never be missing because they are removed from community when they are removed from available add-ons
+                // write a test
             })
             .collect()
     }
@@ -656,6 +657,11 @@ mod tests {
     use std::collections::HashSet;
     use std::convert::TryInto;
 
+    // use crate::access_control::members::{
+    //     ActionType, Member, MemberMetadata, VersionedMemberMetadata,
+    // };
+    // use crate::access_control::rules::Rule;
+    use crate::community::CommunityAddOn;
     use crate::post::PostBody;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
@@ -664,8 +670,20 @@ mod tests {
     use super::Contract;
 
     fn get_context(is_view: bool) -> VMContext {
+        get_context_with_signer(is_view, "bob.near".to_string())
+    }
+
+    fn get_context_with_signer(is_view: bool, signer: String) -> VMContext {
         VMContextBuilder::new()
-            .signer_account_id("bob.near".try_into().unwrap())
+            .signer_account_id(signer.clone().try_into().unwrap())
+            .current_account_id(signer.try_into().unwrap())
+            .is_view(is_view)
+            .build()
+    }
+
+    fn get_context_with_current(is_view: bool, signer: String) -> VMContext {
+        VMContextBuilder::new()
+            .current_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
     }
@@ -718,4 +736,162 @@ mod tests {
             assert_eq!("{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}}]\"}}}}", args);
         }
     }
+
+    #[test]
+    pub fn test_create_new_addon() {
+        let context = get_context_with_current(false, "bob.near".to_string());
+        testing_env!(context);
+
+        let mut contract = Contract::new();
+        let input = CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        };
+        contract.create_new_addon(input.to_owned());
+
+        let addon = contract.get_addon("CommunityAddOnId".to_owned());
+
+        assert_eq!(addon, Some(input))
+    }
+
+    #[test]
+    pub fn test_get_available_addons() {
+        let context = get_context_with_current(false, "bob.near".to_string());
+        testing_env!(context);
+        let mut contract = Contract::new();
+        let input = CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        };
+        contract.create_new_addon(input.to_owned());
+
+        let addons = contract.get_available_addons();
+
+        assert_eq!(addons, vec![input])
+    }
+
+    #[test]
+    pub fn test_get_addon() {
+        let context = get_context_with_current(false, "bob.near".to_string());
+        testing_env!(context);
+        let mut contract = Contract::new();
+        let input = CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        };
+        contract.create_new_addon(input.to_owned());
+
+        let addon = contract.get_addon("CommunityAddOnId".to_owned());
+
+        assert_eq!(addon, Some(input))
+    }
+
+    #[test]
+    pub fn test_delete_addon() {
+        let context = get_context_with_current(false, "bob.near".to_string());
+        testing_env!(context);
+        let mut contract = Contract::new();
+        let input = CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        };
+        contract.create_new_addon(input.to_owned());
+
+        contract.delete_addon("CommunityAddOnId".to_owned());
+
+        let addons = contract.get_available_addons();
+
+        assert_eq!(addons, vec![])
+    }
+
+    #[test]
+    pub fn test_edit_addon() {
+        let context = get_context(false);
+        testing_env!(context);
+        let mut contract = Contract::new();
+        let input = CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        };
+        contract.create_new_addon(input.to_owned());
+
+        contract.edit_addon(CommunityAddOn { title: "Telegram AddOn".to_owned(), ..input });
+
+        let addons = contract.get_available_addons();
+
+        assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
+    }
+
+    // #[test]
+    // pub fn test_get_community_addons() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // TODO add moderator
+    // TODO add admin to community
+    // let metadata = VersionedMemberMetadata::from(MemberMetadata {
+    //     // member_metadata_version: "V0".to_string(),
+    //     description: "".to_string(),
+    //     permissions: HashMap::from([(
+    //         Rule::Any(),
+    //         HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
+    //     )]),
+    //     children: HashSet::from([]),
+    //     parents: HashSet::from([]),
+    // });
+    // contract.add_member(
+    //     Member::Team("moderators".to_string()),
+    //     MemberMetadata {
+    //         description: "Moderators can do anything except funding posts.".to_string(),
+    //         permissions: HashMap::from([(
+    //             Rule::Any(),
+    //             HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
+    //         )]),
+    //         children: HashSet::from([Member::Account("thomasguntenaar.near".to_string())]),
+    //         ..Default::default()
+    //     }
+    //     .into(),
+    // );
+    // }
+
+    // #[test]
+    // pub fn test_add_community_addons() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // }
+
+    // #[test]
+    // pub fn test_edit_community_addon() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // }
+
+    // #[test]
+    // pub fn test_remove_community_addon() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // }
 }

@@ -59,7 +59,7 @@ pub struct CommunityAddOnConfig {
     pub name: String,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
     pub id: CommunityAddOnId,
