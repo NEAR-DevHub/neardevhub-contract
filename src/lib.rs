@@ -455,9 +455,14 @@ impl Contract {
         self.available_addons.remove(&addon.id);
     }
 
-    // pub fn edit_addon(&mut self, input: CommunityAddOn) {
-    //     self.available_addons.replace(input.id.clone(), input);
-    // }
+    pub fn edit_addon(&mut self, input: CommunityAddOn) {
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+        {
+            panic!("Only the admin and moderators can edit add-ons");
+        }
+        self.available_addons.insert(&input.id.clone(), &input);
+    }
 
     pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
         let community = self
