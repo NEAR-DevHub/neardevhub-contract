@@ -424,6 +424,7 @@ impl Contract {
         self.available_addons.iter().map(|(_id, add_on)| add_on).collect()
     }
 
+    // Only the contract admin and DevHub moderators
     pub fn create_new_addon(&mut self, input: CommunityAddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
@@ -477,13 +478,19 @@ impl Contract {
         community_handle: CommunityHandle,
         addon_config: CommunityAddOnConfig,
     ) {
+        let mut community = self.get_community(community_handle.to_owned()).expect(
+            format!("Community with handle `{}` does not exist", community_handle).as_str(),
+        );
+        if (!self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id())
+            || community.admins.contains(&env::predecessor_account_id())
+        {
+            panic!("Only moderators and community admins can delete add-ons to a community");
+        }
         if self.get_addon(addon_config.addon_id.to_owned()).is_none() {
             panic!("No add-on exists with this id");
         }
 
-        let mut community = self.get_community(community_handle.to_owned()).expect(
-            format!("Community with handle `{}` does not exist", community_handle).as_str(),
-        );
         community.addon_list.push(addon_config);
     }
 
@@ -504,7 +511,14 @@ impl Contract {
         let mut community = self.get_community(community_handle.to_owned()).expect(
             format!("Community with handle `{}` does not exist", community_handle).as_str(),
         );
-        // TODO retain
+
+        if (!self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id())
+            || community.admins.contains(&env::predecessor_account_id())
+        {
+            panic!("Only moderators and community admins can remove add-ons from a community");
+        }
+        // TODO test retain
         community.addon_list.retain(|config| config.config_id != config_id);
     }
 
