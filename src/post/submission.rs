@@ -8,7 +8,7 @@ use std::collections::HashSet;
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct Submission {
+pub struct SubmissionV0 {
     // Common fields
     pub id: SubmissionId,
     pub name: String,
@@ -36,23 +36,31 @@ pub struct SubmissionV1 {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+pub struct SubmissionV2 {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
 #[serde(tag = "submission_version")]
 pub enum VersionedSubmission {
-    V0(Submission),
+    V0(SubmissionV0),
     V1(SubmissionV1),
+    V2(SubmissionV2),
 }
 
 impl VersionedSubmission {
-    pub fn latest_version(self) -> SubmissionV1 {
+    pub fn latest_version(self) -> SubmissionV2 {
         self.into()
     }
 }
 
-impl From<VersionedSubmission> for Submission {
+impl From<VersionedSubmission> for SubmissionV0 {
     fn from(vs: VersionedSubmission) -> Self {
         match vs {
             VersionedSubmission::V0(v0) => v0,
-            VersionedSubmission::V1(_) => unimplemented!(),
+            _ => unimplemented!(),
         }
     }
 }
@@ -66,8 +74,17 @@ impl From<VersionedSubmission> for SubmissionV1 {
     }
 }
 
-impl From<Submission> for VersionedSubmission {
-    fn from(s: Submission) -> Self {
+impl From<VersionedSubmission> for SubmissionV2 {
+    fn from(vs: VersionedSubmission) -> Self {
+        match vs {
+            VersionedSubmission::V2(v2) => v2,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<SubmissionV0> for VersionedSubmission {
+    fn from(s: SubmissionV0) -> Self {
         VersionedSubmission::V0(s)
     }
 }
