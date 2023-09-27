@@ -487,9 +487,9 @@ impl Contract {
         let mut community = self.get_community(community_handle.to_owned()).expect(
             format!("Community with handle `{}` does not exist", community_handle).as_str(),
         );
-        if (!self.has_moderator(env::predecessor_account_id())
-            && env::predecessor_account_id() != env::current_account_id())
-            || community.admins.contains(&env::predecessor_account_id())
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+            && !community.admins.contains(&env::predecessor_account_id())
         {
             panic!("Only moderators and community admins can delete add-ons to a community");
         }
@@ -518,13 +518,12 @@ impl Contract {
             format!("Community with handle `{}` does not exist", community_handle).as_str(),
         );
 
-        if (!self.has_moderator(env::predecessor_account_id())
-            && env::predecessor_account_id() != env::current_account_id())
-            || community.admins.contains(&env::predecessor_account_id())
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+            && !community.admins.contains(&env::predecessor_account_id())
         {
             panic!("Only moderators and community admins can remove add-ons from a community");
         }
-        // TODO test retain
         community.addon_list.retain(|config| config.config_id != config_id);
     }
 
@@ -841,57 +840,4 @@ mod tests {
 
         assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
     }
-
-    // #[test]
-    // pub fn test_get_community_addons() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-    // TODO add moderator
-    // TODO add admin to community
-    // let metadata = VersionedMemberMetadata::from(MemberMetadata {
-    //     // member_metadata_version: "V0".to_string(),
-    //     description: "".to_string(),
-    //     permissions: HashMap::from([(
-    //         Rule::Any(),
-    //         HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
-    //     )]),
-    //     children: HashSet::from([]),
-    //     parents: HashSet::from([]),
-    // });
-    // contract.add_member(
-    //     Member::Team("moderators".to_string()),
-    //     MemberMetadata {
-    //         description: "Moderators can do anything except funding posts.".to_string(),
-    //         permissions: HashMap::from([(
-    //             Rule::Any(),
-    //             HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
-    //         )]),
-    //         children: HashSet::from([Member::Account("thomasguntenaar.near".to_string())]),
-    //         ..Default::default()
-    //     }
-    //     .into(),
-    // );
-    // }
-
-    // #[test]
-    // pub fn test_add_community_addons() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-    // }
-
-    // #[test]
-    // pub fn test_edit_community_addon() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-    // }
-
-    // #[test]
-    // pub fn test_remove_community_addon() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-    // }
 }
