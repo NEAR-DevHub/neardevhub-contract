@@ -874,34 +874,6 @@ mod tests {
         assert_eq!(addon.title, "GitHub AddOn".to_owned());
     }
 
-    // #[test]
-    // pub fn test_get_community_addons() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-
-    //     contract.add_member(
-    //         Member::Team("moderators".to_string()),
-    //         MemberMetadata {
-    //             description: "Moderators can do anything except funding posts.".to_string(),
-    //             permissions: HashMap::from([(
-    //                 Rule::Any(),
-    //                 HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
-    //             )]),
-    //             children: HashSet::from([Member::Account("thomasguntenaar.near".to_string())]),
-    //             ..Default::default()
-    //         }
-    //         .into(),
-    //     );
-    // }
-
-    // #[test]
-    // pub fn test_edit_community_addon() {
-    //     let context = get_context(false);
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-    // }
-
     #[test]
     pub fn test_remove_community_addon() {
         let context = get_context_with_predecessor(false, "alice.near".to_string());
