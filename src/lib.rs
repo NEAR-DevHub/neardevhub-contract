@@ -479,8 +479,6 @@ impl Contract {
             .iter()
             .map(|addon_config| {
                 self.get_addon(addon_config.addon_id.clone()).expect("add-on missing")
-                // TODO add-on should never be missing because they are removed from community when they are removed from available add-ons
-                // write a test
             })
             .collect()
     }
@@ -833,82 +831,6 @@ mod tests {
 
         assert_eq!(addons, vec![])
     }
-
-    // #[test]
-    // pub fn test_delete_addon_from_communities() {
-    //     let context = get_context_with_predecessor(false, "alice.near".to_string());
-
-    //     testing_env!(context);
-    //     let mut contract = Contract::new();
-
-    //     contract.add_member(
-    //         Member::Account("bob.near".to_string()),
-    //         MemberMetadata { ..Default::default() }.into(),
-    //     );
-    //     // Add bob.near (signer) as moderator
-    //     contract.add_member(
-    //         Member::Team("moderators".to_string()),
-    //         MemberMetadata {
-    //             description: "Moderators can do anything except funding posts.".to_string(),
-    //             permissions: HashMap::from([(
-    //                 Rule::Any(),
-    //                 HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
-    //             )]),
-    //             children: HashSet::from([Member::Account("bob.near".to_string())]),
-    //             parents: HashSet::new(), // ..Default::default()
-    //         }
-    //         .into(),
-    //     );
-    //     let community_handle = "gotham";
-    //     let addon_id = "CommunityAddOnId";
-    //     let config_id = "CommunityAddOnConfigId";
-    //     // Create community
-    //     // Predesscor is made admin of this community automatically
-    //     contract.create_community(CommunityInputs {
-    //         handle: community_handle.to_string(),
-    //         name: "Gotham".to_string(),
-    //         tag: "Some".to_string(),
-    //         description: "This is a test community.".to_string(),
-    //         bio_markdown: Some("You can change it on the community configuration page.".to_string()),
-    //         logo_url: "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu".to_string(),
-    //         banner_url: "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4".to_string()
-    //     });
-
-    //     // Create add-on
-    //     contract.create_new_addon(CommunityAddOn {
-    //         id: addon_id.to_owned(),
-    //         title: "GitHub AddOn".to_owned(),
-    //         description: "Current status of NEARCORE repo".to_owned(),
-    //         viewer: "custom-viewer-widget".to_owned(),
-    //         configurator: "github-configurator".to_owned(),
-    //         icon: "bi bi-github".to_owned(),
-    //     });
-
-    //     // Add add-on to community
-    //     contract.add_community_addon(
-    //         community_handle.to_string(),
-    //         CommunityAddOnConfig {
-    //             config_id: config_id.to_string(),
-    //             addon_id: addon_id.to_owned(),
-    //             parameters: "".to_string(),
-    //             name: "GitHub".to_string(),
-    //             enabled: true,
-    //         },
-    //     );
-    //     let community_before =
-    //         contract.get_community(community_handle.to_string()).expect("Community not found");
-
-    //     assert_eq!(community_before.addon_list.len(), 1);
-
-    //     // If a addon is deleted ...
-    //     contract.delete_addon(addon_id.to_string());
-
-    //     // ... it should also be deleted from the communities it was on
-    //     let community =
-    //         contract.get_community(community_handle.to_string()).expect("Community not found");
-
-    //     assert_eq!(community.addon_list.len(), 0);
-    // }
 
     #[test]
     pub fn test_edit_addon() {
