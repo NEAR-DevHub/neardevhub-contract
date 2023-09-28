@@ -136,6 +136,14 @@ impl Community {
         }
     }
 
+    pub fn add_addon(&mut self, addon_config: CommunityAddOnConfig) {
+        self.addon_list.push(addon_config);
+    }
+
+    pub fn remove_addon(&mut self, config_id: String) {
+        self.addon_list.retain(|config| config.config_id != config_id);
+    }
+
     pub fn set_default_admin(&mut self) {
         if self.admins.is_empty() {
             self.admins = vec![env::predecessor_account_id()];
