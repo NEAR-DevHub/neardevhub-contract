@@ -437,30 +437,6 @@ impl Contract {
         self.available_addons.insert(&input.id, &input);
     }
 
-    pub fn delete_addon(&mut self, id: CommunityAddOnId) {
-        // Also delete from communities
-        if !self.has_moderator(env::predecessor_account_id())
-            && env::predecessor_account_id() != env::current_account_id()
-        {
-            panic!("Only the admin and moderators can delete add-ons");
-        }
-        let addon = self
-            .get_addon(id.clone())
-            .expect(&format!("Add-on with id `{}` does not exist", id))
-            .clone();
-
-        let mut new_communities: UnorderedMap<CommunityHandle, Community> =
-            UnorderedMap::new(StorageKey::Communities);
-
-        for (community_handle, mut community) in self.communities.iter() {
-            // Try to remove add on from community
-            community.remove_addon(addon.id.to_owned());
-            new_communities.insert(&community_handle, &community);
-        }
-        self.communities = new_communities;
-        self.available_addons.remove(&addon.id);
-    }
-
     pub fn edit_addon(&mut self, input: CommunityAddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
@@ -807,29 +783,6 @@ mod tests {
         let addon = contract.get_addon("CommunityAddOnId".to_owned());
 
         assert_eq!(addon, Some(input))
-    }
-
-    #[test]
-    pub fn test_delete_addon() {
-        let context = get_context_with_current(false, "bob.near".to_string());
-        testing_env!(context);
-        let mut contract = Contract::new();
-        let addon_id = "CommunityAddOnId";
-        let input = CommunityAddOn {
-            id: addon_id.to_string(),
-            title: "GitHub AddOn".to_owned(),
-            description: "Current status of NEARCORE repo".to_owned(),
-            viewer: "custom-viewer-widget".to_owned(),
-            configurator: "github-configurator".to_owned(),
-            icon: "bi bi-github".to_owned(),
-        };
-        contract.create_new_addon(input.to_owned());
-
-        contract.delete_addon(addon_id.to_owned());
-
-        let addons = contract.get_available_addons();
-
-        assert_eq!(addons, vec![])
     }
 
     #[test]
