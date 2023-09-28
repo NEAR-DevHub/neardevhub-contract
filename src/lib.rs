@@ -480,7 +480,7 @@ impl Contract {
     }
 
     pub fn add_community_addon(
-        &self,
+        &mut self,
         community_handle: CommunityHandle,
         addon_config: CommunityAddOnConfig,
     ) {
@@ -491,17 +491,18 @@ impl Contract {
             && env::predecessor_account_id() != env::current_account_id()
             && !community.admins.contains(&env::predecessor_account_id())
         {
-            panic!("Only moderators and community admins can delete add-ons to a community");
+            panic!("Only moderators and community admins can add add-ons to a community");
         }
         if self.get_addon(addon_config.addon_id.to_owned()).is_none() {
             panic!("No add-on exists with this id");
         }
 
         community.addon_list.push(addon_config);
+        self.communities.insert(&community_handle, &community);
     }
 
     pub fn edit_community_addon(
-        &self,
+        &mut self,
         community_handle: CommunityHandle,
         addon_config: CommunityAddOnConfig,
     ) {
@@ -653,14 +654,14 @@ impl Contract {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
     use std::convert::TryInto;
 
-    // use crate::access_control::members::{
-    //     ActionType, Member, MemberMetadata, VersionedMemberMetadata,
-    // };
-    // use crate::access_control::rules::Rule;
-    use crate::community::CommunityAddOn;
+    use crate::access_control::members::{
+        ActionType, Member, MemberMetadata, VersionedMemberMetadata,
+    };
+    use crate::access_control::rules::Rule;
+    use crate::community::{CommunityAddOn, CommunityAddOnConfig, CommunityInputs};
     use crate::post::PostBody;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
@@ -683,6 +684,13 @@ mod tests {
     fn get_context_with_current(is_view: bool, signer: String) -> VMContext {
         VMContextBuilder::new()
             .current_account_id(signer.try_into().unwrap())
+            .is_view(is_view)
+            .build()
+    }
+
+    fn get_context_with_predecessor(is_view: bool, signer: String) -> VMContext {
+        VMContextBuilder::new()
+            .predecessor_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
     }
@@ -840,4 +848,104 @@ mod tests {
 
         assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
     }
+
+    #[test]
+    pub fn test_add_community_addons() {
+        let context = get_context_with_predecessor(false, "alice.near".to_string());
+
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        contract.add_member(
+            Member::Account("bob.near".to_string()),
+            MemberMetadata { ..Default::default() }.into(),
+        );
+        // Add bob.near (signer) as moderator
+        contract.add_member(
+            Member::Team("moderators".to_string()),
+            MemberMetadata {
+                description: "Moderators can do anything except funding posts.".to_string(),
+                permissions: HashMap::from([(
+                    Rule::Any(),
+                    HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
+                )]),
+                children: HashSet::from([Member::Account("bob.near".to_string())]),
+                parents: HashSet::new(), // ..Default::default()
+            }
+            .into(),
+        );
+        // Create community
+        // Predesscor is made admin of this community automatically
+        contract.create_community(CommunityInputs{
+          handle: "gotham".to_string(),
+          name: "Gotham".to_string(),
+          tag: "some".to_string(),
+          description: "This is a test community.".to_string(),
+          bio_markdown: Some("You can change it on the community configuration page.".to_string()),
+          logo_url: "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu".to_string(),
+          banner_url: "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4".to_string()
+        });
+
+        // Create add-on
+        contract.create_new_addon(CommunityAddOn {
+            id: "CommunityAddOnId".to_owned(),
+            title: "GitHub AddOn".to_owned(),
+            description: "Current status of NEARCORE repo".to_owned(),
+            viewer: "custom-viewer-widget".to_owned(),
+            configurator: "github-configurator".to_owned(),
+            icon: "bi bi-github".to_owned(),
+        });
+        // Add add-on to community
+        contract.add_community_addon(
+            "gotham".to_string(),
+            CommunityAddOnConfig {
+                config_id: "CommunityAddOnConfigId".to_string(),
+                addon_id: "CommunityAddOnId".to_string(),
+                parameters: "".to_string(),
+                name: "GitHub".to_string(),
+                enabled: true,
+            },
+        );
+        let community = contract.get_community("gotham".to_string()).expect("Community not found");
+
+        let addon = contract
+            .get_addon(community.addon_list[0].addon_id.to_owned())
+            .expect("Add-on not found");
+        assert_eq!(addon.title, "GitHub AddOn".to_owned());
+    }
+
+    // #[test]
+    // pub fn test_get_community_addons() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+
+    //     contract.add_member(
+    //         Member::Team("moderators".to_string()),
+    //         MemberMetadata {
+    //             description: "Moderators can do anything except funding posts.".to_string(),
+    //             permissions: HashMap::from([(
+    //                 Rule::Any(),
+    //                 HashSet::from([ActionType::EditPost, ActionType::UseLabels]),
+    //             )]),
+    //             children: HashSet::from([Member::Account("thomasguntenaar.near".to_string())]),
+    //             ..Default::default()
+    //         }
+    //         .into(),
+    //     );
+    // }
+
+    // #[test]
+    // pub fn test_edit_community_addon() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // }
+
+    // #[test]
+    // pub fn test_remove_community_addon() {
+    //     let context = get_context(false);
+    //     testing_env!(context);
+    //     let mut contract = Contract::new();
+    // }
 }
