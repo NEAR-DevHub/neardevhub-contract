@@ -53,10 +53,10 @@ impl Into<String> for Member {
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct MemberMetadata {
-    description: String,
-    permissions: HashMap<Rule, HashSet<ActionType>>,
-    children: HashSet<Member>,
-    parents: HashSet<Member>,
+    pub description: String,
+    pub permissions: HashMap<Rule, HashSet<ActionType>>,
+    pub children: HashSet<Member>,
+    pub parents: HashSet<Member>,
 }
 
 #[derive(
