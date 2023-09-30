@@ -7,8 +7,8 @@ fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_j
     let post_link = format!("https://near.social/#/devgovgigs.near/widget/Post?id={}", post.id);
     let title = match post.snapshot.body.clone() {
         PostBody::Idea(idea) => format!("## Idea: {}\n", idea.latest_version().name),
-        PostBody::Submission(submission) => {
-            format!("## Solution: {}\n", submission.latest_version().name)
+        PostBody::Solution(solution) => {
+            format!("## Solution: {}\n", solution.latest_version().name)
         }
         PostBody::Attestation(attestation) => {
             format!("## Attestation: {}\n", attestation.latest_version().name)

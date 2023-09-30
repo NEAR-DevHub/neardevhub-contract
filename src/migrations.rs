@@ -398,6 +398,45 @@ pub struct ContractV7 {
     pub featured_communities: Vec<FeaturedCommunity>,
 }
 
+// From ContractV7 to ContractV8
+#[near_bindgen]
+impl Contract {
+    fn unsafe_migrate_solution_posts() {
+        let ContractV7 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities,
+            featured_communities,
+        } = env::state_read().unwrap();
+        env::state_write(&ContractV8 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities,
+            featured_communities,
+        });
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct ContractV8 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub communities: UnorderedMap<String, CommunityV3>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+}
+
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub(crate) enum StateVersion {
     V1,
@@ -407,6 +446,7 @@ pub(crate) enum StateVersion {
     V5,
     V6,
     V7,
+    V8,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -484,6 +524,10 @@ impl Contract {
             StateVersion::V6 => {
                 Contract::unsafe_add_board_and_feature_flags();
                 state_version_write(&StateVersion::V7);
+            }
+            StateVersion::V7 => {
+                Contract::unsafe_migrate_solution_posts();
+                state_version_write(&StateVersion::V8);
             }
             _ => {
                 return Contract::migration_done();

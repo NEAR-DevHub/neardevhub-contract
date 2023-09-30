@@ -37,23 +37,27 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .await?;
     assert!(add_idea_post.is_success());
 
-    let add_submission_post = contract
+    let add_solution_post = contract
         .call("add_post")
         .args_json(json!({
             "parent_id": null,
             "labels": [],
             "body": {
                 "name": "Solution Test",
-                "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test submission. ",
-                "post_type": "Submission",
-                "submission_version": "V1"
+                "description": "This is a test solution post.",
+                "post_type": "Solution",
+                "sponsorship_token": "NEAR",
+                "amount": 100,
+                "requested_sponsor": "@neardevgov.near",
+                "solution_version": "V2"
             }
         }))
         .deposit(deposit_amount)
         .max_gas()
         .transact()
         .await?;
-    assert!(add_submission_post.is_success());
+
+    assert!(add_solution_post.is_success());
 
     let add_comment_post = contract
         .call("add_post")
@@ -162,7 +166,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
     insta::assert_json_snapshot!(get_comment_posts, {"[].snapshot.timestamp" => "[timestamp]"});
 
-    let get_submission_post: serde_json::Value = contract
+    let get_solution_post: serde_json::Value = contract
         .call("get_post")
         .args_json(json!({
             "post_id" : 1
@@ -170,7 +174,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .view()
         .await?
         .json()?;
-    insta::assert_json_snapshot!(get_submission_post, {".snapshot.timestamp" => "[timestamp]"});
+    insta::assert_json_snapshot!(get_solution_post, {".snapshot.timestamp" => "[timestamp]"});
 
     let get_attestation_sponsorship_posts: serde_json::Value = contract
         .call("get_posts")

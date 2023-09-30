@@ -1,6 +1,5 @@
 use super::{Like, PostStatus};
-use crate::str_serializers::*;
-use crate::{CommentId, IdeaId, SponsorshipId};
+use crate::{str_serializers::*, CommentId, SolutionId, SponsorshipId};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Balance, Timestamp};
@@ -30,7 +29,7 @@ pub struct Sponsorship {
 
     // Specific fields
     #[serde(with = "u64_dec_format")]
-    pub submission_id: IdeaId,
+    pub submission_id: SolutionId,
     pub sponsorship_token: SponsorshipToken,
     #[serde(with = "u128_dec_format")]
     pub amount: Balance,

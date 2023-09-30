@@ -3,8 +3,8 @@ mod comment;
 mod github;
 mod idea;
 mod like;
+mod solution;
 mod sponsorship;
-mod submission;
 
 use crate::str_serializers::*;
 pub use attestation::*;
@@ -14,9 +14,9 @@ pub use like::*;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, BorshStorageKey, CryptoHash, Timestamp};
+pub use solution::*;
 pub use sponsorship::*;
 use std::collections::HashSet;
-pub use submission::*;
 
 pub type PostId = u64;
 
@@ -25,7 +25,7 @@ pub type PostId = u64;
 pub enum PostType {
     Comment,
     Idea,
-    Submission,
+    Solution,
     Attestation,
     Sponsorship,
     Github,
@@ -41,7 +41,7 @@ pub enum PostStatus {
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKey {
     Ideas,
-    Submissions,
+    Solutions,
     Attestations,
     Sponsorships,
     Comments,
@@ -106,7 +106,7 @@ pub struct PostSnapshot {
 pub enum PostBody {
     Comment(VersionedComment),
     Idea(VersionedIdea),
-    Submission(VersionedSubmission),
+    Solution(VersionedSolution),
     Attestation(VersionedAttestation),
     Sponsorship(VersionedSponsorship),
 }
@@ -115,7 +115,7 @@ pub fn get_post_description(post: Post) -> String {
     return match post.snapshot.body.clone() {
         PostBody::Comment(comment) => comment.latest_version().description,
         PostBody::Idea(idea) => idea.latest_version().description,
-        PostBody::Submission(submission) => submission.latest_version().description,
+        PostBody::Solution(solution) => solution.latest_version().description,
         PostBody::Attestation(attestation) => attestation.latest_version().description,
         PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
     };
