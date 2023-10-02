@@ -425,16 +425,17 @@ impl Contract {
     }
 
     // Only the contract admin and DevHub moderators
-    pub fn create_new_addon(&mut self, input: CommunityAddOn) {
+    pub fn create_new_addon(&mut self, addon: CommunityAddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
         {
             panic!("Only the admin and moderators can create new add-ons");
         }
-        if self.get_addon(input.id.to_owned()).is_some() {
+        if self.get_addon(addon.id.to_owned()).is_some() {
             panic!("Add-on with this id already exists");
         }
-        self.available_addons.insert(&input.id, &input);
+        addon.validate();
+        self.available_addons.insert(&addon.id.clone(), &addon);
     }
 
     pub fn edit_addon(&mut self, input: CommunityAddOn) {

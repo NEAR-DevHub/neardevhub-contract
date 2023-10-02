@@ -70,6 +70,33 @@ pub struct CommunityAddOn {
     pub icon: String,
 }
 
+impl CommunityAddOn {
+    pub fn validate(&self) {
+        if !matches!(self.id.chars().count(), 3..=60) {
+            panic!("Add-on id must contain 3 to 60 characters");
+        }
+
+        if !matches!(self.title.chars().count(), 3..=60) {
+            panic!("Add-on title must contain 3 to 60 characters");
+        }
+
+        if !matches!(self.description.chars().count(), 3..=60) {
+            panic!("Add-on description must contain 3 to 60 characters");
+        }
+
+        if !matches!(self.viewer.chars().count(), 6..=60) {
+            panic!("Add-on description must contain 6 to 60 characters");
+        }
+
+        if !matches!(self.configurator.chars().count(), 6..=60) {
+            panic!("Add-on configurator must contain 6 to 60 characters");
+        }
+        if !matches!(self.icon.chars().count(), 6..=60) {
+            panic!("Add-on icon must contain 6 to 60 characters");
+        }
+    }
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Community {
