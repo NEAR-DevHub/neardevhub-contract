@@ -438,6 +438,31 @@ impl Contract {
         self.available_addons.insert(&addon.id.clone(), &addon);
     }
 
+    // ONLY FOR TESTING
+    pub fn delete_addon(&mut self, id: CommunityAddOnId) {
+        // Also delete from communities
+        if !self.has_moderator(env::predecessor_account_id())
+            && env::predecessor_account_id() != env::current_account_id()
+        {
+            panic!("Only the admin and moderators can delete add-ons");
+        }
+        let addon = self
+            .get_addon(id.clone())
+            .expect(&format!("Add-on with id `{}` does not exist", id))
+            .clone();
+
+        // let mut new_communities: UnorderedMap<CommunityHandle, Community> =
+        //     UnorderedMap::new(StorageKey::Communities);
+
+        // for (community_handle, mut community) in self.communities.iter() {
+        //     // Try to remove add on from community
+        //     community.remove_addon(addon.id.to_owned());
+        //     new_communities.insert(&community_handle, &community);
+        // }
+        // self.communities = new_communities;
+        self.available_addons.remove(&addon.id);
+    }
+
     pub fn edit_addon(&mut self, input: CommunityAddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
