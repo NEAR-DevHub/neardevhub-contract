@@ -88,8 +88,8 @@ impl CommunityAddOn {
             panic!("Add-on description must contain 6 to 60 characters");
         }
 
-        if !matches!(self.configurator.chars().count(), 6..=60) {
-            panic!("Add-on configurator must contain 6 to 60 characters");
+        if !matches!(self.configurator.chars().count(), 0..=60) {
+            panic!("Add-on configurator must contain 0 to 60 characters");
         }
         if !matches!(self.icon.chars().count(), 6..=60) {
             panic!("Add-on icon must contain 6 to 60 characters");
