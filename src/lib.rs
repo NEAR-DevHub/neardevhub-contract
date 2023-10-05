@@ -463,7 +463,7 @@ impl Contract {
         self.available_addons.remove(&addon.id);
     }
 
-    pub fn edit_addon(&mut self, input: CommunityAddOn) {
+    pub fn update_addon(&mut self, input: CommunityAddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
         {
@@ -507,7 +507,7 @@ impl Contract {
         self.communities.insert(&community_handle, &community);
     }
 
-    pub fn edit_community_addon(
+    pub fn update_community_addon(
         &mut self,
         community_handle: CommunityHandle,
         addon_config: CommunityAddOnConfig,
@@ -812,7 +812,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_edit_addon() {
+    pub fn test_update_addon() {
         let context = get_context(false);
         testing_env!(context);
         let mut contract = Contract::new();
@@ -826,7 +826,7 @@ mod tests {
         };
         contract.create_new_addon(input.to_owned());
 
-        contract.edit_addon(CommunityAddOn { title: "Telegram AddOn".to_owned(), ..input });
+        contract.update_addon(CommunityAddOn { title: "Telegram AddOn".to_owned(), ..input });
 
         let addons = contract.get_available_addons();
 
