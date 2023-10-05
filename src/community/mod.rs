@@ -119,7 +119,7 @@ pub struct Community {
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
-    pub addon_list: Vec<CommunityAddOnConfig>,
+    pub addon_list: Vec<CommunityAddOnConfigId>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -163,12 +163,12 @@ impl Community {
         }
     }
 
-    pub fn add_addon(&mut self, addon_config: CommunityAddOnConfig) {
+    pub fn add_addon(&mut self, addon_config: CommunityAddOnConfigId) {
         self.addon_list.push(addon_config);
     }
 
     pub fn remove_addon(&mut self, config_id: String) {
-        self.addon_list.retain(|config| config.config_id != config_id);
+        self.addon_list.retain(|config| config != &config_id);
     }
 
     pub fn set_default_admin(&mut self) {

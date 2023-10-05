@@ -54,6 +54,7 @@ pub enum StorageKey {
     AuthorPosts(CryptoHash),
     Communities,
     AddOns,
+    AddOnsConfig,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

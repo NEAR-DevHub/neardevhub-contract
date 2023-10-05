@@ -45,6 +45,7 @@ pub struct Contract {
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<CommunityAddOnId, CommunityAddOn>,
+    pub addon_configurations: LookupMap<CommunityAddOnConfigId, CommunityAddOnConfig>,
 }
 
 #[near_bindgen]
@@ -62,6 +63,7 @@ impl Contract {
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
+            addon_configurations: LookupMap::new(StorageKey::AddOnsConfig),
         };
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
@@ -420,6 +422,10 @@ impl Contract {
         self.available_addons.get(&id)
     }
 
+    pub fn get_addon_config(&self, id: CommunityAddOnConfigId) -> Option<CommunityAddOnConfig> {
+        self.addon_configurations.get(&id)
+    }
+
     pub fn get_available_addons(&self) -> Vec<CommunityAddOn> {
         self.available_addons.iter().map(|(_id, add_on)| add_on).collect()
     }
@@ -472,15 +478,27 @@ impl Contract {
         self.available_addons.insert(&input.id.clone(), &input);
     }
 
-    pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
+    pub fn get_community_addon_configs(
+        &self,
+        handle: CommunityHandle,
+    ) -> Vec<CommunityAddOnConfig> {
         let community = self
             .get_community(handle.to_owned())
             .expect(format!("Community with handle `{}` does not exist", handle).as_str());
         community
             .addon_list
             .iter()
+            .map(|addon_config_id| {
+                self.get_addon_config(addon_config_id.clone()).expect("add-on config missing")
+            })
+            .collect()
+    }
+
+    pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
+        self.get_community_addon_configs(handle.clone())
+            .iter()
             .map(|addon_config| {
-                self.get_addon(addon_config.addon_id.clone()).expect("add-on missing")
+                self.get_addon(addon_config.addon_id.clone()).expect("add-on config missing")
             })
             .collect()
     }
@@ -503,7 +521,8 @@ impl Contract {
             panic!("No add-on exists with this id");
         }
 
-        community.add_addon(addon_config);
+        self.addon_configurations.insert(&addon_config.config_id, &addon_config);
+        community.add_addon(addon_config.config_id);
         self.communities.insert(&community_handle, &community);
     }
 
@@ -531,8 +550,9 @@ impl Contract {
         {
             panic!("Only moderators and community admins can remove add-ons from a community");
         }
-        community.remove_addon(config_id);
 
+        self.addon_configurations.remove(&config_id);
+        community.remove_addon(config_id);
         self.communities.insert(&community_handle, &community);
     }
 
@@ -894,9 +914,10 @@ mod tests {
         let community =
             contract.get_community(community_handle.to_string()).expect("Community not found");
 
-        let addon = contract
-            .get_addon(community.addon_list[0].addon_id.to_owned())
-            .expect("Add-on not found");
+        let addon_config = contract
+            .get_addon_config(community.addon_list[0].to_owned())
+            .expect("Add-on config not found");
+        let addon = contract.get_addon(addon_config.addon_id).expect("Add-on not found");
         assert_eq!(addon.title, "GitHub AddOn".to_owned());
     }
 

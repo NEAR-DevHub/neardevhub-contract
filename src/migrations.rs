@@ -460,6 +460,7 @@ impl Contract {
             communities: communities_new,
             featured_communities,
             available_addons: UnorderedMap::new(StorageKey::AddOns),
+            addon_configurations: LookupMap::new(StorageKey::AddOnsConfig),
         });
     }
 }
@@ -485,7 +486,7 @@ pub struct CommunityV4 {
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
-    pub addon_list: Vec<CommunityAddOnConfig>,
+    pub addon_list: Vec<CommunityAddOnConfigId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -499,6 +500,7 @@ pub struct ContractV8 {
     pub communities: UnorderedMap<String, CommunityV4>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<CommunityAddOnId, CommunityAddOn>,
+    pub addon_configurations: LookupMap<CommunityAddOnConfigId, CommunityAddOnConfig>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
