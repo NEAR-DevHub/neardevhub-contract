@@ -46,9 +46,9 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "name": "Solution Test",
                 "description": "This is a test solution post.",
                 "post_type": "Solution",
+                "requested_sponsor": "neardevgov.near",
+                "requested_sponsorship_amount": "1000",
                 "sponsorship_token": "NEAR",
-                "amount": 100,
-                "requested_sponsor": "@neardevgov.near",
                 "solution_version": "V2"
             }
         }))

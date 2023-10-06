@@ -39,10 +39,10 @@ pub struct SolutionV1 {
 pub struct SolutionV2 {
     pub name: String,
     pub description: String,
-    pub sponsorship_token: SponsorshipToken,
+    pub requested_sponsor: Option<AccountId>,
     #[serde(with = "u128_dec_format")]
-    pub amount: Balance,
-    pub requested_sponsor: AccountId,
+    pub requested_sponsorship_amount: Balance,
+    pub sponsorship_token: Option<SponsorshipToken>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -58,11 +58,28 @@ impl VersionedSolution {
     pub fn latest_version(self) -> SolutionV2 {
         self.into()
     }
+
+    pub fn validate(&self) {
+        match self {
+            VersionedSolution::V2(solution) => {
+                if solution.requested_sponsorship_amount > 0
+                    && (solution.sponsorship_token.is_none()
+                        || solution.requested_sponsor.is_none())
+                {
+                    panic!(
+                        "Solution that requires funding must specify sponsorship token and sponsor"
+                    )
+                }
+            }
+
+            _ => unimplemented!(),
+        }
+    }
 }
 
 impl From<VersionedSolution> for SolutionV0 {
-    fn from(vs: VersionedSolution) -> Self {
-        match vs {
+    fn from(solution: VersionedSolution) -> Self {
+        match solution {
             VersionedSolution::V0(v0) => v0,
             _ => unimplemented!(),
         }
@@ -70,34 +87,34 @@ impl From<VersionedSolution> for SolutionV0 {
 }
 
 impl From<VersionedSolution> for SolutionV1 {
-    fn from(vs: VersionedSolution) -> Self {
-        match vs {
+    fn from(solution: VersionedSolution) -> Self {
+        match solution {
             VersionedSolution::V1(v1) => v1,
             _ => unimplemented!(),
         }
     }
 }
 
+impl From<SolutionV0> for VersionedSolution {
+    fn from(solution: SolutionV0) -> Self {
+        VersionedSolution::V0(solution)
+    }
+}
+
 impl From<VersionedSolution> for SolutionV2 {
-    fn from(vs: VersionedSolution) -> Self {
-        match vs {
+    fn from(solution: VersionedSolution) -> Self {
+        match solution {
             VersionedSolution::V2(v2) => v2,
 
             VersionedSolution::V1(v1) => SolutionV2 {
                 name: v1.name,
                 description: v1.description,
-                sponsorship_token: SponsorshipToken::USD,
-                amount: 0,
-                requested_sponsor: "".to_string(),
+                requested_sponsor: None,
+                requested_sponsorship_amount: 0,
+                sponsorship_token: None,
             },
 
             _ => unimplemented!(),
         }
-    }
-}
-
-impl From<SolutionV0> for VersionedSolution {
-    fn from(s: SolutionV0) -> Self {
-        VersionedSolution::V0(s)
     }
 }
