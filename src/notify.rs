@@ -44,18 +44,15 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
             }));
         }
 
-        ext_social_db::set(
-            json!({
+        ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+            .with_static_gas(env::prepaid_gas() / 2)
+            .with_attached_deposit(env::attached_deposit())
+            .set(json!({
                 env::predecessor_account_id() : {
                     "index": {
                         "notify": json!(notify_values).to_string()
-                    }
-                }
-            }),
-            &SOCIAL_DB,
-            env::attached_deposit(),
-            env::prepaid_gas() / 4,
-        );
+                    } }
+                }));
     }
 }
 
@@ -72,8 +69,10 @@ pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
 }
 
 fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
-    ext_social_db::set(
-        json!({
+    ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+        .with_static_gas(env::prepaid_gas() / 2)
+        .with_attached_deposit(env::attached_deposit())
+        .set(json!({
             env::predecessor_account_id() : {
                 "index": {
                     "notify": json!({
@@ -86,9 +85,6 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
                 }
             }
         }),
-        &SOCIAL_DB,
-        env::attached_deposit(),
-        env::prepaid_gas() / 4,
     )
 }
 
@@ -105,7 +101,7 @@ mod tests {
 
     fn get_context(is_view: bool) -> VMContext {
         VMContextBuilder::new()
-            .signer_account_id("bob.near".try_into().unwrap())
+            .signer_account_id("bob.near".parse().unwrap())
             .is_view(is_view)
             .build()
     }
