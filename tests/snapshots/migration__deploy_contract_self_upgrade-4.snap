@@ -41,5 +41,51 @@ expression: get_attestation_sponsorship_posts
       "supervisor": "john.near"
     },
     "snapshot_history": []
+  },
+  {
+    "post_version": "V0",
+    "id": {
+      "$serde_json::private::Number": "5"
+    },
+    "author_id": "devgovgigs.near",
+    "likes": [],
+    "snapshot": {
+      "editor_id": "devgovgigs.near",
+      "timestamp": "[timestamp]",
+      "labels": [],
+      "post_type": "Sponsorship",
+      "sponsorship_version": "V1",
+      "name": "Contributor fellowship",
+      "description": "Funding approved",
+      "sponsorship_token": "USD",
+      "amount": "1000",
+      "supervisor": "john.near"
+    },
+    "snapshot_history": []
+  },
+  {
+    "post_version": "V0",
+    "id": {
+      "$serde_json::private::Number": "6"
+    },
+    "author_id": "devgovgigs.near",
+    "likes": [],
+    "snapshot": {
+      "editor_id": "devgovgigs.near",
+      "timestamp": "[timestamp]",
+      "labels": [],
+      "post_type": "Sponsorship",
+      "sponsorship_version": "V1",
+      "name": "Contributor fellowship",
+      "description": "Funding approved",
+      "sponsorship_token": {
+        "NEP141": {
+          "address": "usdt.tether-token.near"
+        }
+      },
+      "amount": "1000",
+      "supervisor": "john.near"
+    },
+    "snapshot_history": []
   }
 ]
