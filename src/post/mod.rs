@@ -48,7 +48,8 @@ pub enum StorageKey {
     Posts,
     PostToParent,
     PostToChildren,
-    LabelToPosts, // This collection got corrupted by accident.
+    /// Deprecated due to damaged storage state.
+    LabelToPosts,
     LabelToPostsV2,
     AuthorToAuthorPosts,
     AuthorPosts(CryptoHash),
@@ -73,6 +74,8 @@ pub struct Post {
     pub snapshot_history: Vec<PostSnapshot>,
 }
 
+type PostTag = String;
+
 impl From<VersionedPost> for Post {
     fn from(vp: VersionedPost) -> Self {
         match vp {
@@ -87,15 +90,13 @@ impl From<Post> for VersionedPost {
     }
 }
 
-type Label = String;
-
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PostSnapshot {
     pub editor_id: AccountId,
     #[serde(with = "u64_dec_format")]
     pub timestamp: Timestamp,
-    pub labels: HashSet<Label>,
+    pub labels: HashSet<PostTag>,
     #[serde(flatten)]
     pub body: PostBody,
 }
