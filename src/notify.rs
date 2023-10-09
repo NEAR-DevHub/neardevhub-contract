@@ -45,7 +45,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
         }
 
         ext_social_db::ext(SOCIAL_DB.parse().unwrap())
-            .with_static_gas(env::prepaid_gas() / 2)
+            .with_static_gas(env::prepaid_gas() / 4)
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
                 env::predecessor_account_id() : {
@@ -70,7 +70,7 @@ pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
 
 fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
     ext_social_db::ext(SOCIAL_DB.parse().unwrap())
-        .with_static_gas(env::prepaid_gas() / 2)
+        .with_static_gas(env::prepaid_gas() / 4)
         .with_attached_deposit(env::attached_deposit())
         .set(json!({
             env::predecessor_account_id() : {
