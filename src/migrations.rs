@@ -21,6 +21,7 @@ impl Contract {
     fn unsafe_add_acl() {
         let ContractV1 { posts, post_to_parent, post_to_children, label_to_posts } =
             env::state_read().unwrap();
+
         env::state_write(&ContractV2 {
             posts,
             post_to_parent,
@@ -115,6 +116,7 @@ impl Contract {
             access_control,
             authors,
         } = env::state_read().unwrap();
+
         env::state_write(&ContractV4 {
             posts,
             post_to_parent,
@@ -151,6 +153,7 @@ impl Contract {
             authors,
             communities,
         } = env::state_read().unwrap();
+
         env::state_write(&ContractV5 {
             posts,
             post_to_parent,
@@ -412,6 +415,7 @@ impl Contract {
             communities,
             featured_communities,
         } = env::state_read().unwrap();
+
         env::state_write(&ContractV8 {
             posts,
             post_to_parent,
