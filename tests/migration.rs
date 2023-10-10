@@ -94,7 +94,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .await?;
     assert!(add_attestation_post.is_success());
 
-    let add_sponsorship_post = contract
+    let add_sponsorship_post_with_near = contract
         .call("add_post")
         .args_json(json!({
             "parent_id": 1,
@@ -113,7 +113,53 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
-    assert!(add_sponsorship_post.is_success());
+    assert!(add_sponsorship_post_with_near.is_success());
+
+    let add_sponsorship_post_with_usd = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Contributor fellowship",
+                "description": "Funding approved",
+                "amount": "1000",
+                "sponsorship_token": "USD",
+                "supervisor": "john.near",
+                "sponsorship_version": "V1",
+                "post_type": "Sponsorship"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+    assert!(add_sponsorship_post_with_usd.is_success());
+
+    let add_sponsorship_post_with_nep141 = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Contributor fellowship",
+                "description": "Funding approved",
+                "amount": "1000",
+                "sponsorship_token": {
+                    "NEP141": {
+                        "address": "usdt.tether-token.near"
+                    }
+                },
+                "supervisor": "john.near",
+                "sponsorship_version": "V1",
+                "post_type": "Sponsorship"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+    assert!(add_sponsorship_post_with_nep141.is_success());
 
     // Add a community
     let create_community = contract

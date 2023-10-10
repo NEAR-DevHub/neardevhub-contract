@@ -474,10 +474,10 @@ impl Contract {
         Promise::new(env::current_account_id())
             .deploy_contract(contract)
             .then(Promise::new(env::current_account_id()).function_call(
-                b"unsafe_migrate".to_vec(),
+                "unsafe_migrate".to_string(),
                 Vec::new(),
                 0u128,
-                env::prepaid_gas() - 100_000_000_000_000u64,
+                env::prepaid_gas() - near_sdk::Gas(100_000_000_000_000),
             ))
             .as_return();
     }

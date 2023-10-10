@@ -17,11 +17,10 @@ use post::*;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
+use near_sdk::require;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
-
-near_sdk::setup_alloc!();
 
 type PostId = u64;
 type IdeaId = u64;
@@ -139,7 +138,7 @@ impl Contract {
         let id = self.posts.len();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
-        assert!(
+        require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
                 labels.iter().cloned().collect()
@@ -211,7 +210,7 @@ impl Contract {
         res
     }
 
-    pub fn get_all_authors(&self) -> Vec<String> {
+    pub fn get_all_authors(&self) -> Vec<AccountId> {
         near_sdk::log!("get_all_authors");
         let mut res: Vec<_> = self.authors.keys().collect();
         res.sort();
@@ -234,7 +233,7 @@ impl Contract {
         // Then check for complex case.
         self.access_control
             .members_list
-            .check_permissions(editor, &post.snapshot.labels.into_iter().collect::<Vec<_>>())
+            .check_permissions(editor, post.snapshot.labels.into_iter().collect::<Vec<_>>())
             .contains(&ActionType::EditPost)
     }
 
@@ -250,7 +249,7 @@ impl Contract {
         }
         self.access_control
             .members_list
-            .check_permissions(editor, &labels)
+            .check_permissions(editor, labels)
             .contains(&ActionType::UseLabels)
     }
 
@@ -270,7 +269,7 @@ impl Contract {
     #[payable]
     pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
         near_sdk::log!("edit_post");
-        assert!(
+        require!(
             self.is_allowed_to_edit(id, Option::None),
             "The account is not allowed to edit this post"
         );
@@ -297,14 +296,14 @@ impl Contract {
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;
-        assert!(
+        require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
                 labels_to_remove.iter().cloned().collect()
             ),
             "Not allowed to remove these labels"
         );
-        assert!(
+        require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
                 labels_to_add.iter().cloned().collect()
@@ -329,9 +328,7 @@ impl Contract {
 
     #[allow(unused_mut)]
     pub fn create_community(&mut self, mut inputs: CommunityInputs) {
-        if self.get_community(inputs.handle.to_owned()).is_some() {
-            panic!("Community already exists");
-        }
+        require!(self.get_community(inputs.handle.to_owned()).is_none(), "Community already exists");
 
         let mut new_community = Community {
             admins: vec![],
@@ -438,10 +435,7 @@ impl Contract {
         if target_community.handle == community.handle {
             self.communities.insert(&target_community.handle, &community);
         } else {
-            if self.communities.get(&community.handle).is_some() {
-                panic!("Community handle `{}` is already taken", community.handle);
-            }
-
+            require!(self.communities.get(&community.handle).is_none(), "Community handle `{community.handle}` is already taken");
             self.communities.remove(&target_community.handle);
             self.communities.insert(&community.handle, &community);
         }
@@ -497,9 +491,7 @@ impl Contract {
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
-        if !self.has_moderator(env::predecessor_account_id()) {
-            panic!("Only moderators can delete community");
-        }
+        require!(self.has_moderator(env::predecessor_account_id()), "Only moderators can delete community");
 
         let community = self
             .get_community(handle.clone())
@@ -509,16 +501,14 @@ impl Contract {
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
-        assert!(
+        require!(
             self.has_moderator(env::predecessor_account_id()),
             "Only moderators can add featured communities"
         );
 
         // Check if every handle corresponds to an existing community
         for handle in &handles {
-            if !self.communities.get(&handle).is_some() {
-                panic!("Community '{}' does not exist.", handle);
-            }
+            require!(self.communities.get(&handle).is_some(), "Community '{handle}' does not exist.");
         }
 
         // Replace the existing featured communities with the new ones
@@ -553,7 +543,7 @@ mod tests {
 
     fn get_context(is_view: bool) -> VMContext {
         VMContextBuilder::new()
-            .signer_account_id("bob.near".try_into().unwrap())
+            .signer_account_id("bob.near".parse().unwrap())
             .is_view(is_view)
             .build()
     }
