@@ -49,7 +49,10 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V8);
+        migrations::state_version_write(&migrations::StateVersion::V8 {
+            done: true,
+            migrated_count: 0,
+        });
 
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
@@ -326,8 +329,7 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    #[allow(unused_mut)]
-    pub fn create_community(&mut self, mut inputs: CommunityInputs) {
+    pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
         require!(
             self.get_community(inputs.handle.to_owned()).is_none(),
             "Community already exists"
@@ -426,8 +428,11 @@ impl Contract {
         };
     }
 
-    #[allow(unused_mut)]
-    pub fn update_community(&mut self, handle: CommunityHandle, mut community: Community) {
+    pub fn update_community(
+        &mut self,
+        handle: CommunityHandle,
+        #[allow(unused_mut)] mut community: Community,
+    ) {
         let target_community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");
