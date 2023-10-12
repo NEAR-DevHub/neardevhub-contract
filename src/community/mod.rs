@@ -84,11 +84,30 @@ pub struct CommunityPermissions {
 
 impl Community {
     pub fn validate(&self) {
-            require!(matches!(self.handle.chars().count(), 3..=40), "Community handle must contain 3 to 40 characters");
-            require!(matches!(self.name.chars().count(), 3..=30), "Community name must contain 3 to 30 characters");
-            require!(matches!(self.tag.chars().count(), 3..=30), "Community tag must contain 3 to 30 characters");
-            require!(matches!(self.description.chars().count(), 6..=60), "Community description must contain 6 to 60 characters");
-            require!(self.bio_markdown.is_none() || matches!(self.bio_markdown.to_owned().map_or(0, |text| text.chars().count()), 3..=200), "Community bio must contain 3 to 200 characters");
+        require!(
+            matches!(self.handle.chars().count(), 3..=40),
+            "Community handle must contain 3 to 40 characters"
+        );
+        require!(
+            matches!(self.name.chars().count(), 3..=30),
+            "Community name must contain 3 to 30 characters"
+        );
+        require!(
+            matches!(self.tag.chars().count(), 3..=30),
+            "Community tag must contain 3 to 30 characters"
+        );
+        require!(
+            matches!(self.description.chars().count(), 6..=60),
+            "Community description must contain 6 to 60 characters"
+        );
+        require!(
+            self.bio_markdown.is_none()
+                || matches!(
+                    self.bio_markdown.to_owned().map_or(0, |text| text.chars().count()),
+                    3..=200
+                ),
+            "Community bio must contain 3 to 200 characters"
+        );
     }
 
     pub fn set_default_admin(&mut self) {

@@ -567,6 +567,7 @@ impl Contract {
                 return Contract::migration_done();
             }
         }
+
         Contract::needs_migration();
     }
 }
