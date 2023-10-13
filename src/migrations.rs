@@ -416,21 +416,18 @@ impl Contract {
             featured_communities,
         } = env::state_read().unwrap();
 
-        let mut migrated_posts: Vector<VersionedPost> = Vector::new(StorageKey::Posts);
+        let mut posts = posts;
         let total = posts.len();
         let end = min(total, end);
 
         for post_index in start..end {
-            let versioned_post = posts.get(post_index);
-
-            if let Some(versioned_post) = versioned_post {
-                let post = versioned_post.into();
-                migrated_posts.replace(post_index, &post);
+            if let Some(versioned_post) = posts.get(post_index) {
+                posts.replace(post_index, &versioned_post.into());
             }
         }
 
         env::state_write(&ContractV8 {
-            posts: migrated_posts,
+            posts,
             post_to_parent,
             post_to_children,
             label_to_posts,
