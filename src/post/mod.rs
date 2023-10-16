@@ -53,8 +53,9 @@ pub enum StorageKey {
     AuthorToAuthorPosts,
     AuthorPosts(CryptoHash),
     Communities,
-    AddOns,
-    AddOnsConfig,
+    AddOns,       // TODO check if still nec
+    AddOnsConfig, // same
+    TemplateType,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

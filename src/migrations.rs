@@ -436,7 +436,8 @@ impl Contract {
                         wiki1: community.wiki1,
                         wiki2: community.wiki2,
                         features: community.features,
-                        addon_list: Vec::new(),
+                        addons: Vec::new(),
+                        configs: LookupMap::new(StorageKey::AddOnsConfig),
                     },
                 )
             })
@@ -460,12 +461,11 @@ impl Contract {
             communities: communities_new,
             featured_communities,
             available_addons: UnorderedMap::new(StorageKey::AddOns),
-            addon_configurations: LookupMap::new(StorageKey::AddOnsConfig),
         });
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct CommunityV4 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -486,7 +486,8 @@ pub struct CommunityV4 {
     pub wiki1: Option<WikiPage>,
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
-    pub addon_list: Vec<CommunityAddOnConfigId>,
+    pub addons: Vec<CommunityAddOn>,
+    pub configs: LookupMap<AddOnConfigId, AddOnConfig>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -499,8 +500,7 @@ pub struct ContractV8 {
     pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
     pub communities: UnorderedMap<String, CommunityV4>,
     pub featured_communities: Vec<FeaturedCommunity>,
-    pub available_addons: UnorderedMap<CommunityAddOnId, CommunityAddOn>,
-    pub addon_configurations: LookupMap<CommunityAddOnConfigId, CommunityAddOnConfig>,
+    pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
