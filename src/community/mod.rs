@@ -2,8 +2,8 @@ use core::fmt;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
+use near_sdk::serde::Serializer;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::serde_json::Serializer;
 use near_sdk::{env, AccountId};
 
 use crate::post::StorageKey;
@@ -78,7 +78,8 @@ pub struct CommunityAddOn {
     pub enabled: bool,
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct AddOn {
     pub id: AddOnId,
     pub title: String,
@@ -108,24 +109,36 @@ impl PartialEq for AddOn {
 impl fmt::Debug for AddOn {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // You specify how the struct should be formatted here
-        write!(f, "AddOn {{ id: {}, title: {}, description: {}, icon: {}, widgets: viewer: {} configurator: {} }}", self.id, self.title, self.description, self.icon, self.widgets.get(&TemplateType::Viewer).unwrap_or("default".to_string()), self.widgets.get(&TemplateType::Configurator).unwrap_or("default".to_string()))
+        write!(f,
+        "AddOn {{ id: {}, title: {}, description: {}, icon: {}, widgets: {{viewer: {}, configurator: {}}} }}",
+        self.id,
+        self.title,
+        self.description,
+        self.icon,
+        self.widgets
+        .get(&TemplateType::Viewer).unwrap_or("default".to_string()),
+        self.widgets
+        .get(&TemplateType::Configurator).unwrap_or("default".to_string()))
     }
 }
 
-impl Serialize for AddOn {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut s = serializer.serialize_struct("AddOn", 5)?;
-        // s.serialize_field("id", &self.id)?;
-        // s.serialize_field("title", &self.title)?;
-        // s.serialize_field("description", &self.description)?;
-        // s.serialize_field("icon", &self.icon)?;
-        s.serialize_map("widgets", &self.widgets)?;
-        s.end()
-    }
-}
+// impl Serialize for AddOn {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer
+//     {
+//         let mut s = serializer.serialize_struct("AddOn", 5)?;
+//         // s.serialize_field("id", &self.id)?;
+//         // s.serialize_field("title", &self.title)?;
+//         // s.serialize_field("description", &self.description)?;
+//         // s.serialize_field("icon", &self.icon)?;
+//         // s.serialize_map("widgets", &self.widgets)?;
+//         // s.serialize_field("widgets")
+//         // s.serialize_map(2);
+//         // s.end()
+//         s
+//     }
+// }
 
 fn clone_widgets(original: &LookupMap<TemplateType, String>) -> LookupMap<TemplateType, String> {
     let mut cloned = LookupMap::new(StorageKey::TemplateType);
