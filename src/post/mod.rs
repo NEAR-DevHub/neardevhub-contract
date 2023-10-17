@@ -53,8 +53,8 @@ pub enum StorageKey {
     AuthorToAuthorPosts,
     AuthorPosts(CryptoHash),
     Communities,
-    AddOns,       // TODO check if still nec
-    AddOnsConfig, // same
+    AddOns,
+    AddOnsConfig,
     TemplateType,
 }
 

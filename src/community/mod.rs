@@ -1,12 +1,6 @@
-use core::fmt;
-
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::LookupMap;
-use near_sdk::serde::Serializer;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, AccountId};
-
-use crate::post::StorageKey;
 
 pub type CommunityHandle = String;
 
@@ -78,75 +72,17 @@ pub struct CommunityAddOn {
     pub enabled: bool,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct AddOn {
     pub id: AddOnId,
     pub title: String,
     pub description: String,
     pub icon: String,
-    pub widgets: LookupMap<TemplateType, String>,
-}
-
-impl Clone for AddOn {
-    fn clone(&self) -> Self {
-        AddOn {
-            id: self.id.clone(),
-            title: self.title.clone(),
-            description: self.description.clone(),
-            icon: self.icon.clone(),
-            widgets: clone_widgets(&self.widgets),
-        }
-    }
-}
-
-impl PartialEq for AddOn {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-
-impl fmt::Debug for AddOn {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // You specify how the struct should be formatted here
-        write!(f,
-        "AddOn {{ id: {}, title: {}, description: {}, icon: {}, widgets: {{viewer: {}, configurator: {}}} }}",
-        self.id,
-        self.title,
-        self.description,
-        self.icon,
-        self.widgets
-        .get(&TemplateType::Viewer).unwrap_or("default".to_string()),
-        self.widgets
-        .get(&TemplateType::Configurator).unwrap_or("default".to_string()))
-    }
-}
-
-// impl Serialize for AddOn {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer
-//     {
-//         let mut s = serializer.serialize_struct("AddOn", 5)?;
-//         // s.serialize_field("id", &self.id)?;
-//         // s.serialize_field("title", &self.title)?;
-//         // s.serialize_field("description", &self.description)?;
-//         // s.serialize_field("icon", &self.icon)?;
-//         // s.serialize_map("widgets", &self.widgets)?;
-//         // s.serialize_field("widgets")
-//         // s.serialize_map(2);
-//         // s.end()
-//         s
-//     }
-// }
-
-fn clone_widgets(original: &LookupMap<TemplateType, String>) -> LookupMap<TemplateType, String> {
-    let mut cloned = LookupMap::new(StorageKey::TemplateType);
-
-    cloned.insert(&TemplateType::Viewer, &original.get(&TemplateType::Viewer).unwrap());
-    cloned.insert(&TemplateType::Configurator, &original.get(&TemplateType::Configurator).unwrap());
-
-    return cloned;
+    // The path to the view on the community page
+    pub view_widget: String,
+    // The path to the view on the community configuration page
+    pub configurator_widget: String,
 }
 
 impl AddOn {
@@ -162,10 +98,10 @@ impl AddOn {
         if !matches!(self.description.chars().count(), 3..=120) {
             panic!("Add-on description must contain 3 to 120 characters");
         }
-        if !matches!(self.widgets.get(&TemplateType::Viewer).chars().count(), 6..=240) {
+        if !matches!(self.view_widget.chars().count(), 6..=240) {
             panic!("Add-on viewer must contain 6 to 240 characters");
         }
-        if !matches!(self.widgets.get(&TemplateType::Configurator).chars().count(), 0..=240) {
+        if !matches!(self.configurator_widget.chars().count(), 0..=240) {
             panic!("Add-on configurator must contain 0 to 240 characters");
         }
         if !matches!(self.icon.chars().count(), 6..=60) {
@@ -174,7 +110,8 @@ impl AddOn {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -196,7 +133,7 @@ pub struct Community {
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
     pub addons: Vec<CommunityAddOn>,
-    pub configs: LookupMap<AddOnConfigId, AddOnConfig>,
+    pub configs: Vec<AddOnConfig>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

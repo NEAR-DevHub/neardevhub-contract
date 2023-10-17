@@ -358,7 +358,7 @@ impl Contract {
                 wiki: true,
             },
             addons: vec![],
-            configs: LookupMap::new(StorageKey::TemplateType),
+            configs: vec![],
         };
 
         new_community.validate();
@@ -464,7 +464,7 @@ impl Contract {
         self.available_addons.remove(&addon.id);
     }
 
-    pub fn update_addon(&mut self, input: CommunityAddOn) {
+    pub fn update_addon(&mut self, input: AddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
         {
@@ -513,8 +513,10 @@ impl Contract {
             .expect(format!("Community not found with handle `{}`", handle).as_str());
         return community
             .configs
-            .get(&config_id)
-            .expect(format!("Config not found with id `{}`", config_id).as_str());
+            .iter()
+            .find(|config| config.id == config_id)
+            .expect(format!("Config not found with id `{}`", config_id).as_str())
+            .clone();
     }
 
     pub fn set_community_config(
@@ -526,7 +528,11 @@ impl Contract {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
-        community.configs.insert(&config_id, &config);
+        if let Some(index) = community.configs.iter().position(|config| config.id == config_id) {
+            community.configs[index] = config;
+        } else {
+            community.configs.push(config);
+        }
     }
 
     // pub fn add_community_addon(
@@ -712,14 +718,11 @@ impl Contract {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashSet;
     use std::convert::TryInto;
 
-    use crate::access_control::members::{ActionType, Member, MemberMetadata};
-    use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, AddOnConfig, CommunityAddOn, CommunityInputs, TemplateType};
-    use crate::post::{PostBody, StorageKey};
-    use near_sdk::collections::LookupMap;
+    use crate::community::AddOn;
+    use crate::post::PostBody;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
     use regex::Regex;
@@ -816,17 +819,12 @@ mod tests {
     }
 
     pub fn fake_addon(id: String) -> AddOn {
-        let mut widgets = LookupMap::new(StorageKey::TemplateType);
-        let viewer = "custom-viewer-widget".to_owned();
-        let configurator = "github-configurator".to_owned();
-        widgets.insert(&TemplateType::Viewer, &viewer);
-        widgets.insert(&TemplateType::Configurator, &configurator);
-
         let input = AddOn {
             id: id.to_owned(),
             title: "GitHub AddOn".to_owned(),
             description: "Current status of NEARCORE repo".to_owned(),
-            widgets,
+            view_widget: "custom-viewer-widget".to_owned(),
+            configurator_widget: "github-configurator".to_owned(),
             icon: "bi bi-github".to_owned(),
         };
         return input;
