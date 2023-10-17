@@ -67,8 +67,8 @@ pub struct AddOnConfig {
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
     pub addon_id: AddOnId,
+    pub config_id: AddOnConfigId,
     pub display_name: String,
-    pub icon: String,
     pub enabled: bool,
 }
 
@@ -110,7 +110,7 @@ impl AddOn {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Community {
     pub admins: Vec<AccountId>,

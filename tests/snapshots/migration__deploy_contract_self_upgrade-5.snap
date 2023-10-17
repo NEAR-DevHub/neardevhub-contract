@@ -27,5 +27,6 @@ expression: get_community
     "board": true,
     "wiki": true
   },
-  "addon_list": []
+  "addons": [],
+  "configs": []
 }
