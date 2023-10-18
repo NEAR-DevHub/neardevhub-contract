@@ -6,15 +6,6 @@ pub type CommunityHandle = String;
 
 pub type AddOnId = String;
 
-pub type AddOnConfigId = String;
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub enum TemplateType {
-    Viewer,
-    Configurator,
-}
-
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityInputs {
@@ -60,7 +51,6 @@ pub struct WikiPage {
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
     pub addon_id: AddOnId,
-    pub config_id: AddOnConfigId,
     pub display_name: String,
     pub enabled: bool,
     pub parameters: String,
