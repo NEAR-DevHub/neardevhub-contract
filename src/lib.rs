@@ -421,7 +421,7 @@ impl Contract {
         self.available_addons.get(&id)
     }
 
-    pub fn get_available_addons(&self) -> Vec<AddOn> {
+    pub fn get_all_addons(&self) -> Vec<AddOn> {
         self.available_addons.iter().map(|(_id, add_on)| add_on).collect()
     }
 
@@ -754,14 +754,14 @@ mod tests {
     }
 
     #[test]
-    pub fn test_get_available_addons() {
+    pub fn test_get_all_addons() {
         let context = get_context_with_current(false, "bob.near".to_string());
         testing_env!(context);
         let mut contract = Contract::new();
         let input = fake_addon("CommunityAddOnId".to_string());
         contract.create_new_addon(input.to_owned());
 
-        let addons = contract.get_available_addons();
+        let addons = contract.get_all_addons();
 
         assert_eq!(addons[0], input)
     }
@@ -789,7 +789,7 @@ mod tests {
 
         contract.update_addon(AddOn { title: "Telegram AddOn".to_owned(), ..input });
 
-        let addons = contract.get_available_addons();
+        let addons = contract.get_all_addons();
 
         assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
     }
