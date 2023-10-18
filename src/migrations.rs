@@ -437,7 +437,6 @@ impl Contract {
                         wiki2: community.wiki2,
                         features: community.features,
                         addons: Vec::new(),
-                        configs: Vec::new(),
                     },
                 )
             })
@@ -487,7 +486,6 @@ pub struct CommunityV4 {
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
     pub addons: Vec<CommunityAddOn>,
-    pub configs: Vec<AddOnConfig>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]

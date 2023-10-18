@@ -56,13 +56,6 @@ pub struct WikiPage {
     content_markdown: String,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct AddOnConfig {
-    pub id: AddOnConfigId,
-    pub parameters: String,
-}
-
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
@@ -70,6 +63,7 @@ pub struct CommunityAddOn {
     pub config_id: AddOnConfigId,
     pub display_name: String,
     pub enabled: bool,
+    pub parameters: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
@@ -133,7 +127,6 @@ pub struct Community {
     pub wiki2: Option<WikiPage>,
     pub features: CommunityFeatureFlags,
     pub addons: Vec<CommunityAddOn>,
-    pub configs: Vec<AddOnConfig>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

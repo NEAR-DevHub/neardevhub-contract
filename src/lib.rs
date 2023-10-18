@@ -358,7 +358,6 @@ impl Contract {
                 wiki: true,
             },
             addons: vec![],
-            configs: vec![],
         };
 
         new_community.validate();
@@ -455,13 +454,13 @@ impl Contract {
         self.available_addons.remove(&addon.id);
     }
 
-    pub fn update_addon(&mut self, input: AddOn) {
+    pub fn update_addon(&mut self, addon: AddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
         {
             panic!("Only the admin and moderators can edit add-ons");
         }
-        self.available_addons.insert(&input.id.clone(), &input);
+        self.available_addons.insert(&addon.id.clone(), &addon);
     }
 
     pub fn get_community_addons(&self, handle: CommunityHandle) -> Vec<CommunityAddOn> {
@@ -479,37 +478,20 @@ impl Contract {
         self.update_community(handle, community);
     }
 
-    //
-    pub fn get_community_config(
-        &self,
-        handle: CommunityHandle,
-        config_id: AddOnConfigId,
-    ) -> AddOnConfig {
-        let community = self
-            .get_community(handle.clone())
-            .expect(format!("Community not found with handle `{}`", handle).as_str());
-        return community
-            .configs
-            .iter()
-            .find(|config| config.id == config_id)
-            .expect(format!("Config not found with id `{}`", config_id).as_str())
-            .clone();
-    }
-
     // To add or update parameters set by the configurator widget
-    pub fn set_community_config(
+    pub fn set_community_addon(
         self,
         handle: CommunityHandle,
-        config_id: AddOnConfigId,
-        config: AddOnConfig,
+        addon_id: AddOnId,
+        addon: CommunityAddOn,
     ) {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
-        if let Some(index) = community.configs.iter().position(|config| config.id == config_id) {
-            community.configs[index] = config;
+        if let Some(index) = community.addons.iter().position(|addon| addon.addon_id == addon_id) {
+            community.addons[index] = addon;
         } else {
-            community.configs.push(config);
+            community.addons.push(addon);
         }
     }
 
@@ -644,7 +626,7 @@ mod tests {
 
     use crate::access_control::members::{ActionType, Member, MemberMetadata};
     use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, AddOnConfig, CommunityAddOn, CommunityInputs};
+    use crate::community::{AddOn, CommunityAddOn, CommunityInputs};
     use crate::post::PostBody;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, MockedBlockchain, VMContext};
@@ -852,6 +834,7 @@ mod tests {
             addon_id: "CommunityAddOnId".to_string(),
             display_name: "GitHub".to_string(),
             enabled: true,
+            parameters: "".to_string(),
         };
         let addons = vec![addon];
 
