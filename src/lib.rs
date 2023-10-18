@@ -426,7 +426,7 @@ impl Contract {
     }
 
     // Only the contract admin and DevHub moderators
-    pub fn create_new_addon(&mut self, addon: AddOn) {
+    pub fn create_addon(&mut self, addon: AddOn) {
         if !self.has_moderator(env::predecessor_account_id())
             && env::predecessor_account_id() != env::current_account_id()
         {
@@ -728,13 +728,13 @@ mod tests {
     }
 
     #[test]
-    pub fn test_create_new_addon() {
+    pub fn test_create_addon() {
         let context = get_context_with_current(false, "bob.near".to_string());
         testing_env!(context);
 
         let mut contract = Contract::new();
         let input = fake_addon("CommunityAddOnId".to_string());
-        contract.create_new_addon(input.to_owned());
+        contract.create_addon(input.to_owned());
 
         let addon = contract.get_addon("CommunityAddOnId".to_owned());
 
@@ -759,7 +759,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::new();
         let input = fake_addon("CommunityAddOnId".to_string());
-        contract.create_new_addon(input.to_owned());
+        contract.create_addon(input.to_owned());
 
         let addons = contract.get_all_addons();
 
@@ -772,7 +772,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::new();
         let input = fake_addon("CommunityAddOnId".to_string());
-        contract.create_new_addon(input.to_owned());
+        contract.create_addon(input.to_owned());
 
         let addon = contract.get_addon("CommunityAddOnId".to_owned());
 
@@ -785,7 +785,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::new();
         let input = fake_addon("test".to_owned());
-        contract.create_new_addon(input.to_owned());
+        contract.create_addon(input.to_owned());
 
         contract.update_addon(AddOn { title: "Telegram AddOn".to_owned(), ..input });
 
@@ -829,7 +829,7 @@ mod tests {
       });
 
         // Create add-on
-        contract.create_new_addon(AddOn {
+        contract.create_addon(AddOn {
             id: "CommunityAddOnId".to_owned(),
             title: "GitHub AddOn".to_owned(),
             description: "Current status of NEARCORE repo".to_owned(),
