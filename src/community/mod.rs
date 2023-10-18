@@ -181,8 +181,8 @@ impl Community {
         self.addons.push(addon_config);
     }
 
-    pub fn remove_addon(&mut self, addon2: CommunityAddOn) {
-        self.addons.retain(|addon| addon != &addon2);
+    pub fn remove_addon(&mut self, addon_to_remove: CommunityAddOn) {
+        self.addons.retain(|addon| addon != &addon_to_remove);
     }
 
     pub fn set_addons(&mut self, addons: Vec<CommunityAddOn>) {
