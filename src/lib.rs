@@ -479,16 +479,13 @@ impl Contract {
     }
 
     // To add or update parameters set by the configurator widget
-    pub fn set_community_addon(
-        self,
-        handle: CommunityHandle,
-        addon_id: AddOnId,
-        addon: CommunityAddOn,
-    ) {
+    pub fn set_community_addon(self, handle: CommunityHandle, addon: CommunityAddOn) {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
-        if let Some(index) = community.addons.iter().position(|addon| addon.addon_id == addon_id) {
+        if let Some(index) =
+            community.addons.iter().position(|current| current.addon_id == addon.addon_id)
+        {
             community.addons[index] = addon;
         } else {
             community.addons.push(addon);
