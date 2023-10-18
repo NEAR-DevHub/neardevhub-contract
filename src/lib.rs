@@ -827,7 +827,6 @@ mod tests {
         let mut contract = contract_with_community(community_handle.to_owned());
 
         let addon = CommunityAddOn {
-            config_id: "CommunityAddOnConfigId".to_string(),
             addon_id: "CommunityAddOnId".to_string(),
             display_name: "GitHub".to_string(),
             enabled: true,
