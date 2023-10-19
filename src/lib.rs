@@ -326,7 +326,10 @@ impl Contract {
 
     #[allow(unused_mut)]
     pub fn create_community(&mut self, mut inputs: CommunityInputs) {
-        require!(self.get_community(inputs.handle.to_owned()).is_none(), "Community already exists");
+        require!(
+            self.get_community(inputs.handle.to_owned()).is_none(),
+            "Community already exists"
+        );
 
         let mut new_community = Community {
             admins: vec![],
@@ -433,7 +436,10 @@ impl Contract {
         if target_community.handle == community.handle {
             self.communities.insert(&target_community.handle, &community);
         } else {
-            require!(self.communities.get(&community.handle).is_none(), "Community handle `{community.handle}` is already taken");
+            require!(
+                self.communities.get(&community.handle).is_none(),
+                "Community handle `{community.handle}` is already taken"
+            );
             self.communities.remove(&target_community.handle);
             self.communities.insert(&community.handle, &community);
         }
@@ -489,7 +495,10 @@ impl Contract {
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
-        require!(self.has_moderator(env::predecessor_account_id()), "Only moderators can delete community");
+        require!(
+            self.has_moderator(env::predecessor_account_id()),
+            "Only moderators can delete community"
+        );
 
         let community = self
             .get_community(handle.clone())
@@ -506,7 +515,10 @@ impl Contract {
 
         // Check if every handle corresponds to an existing community
         for handle in &handles {
-            require!(self.communities.get(&handle).is_some(), "Community '{handle}' does not exist.");
+            require!(
+                self.communities.get(&handle).is_some(),
+                "Community '{handle}' does not exist."
+            );
         }
 
         // Replace the existing featured communities with the new ones

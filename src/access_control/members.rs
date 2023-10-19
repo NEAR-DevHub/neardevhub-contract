@@ -124,7 +124,11 @@ impl MembersList {
 
     /// Whether given account has special permissions for a post with the given labels.
     /// Labels are restricted labels.
-    pub fn check_permissions(&self, account: AccountId, labels: Vec<String>) -> HashSet<ActionType> {
+    pub fn check_permissions(
+        &self,
+        account: AccountId,
+        labels: Vec<String>,
+    ) -> HashSet<ActionType> {
         let member_account = Member::Account(account);
         if !self.members.contains_key(&member_account) {
             return HashSet::new();
@@ -374,8 +378,8 @@ mod tests {
             .unwrap()
         );
 
-        let actual =
-            list.check_permissions("max.near".parse().unwrap(), vec!["funding-requested".to_string()]);
+        let actual = list
+            .check_permissions("max.near".parse().unwrap(), vec!["funding-requested".to_string()]);
         assert!(actual.is_empty());
     }
 
