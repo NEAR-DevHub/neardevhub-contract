@@ -50,6 +50,7 @@ pub struct WikiPage {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityAddOn {
+    pub id: String,
     pub addon_id: AddOnId,
     pub display_name: String,
     pub enabled: bool,

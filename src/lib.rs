@@ -479,16 +479,16 @@ impl Contract {
     }
 
     // To add or update parameters set by the configurator widget
-    pub fn set_community_addon(self, handle: CommunityHandle, addon: CommunityAddOn) {
+    pub fn set_community_addon(self, handle: CommunityHandle, community_addon: CommunityAddOn) {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
         if let Some(index) =
-            community.addons.iter().position(|current| current.addon_id == addon.addon_id)
+            community.addons.iter().position(|current| current.id == community_addon.id)
         {
-            community.addons[index] = addon;
+            community.addons[index] = community_addon;
         } else {
-            community.addons.push(addon);
+            community.addons.push(community_addon);
         }
     }
 
@@ -827,6 +827,7 @@ mod tests {
         let mut contract = contract_with_community(community_handle.to_owned());
 
         let addon = CommunityAddOn {
+            id: "unique".to_string(),
             addon_id: "CommunityAddOnId".to_string(),
             display_name: "GitHub".to_string(),
             enabled: true,
@@ -846,21 +847,19 @@ mod tests {
     }
 
     // #[test]
-    // pub fn test_set_community_config() {
+    // pub fn test_set_community_addon() {
     //     let context = get_context_with_predecessor(false, "alice.near".to_string());
     //     testing_env!(context);
     //     let community_handle = "gotham";
     //     let contract = contract_with_community(community_handle.to_owned());
-    //     let id = "string".to_string();
-    //     let id2 = "string".to_string();
-    //     let config = AddOnConfig { id: id.clone(), parameters: "JSON STRING".to_string() };
-    //     contract.set_community_config(community_handle.to_owned(), id.clone(), config);
-    //     let config2 = AddOnConfig { id: id2.clone(), parameters: "JSON STRING2".to_string() };
-    //     contract.set_community_config(community_handle.to_owned(), id2.clone(), config2);
-
-    //     let config = contract.get_community_config(community_handle.to_string(), id);
-    //     let config2 = contract.get_community_config(community_handle.to_string(), id2);
-    //     assert_eq!(config.parameters, config2.parameters);
-    // }
+    //     let addon = CommunityAddOn {
+    //         addon_id: "CommunityAddOnId".to_string(),
+    //         display_name: "GitHub".to_string(),
+    //         enabled: true,
+    //         parameters: "".to_string(),
+    //     };
+    //     contract.set_community_addon(community_handle.to_owned(), addon.clone());
+    //     let retreived_addons = contract.get_community_addons(community_handle.to_string());
+    //     assert_eq!(addon.addon_id, retreived_addons[0].addon_id);
     // }
 }
