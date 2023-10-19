@@ -48,11 +48,11 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
             .with_static_gas(env::prepaid_gas() / 4)
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
-                env::predecessor_account_id() : {
-                    "index": {
-                        "notify": json!(notify_values).to_string()
-                    } }
-                }));
+            env::predecessor_account_id() : {
+                "index": {
+                    "notify": json!(notify_values).to_string()
+                } }
+            }));
     }
 }
 
@@ -84,8 +84,7 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
                     }).to_string()
                 }
             }
-        }),
-    )
+        }))
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
