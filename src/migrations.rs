@@ -452,8 +452,6 @@ impl Contract {
     }
 
     pub fn unsafe_migrate() {
-        state_version_write(&StateVersion::V7);
-
         near_sdk::assert_self();
         let current_version = state_version_read();
         near_sdk::log!("Migrating from version: {:?}", current_version);
