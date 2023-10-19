@@ -487,10 +487,10 @@ impl Contract {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
-        if let Some(index) =
-            community.addons.iter().position(|current| current.id == community_addon.id)
+        if let Some(existing_addon) =
+            community.addons.iter_mut().find(|current| current.id == community_addon.id)
         {
-            community.addons[index] = community_addon;
+            *existing_addon = community_addon;
         } else {
             community.addons.push(community_addon);
         }
@@ -945,7 +945,7 @@ mod tests {
           banner_url: "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4".to_string()
         });
 
-        let addon = CommunityAddOn {
+        let mut addon = CommunityAddOn {
             id: "unique".to_string(),
             addon_id: "CommunityAddOnId".to_string(),
             display_name: "GitHub".to_string(),
@@ -953,7 +953,13 @@ mod tests {
             parameters: "".to_string(),
         };
         contract.set_community_addon(community_handle.to_owned(), addon.clone());
+
+        addon.display_name = "Telegram".to_string();
+
+        contract.set_community_addon(community_handle.to_owned(), addon.clone());
+
         let retrieved_addons = contract.get_community_addons(community_handle.to_string());
+        assert_eq!(retrieved_addons[0].display_name, "Telegram".to_string());
         assert_eq!(addon.id, retrieved_addons[0].id);
     }
 }
