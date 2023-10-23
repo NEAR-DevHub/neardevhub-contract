@@ -5,13 +5,40 @@ use serde_json::json;
 const DEVHUB_CONTRACT: &str = "devgovgigs.near";
 const NEAR_SOCIAL: &str = "social.near";
 
+async fn init_contracts() -> anyhow::Result<near_workspaces::Contract> {
+    let worker = near_workspaces::sandbox().await?;
+    let mainnet = near_workspaces::mainnet_archival().await?;
+
+    // NEAR social deployment
+    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
+    let near_social = worker
+        .import_contract(&near_social_id, &mainnet)
+        .initial_balance(parse_near!("10000 N"))
+        .transact()
+        .await?;
+    near_social.call("new").transact().await?.into_result()?;
+
+    // Devhub contract deployment
+    let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
+    let contract = worker
+        .import_contract(&contract_id, &mainnet)
+        .initial_balance(parse_near!("1000 N"))
+        .transact()
+        .await?;
+    let outcome = contract.call("new").args_json(json!({})).transact().await?;
+    assert!(outcome.is_success());
+    assert!(format!("{:?}", outcome).contains("Migrated to version:"));
+
+    Ok(contract)
+}
+
 #[tokio::test]
 async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     // Test Flow:
     // 1. Deploy devhub and near social contract on sandbox
     // 2. Add all kinds of posts and add a community.
     // 3. Upgrade the contract.
-    // 4. Get all the posts and community and check if migration was succesfull.
+    // 4. Get all the posts and community and check if migration was successful.
 
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
@@ -36,28 +63,6 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .transact()
         .await?;
     assert!(add_idea_post.is_success());
-
-    let add_solution_post = contract
-        .call("add_post")
-        .args_json(json!({
-            "parent_id": null,
-            "labels": [],
-            "body": {
-                "name": "Solution Test",
-                "description": "This is a test solution post.",
-                "post_type": "Solution",
-                "requested_sponsor": "neardevgov.near",
-                "requested_sponsorship_amount": "1000",
-                "sponsorship_token": "NEAR",
-                "solution_version": "V2"
-            }
-        }))
-        .deposit(deposit_amount)
-        .max_gas()
-        .transact()
-        .await?;
-
-    assert!(add_solution_post.is_success());
 
     let add_comment_post = contract
         .call("add_post")
@@ -212,16 +217,6 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
     insta::assert_json_snapshot!(get_comment_posts, {"[].snapshot.timestamp" => "[timestamp]"});
 
-    let get_solution_post: serde_json::Value = contract
-        .call("get_post")
-        .args_json(json!({
-            "post_id" : 1
-        }))
-        .view()
-        .await?
-        .json()?;
-    insta::assert_json_snapshot!(get_solution_post, {".snapshot.timestamp" => "[timestamp]"});
-
     let get_attestation_sponsorship_posts: serde_json::Value = contract
         .call("get_posts")
         .args_json(json!({
@@ -245,29 +240,44 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn init_contracts() -> anyhow::Result<near_workspaces::Contract> {
-    let worker = near_workspaces::sandbox().await?;
-    let mainnet = near_workspaces::mainnet_archival().await?;
+#[tokio::test]
+async fn test_posting_features() -> anyhow::Result<()> {
+    let contract = init_contracts().await?;
 
-    // NEAR social deployment
-    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
-    let near_social = worker
-        .import_contract(&near_social_id, &mainnet)
-        .initial_balance(parse_near!("10000 N"))
+    let deposit_amount = near_units::parse_near!("0.1");
+
+    let add_solution_post = contract
+        .call("add_post")
+        .args_json(json!({
+                        "parent_id": null,
+                        "labels": [],
+                        "body": {
+                                        "name": "Solution Test",
+                                        "description": "This is a test solution post.",
+                                        "post_type": "Solution",
+                                        "requested_sponsor": "neardevgov.near",
+                                        "requested_sponsorship_amount": "1000",
+                                        "sponsorship_token": "NEAR",
+                                        "solution_version": "V2"
+                        }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
         .transact()
         .await?;
-    near_social.call("new").transact().await?.into_result()?;
 
-    // Devhub contract deployment
-    let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
-    let contract = worker
-        .import_contract(&contract_id, &mainnet)
-        .initial_balance(parse_near!("1000 N"))
-        .transact()
-        .await?;
-    let outcome = contract.call("new").args_json(json!({})).transact().await?;
-    assert!(outcome.is_success());
-    assert!(format!("{:?}", outcome).contains("Migrated to version:"));
+    assert!(add_solution_post.is_success());
 
-    Ok(contract)
+    let get_solution_post: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+                        "post_id" : 1
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_solution_post, {".snapshot.timestamp" => "[timestamp]"});
+
+    Ok(())
 }
