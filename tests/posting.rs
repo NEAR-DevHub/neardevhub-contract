@@ -41,6 +41,7 @@ async fn test_solution_posts() -> anyhow::Result<()> {
 				.transact()
 				.await?;
 
+    println!("add_solution_post outcome: {:#?}", add_solution_post);
     assert!(add_solution_post.is_success());
 
     let get_solution_post: serde_json::Value = contract
