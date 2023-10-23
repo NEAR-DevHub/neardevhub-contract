@@ -22,24 +22,24 @@ async fn test_solution_posts() -> anyhow::Result<()> {
     }
 
     let add_solution_post = contract
-				.call("add_post")
-				.args_json(json!({
-												"parent_id": null,
-												"labels": [],
-												"body": {
-																				"name": "Solution Test",
-																				"description": "This is a test solution post.",
-																				"post_type": "Solution",
-																				"requested_sponsor": "neardevgov.near",
-																				"requested_sponsorship_amount": "1000",
-																				"sponsorship_token": "NEAR",
-																				"solution_version": "V2"
-												}
-				}))
-				.deposit(deposit_amount)
-				.max_gas()
-				.transact()
-				.await?;
+        .call("add_post")
+        .args_json(json!({
+                        "parent_id": null,
+                        "labels": [],
+                        "body": {
+                                        "name": "Solution Test",
+                                        "description": "This is a test solution post.",
+                                        "post_type": "Solution",
+                                        "requested_sponsor": "neardevgov.near",
+                                        "requested_sponsorship_amount": "1000",
+                                        "sponsorship_token": "NEAR",
+                                        "solution_version": "V2"
+                        }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
 
     println!("add_solution_post outcome: {:#?}", add_solution_post);
     assert!(add_solution_post.is_success());
