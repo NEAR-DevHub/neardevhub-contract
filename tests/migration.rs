@@ -242,9 +242,21 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_posting_features() -> anyhow::Result<()> {
+    let deposit_amount = near_units::parse_near!("0.1");
+
     let contract = init_contracts().await?;
 
-    let deposit_amount = near_units::parse_near!("0.1");
+    // Call self upgrade with current branch code
+    // compile the current code
+    let wasm = near_workspaces::compile_project("./").await?;
+
+    let mut contract_upgrade_result =
+        contract.call("unsafe_self_upgrade").args(wasm).max_gas().transact().await?;
+
+    while contract_upgrade_result.json::<String>()? == "needs-migration" {
+        contract_upgrade_result =
+            contract.call("unsafe_migrate").args_json(json!({})).max_gas().transact().await?;
+    }
 
     let add_solution_post = contract
         .call("add_post")
