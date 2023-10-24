@@ -50,10 +50,7 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V9 {
-            done: true,
-            migrated_count: 0,
-        });
+        migrations::state_version_write(&migrations::StateVersion::V8);
 
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),

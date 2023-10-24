@@ -501,39 +501,6 @@ pub struct ContractV8 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-// From ContractV8 to ContractV9
-#[near_bindgen]
-impl Contract {
-    fn unsafe_migrate_solution_posts(start: u64, end: u64) -> StateVersion {
-        let mut contract: ContractV8 = env::state_read().unwrap();
-
-        let total = contract.posts.len();
-        let end = min(total, end);
-
-        for post_index in start..end {
-            if let Some(versioned_post) = contract.posts.get(post_index) {
-                contract.posts.replace(post_index, &versioned_post.into());
-            }
-        }
-
-        env::state_write(&contract);
-        StateVersion::V9 { done: end == total, migrated_count: end }
-    }
-}
-
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct ContractV9 {
-    pub posts: Vector<VersionedPost>,
-    pub post_to_parent: LookupMap<PostId, PostId>,
-    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
-    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
-    pub access_control: AccessControl,
-    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
-    pub communities: UnorderedMap<String, CommunityV4>,
-    pub featured_communities: Vec<FeaturedCommunity>,
-    pub available_addons: UnorderedMap<AddOnId, AddOn>,
-}
-
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub(crate) enum StateVersion {
     V1,
@@ -544,7 +511,6 @@ pub(crate) enum StateVersion {
     V6,
     V7,
     V8,
-    V9 { done: bool, migrated_count: u64 },
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -593,60 +559,40 @@ impl Contract {
         near_sdk::assert_self();
         let current_version = state_version_read();
         near_sdk::log!("Migrating from version: {:?}", current_version);
-
         match current_version {
             StateVersion::V1 => {
                 Contract::unsafe_add_acl();
                 state_version_write(&StateVersion::V2);
             }
-
             StateVersion::V2 => {
                 Contract::unsafe_add_post_authors();
                 state_version_write(&StateVersion::V3 { done: false, migrated_count: 0 })
             }
-
             StateVersion::V3 { done: false, migrated_count } => {
                 let new_version =
                     Contract::unsafe_insert_old_post_authors(migrated_count, migrated_count + 100);
                 state_version_write(&new_version);
             }
-
             StateVersion::V3 { done: true, migrated_count: _ } => {
                 Contract::unsafe_add_communities();
                 state_version_write(&StateVersion::V4);
             }
-
             StateVersion::V4 => {
                 Contract::unsafe_add_featured_communities();
                 state_version_write(&StateVersion::V5);
             }
-
             StateVersion::V5 => {
                 Contract::unsafe_multiple_telegrams();
                 state_version_write(&StateVersion::V6);
             }
-
             StateVersion::V6 => {
                 Contract::unsafe_add_board_and_feature_flags();
                 state_version_write(&StateVersion::V7);
             }
-
             StateVersion::V7 => {
                 Contract::unsafe_add_community_addons();
                 state_version_write(&StateVersion::V8);
             }
-
-            StateVersion::V8 => {
-                state_version_write(&StateVersion::V9 { done: false, migrated_count: 0 })
-            }
-
-            StateVersion::V9 { done: false, migrated_count } => {
-                state_version_write(&Contract::unsafe_migrate_solution_posts(
-                    migrated_count,
-                    migrated_count + 100,
-                ));
-            }
-
             _ => {
                 return Contract::migration_done();
             }
