@@ -20,14 +20,14 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_idea_post = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": null,
-                "labels": [],
-                "body": {
-                        "name": "This is a test idea.",
-                        "description": "This is a test description.",
-                        "post_type": "Idea",
-                        "idea_version": "V1"
-                }
+            "parent_id": null,
+            "labels": [],
+            "body": {
+                "name": "This is a test idea.",
+                "description": "This is a test description.",
+                "post_type": "Idea",
+                "idea_version": "V1"
+            }
         }))
         .deposit(deposit_amount)
         .transact()
@@ -57,13 +57,13 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_comment_post = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": 0,
-                "labels": [],
-                "body": {
-                        "description": "This is test Comment.",
-                        "comment_version": "V2",
-                        "post_type": "Comment"
-                }
+            "parent_id": 0,
+            "labels": [],
+            "body": {
+                "description": "This is test Comment.",
+                "comment_version": "V2",
+                "post_type": "Comment"
+            }
         }))
         .deposit(deposit_amount)
         .max_gas()
@@ -75,14 +75,14 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_attestation_post = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": 1,
-                "labels": [],
-                "body": {
-                        "name": "Attestation",
-                        "description": "Description",
-                        "attestation_version": "V1",
-                        "post_type": "Attestation"
-                }
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Attestation",
+                "description": "Description",
+                "attestation_version": "V1",
+                "post_type": "Attestation"
+            }
         }))
         .deposit(deposit_amount)
         .max_gas()
@@ -94,17 +94,17 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_sponsorship_post_with_near = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": 1,
-                "labels": [],
-                "body": {
-                        "name": "Contributor fellowship",
-                        "description": "Funding approved",
-                        "amount": "1000",
-                        "sponsorship_token": "NEAR",
-                        "supervisor": "john.near",
-                        "sponsorship_version": "V1",
-                        "post_type": "Sponsorship"
-                }
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Contributor fellowship",
+                "description": "Funding approved",
+                "amount": "1000",
+                "sponsorship_token": "NEAR",
+                "supervisor": "john.near",
+                "sponsorship_version": "V1",
+                "post_type": "Sponsorship"
+            }
         }))
         .deposit(deposit_amount)
         .max_gas()
@@ -116,17 +116,17 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_sponsorship_post_with_usd = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": 1,
-                "labels": [],
-                "body": {
-                        "name": "Contributor fellowship",
-                        "description": "Funding approved",
-                        "amount": "1000",
-                        "sponsorship_token": "USD",
-                        "supervisor": "john.near",
-                        "sponsorship_version": "V1",
-                        "post_type": "Sponsorship"
-                }
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Contributor fellowship",
+                "description": "Funding approved",
+                "amount": "1000",
+                "sponsorship_token": "USD",
+                "supervisor": "john.near",
+                "sponsorship_version": "V1",
+                "post_type": "Sponsorship"
+            }
         }))
         .deposit(deposit_amount)
         .max_gas()
@@ -138,21 +138,21 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     let add_sponsorship_post_with_nep141 = contract
         .call("add_post")
         .args_json(json!({
-                "parent_id": 1,
-                "labels": [],
-                "body": {
-                        "name": "Contributor fellowship",
-                        "description": "Funding approved",
-                        "amount": "1000",
-                        "sponsorship_token": {
-                                "NEP141": {
-                                        "address": "usdt.tether-token.near"
-                                }
-                        },
-                        "supervisor": "john.near",
-                        "sponsorship_version": "V1",
-                        "post_type": "Sponsorship"
-                }
+            "parent_id": 1,
+            "labels": [],
+            "body": {
+                "name": "Contributor fellowship",
+                "description": "Funding approved",
+                "amount": "1000",
+                "sponsorship_token": {
+                    "NEP141": {
+                        "address": "usdt.tether-token.near"
+                    }
+                },
+                "supervisor": "john.near",
+                "sponsorship_version": "V1",
+                "post_type": "Sponsorship"
+            }
         }))
         .deposit(deposit_amount)
         .max_gas()
