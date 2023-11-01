@@ -19,7 +19,7 @@ pub struct Idea {
     pub comments: Vec<CommentId>,
 
     // Specific fields
-    pub submissions: Vec<SolutionId>,
+    pub solutions: Vec<SolutionId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
