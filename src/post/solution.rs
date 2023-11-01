@@ -42,7 +42,7 @@ pub struct SolutionV2 {
     pub requested_sponsor: Option<AccountId>,
     #[serde(with = "u128_dec_format")]
     pub requested_sponsorship_amount: Balance,
-    pub sponsorship_token: Option<SponsorshipToken>,
+    pub requested_sponsorship_token: Option<SponsorshipToken>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
@@ -63,7 +63,7 @@ impl VersionedSolution {
         match self {
             VersionedSolution::V2(solution) => {
                 if solution.requested_sponsorship_amount > 0
-                    && (solution.sponsorship_token.is_none()
+                    && (solution.requested_sponsorship_token.is_none()
                         || solution.requested_sponsor.is_none())
                 {
                     panic!(
@@ -111,7 +111,7 @@ impl From<VersionedSolution> for SolutionV2 {
                 description: v1.description,
                 requested_sponsor: None,
                 requested_sponsorship_amount: 0,
-                sponsorship_token: None,
+                requested_sponsorship_token: None,
             },
 
             _ => unimplemented!(),

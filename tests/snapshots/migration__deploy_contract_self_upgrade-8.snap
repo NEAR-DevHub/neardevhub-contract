@@ -19,7 +19,7 @@ expression: get_solution_v2_post
     "description": "This is a test solution post.",
     "requested_sponsor": "neardevgov.near",
     "requested_sponsorship_amount": "1000",
-    "sponsorship_token": "NEAR"
+    "requested_sponsorship_token": "NEAR"
   },
   "snapshot_history": []
 }
