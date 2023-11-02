@@ -1,11 +1,11 @@
 ---
 source: tests/migration.rs
-expression: get_solution_v1_post
+expression: get_solution_v2_post
 ---
 {
   "post_version": "V0",
   "id": {
-    "$serde_json::private::Number": "1"
+    "$serde_json::private::Number": "7"
   },
   "author_id": "devgovgigs.near",
   "likes": [],
@@ -14,9 +14,12 @@ expression: get_solution_v1_post
     "timestamp": "[timestamp]",
     "labels": [],
     "post_type": "Solution",
-    "solution_version": "V1",
+    "solution_version": "V2",
     "name": "Solution Test",
-    "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test solution. "
+    "description": "This is a test solution post.",
+    "requested_sponsor": "neardevgov.near",
+    "requested_sponsorship_amount": "1000",
+    "requested_sponsorship_token": "NEAR"
   },
   "snapshot_history": []
 }

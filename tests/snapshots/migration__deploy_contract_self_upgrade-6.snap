@@ -1,11 +1,11 @@
 ---
 source: tests/migration.rs
-expression: get_sponsorship_post_with_near
+expression: get_sponsorship_post_with_usd
 ---
 {
   "post_version": "V0",
   "id": {
-    "$serde_json::private::Number": "4"
+    "$serde_json::private::Number": "5"
   },
   "author_id": "devgovgigs.near",
   "likes": [],
@@ -17,7 +17,7 @@ expression: get_sponsorship_post_with_near
     "sponsorship_version": "V1",
     "name": "Contributor fellowship",
     "description": "Funding approved",
-    "sponsorship_token": "NEAR",
+    "sponsorship_token": "USD",
     "amount": "1000",
     "supervisor": "john.near"
   },

@@ -1,9 +1,6 @@
-use near_units::parse_near;
-use near_workspaces::AccountId;
-use serde_json::json;
+mod test_env;
 
-const DEVHUB_CONTRACT: &str = "devgovgigs.near";
-const NEAR_SOCIAL: &str = "social.near";
+use {crate::test_env::*, serde_json::json};
 
 #[tokio::test]
 async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
@@ -11,7 +8,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     // 1. Deploy devhub and near social contract on sandbox
     // 2. Add all kinds of posts and add a community.
     // 3. Upgrade the contract.
-    // 4. Get all the posts and community and check if migration was succesfull.
+    // 4. Get all the posts and community and check if migration was successful.
 
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
@@ -35,17 +32,18 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
+
     assert!(add_idea_post.is_success());
 
-    let add_submission_post = contract
+    let add_solution_v1_post = contract
         .call("add_post")
         .args_json(json!({
             "parent_id": null,
             "labels": [],
             "body": {
                 "name": "Solution Test",
-                "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test submission. ",
-                "post_type": "Submission",
+                "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test solution. ",
+                "post_type": "Submission", // Before V2, Solution was called Submission
                 "submission_version": "V1"
             }
         }))
@@ -53,7 +51,8 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
-    assert!(add_submission_post.is_success());
+
+    assert!(add_solution_v1_post.is_success());
 
     let add_comment_post = contract
         .call("add_post")
@@ -70,6 +69,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(add_comment_post.is_success());
 
     let add_attestation_post = contract
@@ -88,6 +88,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(add_attestation_post.is_success());
 
     let add_sponsorship_post_with_near = contract
@@ -109,6 +110,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(add_sponsorship_post_with_near.is_success());
 
     let add_sponsorship_post_with_usd = contract
@@ -130,6 +132,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(add_sponsorship_post_with_usd.is_success());
 
     let add_sponsorship_post_with_nep141 = contract
@@ -155,6 +158,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(add_sponsorship_post_with_nep141.is_success());
 
     // Add a community
@@ -174,6 +178,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+
     assert!(create_community.is_success());
 
     // Call self upgrade with current branch code
@@ -196,7 +201,19 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .view()
         .await?
         .json()?;
+
     insta::assert_json_snapshot!(get_idea_post, {".snapshot.timestamp" => "[timestamp]"});
+
+    let get_solution_v1_post: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 1
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_solution_v1_post, {".snapshot.timestamp" => "[timestamp]"});
 
     let get_comment_posts: serde_json::Value = contract
         .call("get_posts")
@@ -206,17 +223,8 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .view()
         .await?
         .json()?;
-    insta::assert_json_snapshot!(get_comment_posts, {"[].snapshot.timestamp" => "[timestamp]"});
 
-    let get_submission_post: serde_json::Value = contract
-        .call("get_post")
-        .args_json(json!({
-            "post_id" : 1
-        }))
-        .view()
-        .await?
-        .json()?;
-    insta::assert_json_snapshot!(get_submission_post, {".snapshot.timestamp" => "[timestamp]"});
+    insta::assert_json_snapshot!(get_comment_posts, {"[].snapshot.timestamp" => "[timestamp]"});
 
     let get_attestation_sponsorship_posts: serde_json::Value = contract
         .call("get_posts")
@@ -226,7 +234,74 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .view()
         .await?
         .json()?;
+
     insta::assert_json_snapshot!(get_attestation_sponsorship_posts, {"[].snapshot.timestamp" => "[timestamp]"});
+
+    let get_sponsorship_post_with_near: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 4
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_sponsorship_post_with_near, {".snapshot.timestamp" => "[timestamp]"});
+
+    let get_sponsorship_post_with_usd: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 5
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_sponsorship_post_with_usd, {".snapshot.timestamp" => "[timestamp]"});
+
+    let get_sponsorship_post_with_nep141: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 6
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_sponsorship_post_with_nep141, {".snapshot.timestamp" => "[timestamp]"});
+
+    let add_solution_v2_post = contract
+        .call("add_post")
+        .args_json(json!({
+            "parent_id": null,
+            "labels": [],
+            "body": {
+                "name": "Solution Test",
+                "description": "This is a test solution post.",
+                "post_type": "Solution",
+                "requested_sponsor": "neardevgov.near",
+                "requested_sponsorship_amount": "1000",
+                "requested_sponsorship_token": "NEAR",
+                "solution_version": "V2"
+            }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(add_solution_v2_post.is_success());
+
+    let get_solution_v2_post: serde_json::Value = contract
+        .call("get_post")
+        .args_json(json!({
+            "post_id" : 7
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_solution_v2_post, {".snapshot.timestamp" => "[timestamp]"});
 
     let get_community: serde_json::Value = contract
         .call("get_community")
@@ -236,34 +311,8 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .view()
         .await?
         .json()?;
+
     insta::assert_json_snapshot!(get_community);
 
     Ok(())
-}
-
-async fn init_contracts() -> anyhow::Result<near_workspaces::Contract> {
-    let worker = near_workspaces::sandbox().await?;
-    let mainnet = near_workspaces::mainnet_archival().await?;
-
-    // NEAR social deployment
-    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
-    let near_social = worker
-        .import_contract(&near_social_id, &mainnet)
-        .initial_balance(parse_near!("10000 N"))
-        .transact()
-        .await?;
-    near_social.call("new").transact().await?.into_result()?;
-
-    // Devhub contract deployment
-    let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
-    let contract = worker
-        .import_contract(&contract_id, &mainnet)
-        .initial_balance(parse_near!("1000 N"))
-        .transact()
-        .await?;
-    let outcome = contract.call("new").args_json(json!({})).transact().await?;
-    assert!(outcome.is_success());
-    assert!(format!("{:?}", outcome).contains("Migrated to version:"));
-
-    Ok(contract)
 }

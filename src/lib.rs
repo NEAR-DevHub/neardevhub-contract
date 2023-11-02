@@ -25,7 +25,7 @@ use std::collections::HashSet;
 type PostId = u64;
 type IdeaId = u64;
 type AttestationId = u64;
-type SubmissionId = u64;
+type SolutionId = u64;
 type SponsorshipId = u64;
 type CommentId = u64;
 
@@ -63,6 +63,7 @@ impl Contract {
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
         };
+
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
         contract
     }
@@ -327,8 +328,7 @@ impl Contract {
         notify::notify_edit(id, post_author);
     }
 
-    #[allow(unused_mut)]
-    pub fn create_community(&mut self, mut inputs: CommunityInputs) {
+    pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
         require!(
             self.get_community(inputs.handle.to_owned()).is_none(),
             "Community already exists"
@@ -509,8 +509,11 @@ impl Contract {
         };
     }
 
-    #[allow(unused_mut)]
-    pub fn update_community(&mut self, handle: CommunityHandle, mut community: Community) {
+    pub fn update_community(
+        &mut self,
+        handle: CommunityHandle,
+        #[allow(unused_mut)] mut community: Community,
+    ) {
         let target_community = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");

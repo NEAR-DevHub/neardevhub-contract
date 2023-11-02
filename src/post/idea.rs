@@ -1,5 +1,5 @@
 use super::{Like, PostStatus};
-use crate::{CommentId, IdeaId, SubmissionId};
+use crate::{CommentId, IdeaId, SolutionId};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
@@ -19,7 +19,7 @@ pub struct Idea {
     pub comments: Vec<CommentId>,
 
     // Specific fields
-    pub submissions: Vec<SubmissionId>,
+    pub solutions: Vec<SolutionId>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]

@@ -1,6 +1,6 @@
 use super::{Like, PostStatus};
 use crate::str_serializers::*;
-use crate::{AttestationId, CommentId, SubmissionId};
+use crate::{AttestationId, CommentId, SolutionId};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
@@ -22,7 +22,7 @@ pub struct Attestation {
 
     //Specific fields
     #[serde(with = "u64_dec_format")]
-    pub submission_id: SubmissionId,
+    pub submission_id: SolutionId,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
