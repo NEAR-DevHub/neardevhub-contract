@@ -35,16 +35,19 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     assert!(add_idea_post.is_success());
 
-    let add_solution_v1_post = contract
+    let add_solution_v2_post = contract
         .call("add_post")
         .args_json(json!({
             "parent_id": null,
             "labels": [],
             "body": {
                 "name": "Solution Test",
-                "description": "###### Requested amount: 100 NEAR\n###### Requested sponsor: @neardevgov.near\nThis is a test solution. ",
-                "post_type": "Submission", // Before V2, Solution was called Submission
-                "submission_version": "V1"
+                "description": "This is a test solution post.",
+                "post_type": "Solution",
+                "requested_sponsor": "neardevgov.near",
+                "requested_sponsorship_amount": "1000",
+                "requested_sponsorship_token": "NEAR",
+                "solution_version": "V2"
             }
         }))
         .deposit(deposit_amount)
@@ -52,7 +55,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    assert!(add_solution_v1_post.is_success());
+    assert!(add_solution_v2_post.is_success());
 
     let add_comment_post = contract
         .call("add_post")
@@ -204,7 +207,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     insta::assert_json_snapshot!(get_idea_post, {".snapshot.timestamp" => "[timestamp]"});
 
-    let get_solution_v1_post: serde_json::Value = contract
+    let get_solution_v2_post: serde_json::Value = contract
         .call("get_post")
         .args_json(json!({
             "post_id" : 1
@@ -213,7 +216,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    insta::assert_json_snapshot!(get_solution_v1_post, {".snapshot.timestamp" => "[timestamp]"});
+    insta::assert_json_snapshot!(get_solution_v2_post, {".snapshot.timestamp" => "[timestamp]"});
 
     let get_comment_posts: serde_json::Value = contract
         .call("get_posts")
@@ -269,39 +272,6 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
 
     insta::assert_json_snapshot!(get_sponsorship_post_with_nep141, {".snapshot.timestamp" => "[timestamp]"});
-
-    let add_solution_v2_post = contract
-        .call("add_post")
-        .args_json(json!({
-            "parent_id": null,
-            "labels": [],
-            "body": {
-                "name": "Solution Test",
-                "description": "This is a test solution post.",
-                "post_type": "Solution",
-                "requested_sponsor": "neardevgov.near",
-                "requested_sponsorship_amount": "1000",
-                "requested_sponsorship_token": "NEAR",
-                "solution_version": "V2"
-            }
-        }))
-        .deposit(deposit_amount)
-        .max_gas()
-        .transact()
-        .await?;
-
-    assert!(add_solution_v2_post.is_success());
-
-    let get_solution_v2_post: serde_json::Value = contract
-        .call("get_post")
-        .args_json(json!({
-            "post_id" : 7
-        }))
-        .view()
-        .await?
-        .json()?;
-
-    insta::assert_json_snapshot!(get_solution_v2_post, {".snapshot.timestamp" => "[timestamp]"});
 
     let get_community: serde_json::Value = contract
         .call("get_community")
