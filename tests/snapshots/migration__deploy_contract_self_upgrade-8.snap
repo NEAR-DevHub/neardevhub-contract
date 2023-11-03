@@ -1,25 +1,31 @@
 ---
 source: tests/migration.rs
-expression: get_solution_v2_post
+expression: get_community
 ---
 {
-  "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "7"
+  "admins": [
+    "devgovgigs.near"
+  ],
+  "handle": "gotham",
+  "name": "Gotham",
+  "tag": "some",
+  "description": "This is a test community.",
+  "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+  "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
+  "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+  "github_handle": null,
+  "telegram_handle": [],
+  "twitter_handle": null,
+  "website_url": null,
+  "github": null,
+  "board": null,
+  "wiki1": null,
+  "wiki2": null,
+  "features": {
+    "telegram": true,
+    "github": true,
+    "board": true,
+    "wiki": true
   },
-  "author_id": "devgovgigs.near",
-  "likes": [],
-  "snapshot": {
-    "editor_id": "devgovgigs.near",
-    "timestamp": "[timestamp]",
-    "labels": [],
-    "post_type": "Solution",
-    "solution_version": "V2",
-    "name": "Solution Test",
-    "description": "This is a test solution post.",
-    "requested_sponsor": "neardevgov.near",
-    "requested_sponsorship_amount": "1000",
-    "requested_sponsorship_token": "NEAR"
-  },
-  "snapshot_history": []
+  "addons": []
 }
