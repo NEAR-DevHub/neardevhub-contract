@@ -534,7 +534,7 @@ impl Contract {
                         telegram_handle: community.telegram_handle.first().cloned(),
                         twitter_handle: community.twitter_handle,
                         website_url: community.website_url,
-                        addons: Vec::new(),
+                        addons: community.addons,
                     },
                 )
             })
