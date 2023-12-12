@@ -21,14 +21,12 @@ pub struct CommunityInputs {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CommunityMetadata {
-    pub admins: Vec<AccountId>,
-    pub handle: CommunityHandle,
     pub name: String,
-    pub tag: String,
     pub description: String,
-    pub logo_url: String,
-    pub banner_url: String,
-    pub bio_markdown: Option<String>,
+    pub image: String,
+    pub background_image: String,
+    pub linktree: Vec<String>,
+    pub tags: Vec<String>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -98,19 +96,11 @@ impl AddOn {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Community {
-    pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
-    pub name: String,
-    pub tag: String,
-    pub description: String,
-    pub logo_url: String,
-    pub banner_url: String,
-    pub bio_markdown: Option<String>,
-    pub github_handle: Option<String>,
-    pub telegram_handle: Option<String>,
-    pub twitter_handle: Option<String>,
-    pub website_url: Option<String>,
+    pub admins: Vec<AccountId>,
     pub addons: Vec<CommunityAddOn>,
+    pub metadata: CommunityMetadata,
+    pub bio_markdown: Option<String>,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -133,15 +123,15 @@ impl Community {
             "Community handle must contain 3 to 40 characters"
         );
         require!(
-            matches!(self.name.chars().count(), 3..=30),
+            matches!(self.metadata.name.chars().count(), 3..=30),
             "Community name must contain 3 to 30 characters"
         );
         require!(
-            matches!(self.tag.chars().count(), 3..=30),
+            matches!(self.metadata.tags[0].chars().count(), 3..=30),
             "Community tag must contain 3 to 30 characters"
         );
         require!(
-            matches!(self.description.chars().count(), 6..=60),
+            matches!(self.metadata.description.chars().count(), 6..=60),
             "Community description must contain 6 to 60 characters"
         );
         require!(

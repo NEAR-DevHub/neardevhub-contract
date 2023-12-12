@@ -335,19 +335,18 @@ impl Contract {
         );
 
         let mut new_community = Community {
-            admins: vec![],
             handle: inputs.handle,
-            name: inputs.name,
-            tag: inputs.tag,
-            description: inputs.description,
-            logo_url: inputs.logo_url,
-            banner_url: inputs.banner_url,
-            bio_markdown: inputs.bio_markdown,
-            github_handle: None,
-            telegram_handle: None,
-            twitter_handle: None,
-            website_url: None,
+            admins: vec![],
             addons: vec![],
+            metadata: CommunityMetadata {
+                name: inputs.name,
+                description: inputs.description,
+                tags: vec![inputs.tag],
+                background_image: inputs.banner_url,
+                linktree: vec![],
+                image: inputs.logo_url,
+            },
+            bio_markdown: inputs.bio_markdown,
         };
 
         new_community.validate();
@@ -360,16 +359,7 @@ impl Contract {
     }
 
     pub fn get_community_metadata(&self, handle: CommunityHandle) -> Option<CommunityMetadata> {
-        self.communities.get(&handle).map(|community| CommunityMetadata {
-            admins: community.admins,
-            handle: community.handle,
-            name: community.name,
-            tag: community.tag,
-            description: community.description,
-            logo_url: community.logo_url,
-            banner_url: community.banner_url,
-            bio_markdown: community.bio_markdown,
-        })
+        self.communities.get(&handle).map(|community| community.metadata)
     }
 
     pub fn get_account_community_permissions(
@@ -391,19 +381,7 @@ impl Contract {
 
     pub fn get_all_communities_metadata(&self) -> Vec<CommunityMetadata> {
         near_sdk::log!("get_all_communities");
-        self.communities
-            .iter()
-            .map(|(handle, community)| CommunityMetadata {
-                admins: community.admins,
-                handle,
-                name: community.name,
-                tag: community.tag,
-                description: community.description,
-                logo_url: community.logo_url,
-                banner_url: community.banner_url,
-                bio_markdown: community.bio_markdown,
-            })
-            .collect()
+        self.communities.iter().map(|(handle, community)| community.metadata).collect()
     }
 
     pub fn get_addon(&self, id: AddOnId) -> Option<AddOn> {
@@ -521,6 +499,39 @@ impl Contract {
             self.communities.insert(&community.handle, &community);
         }
     }
+
+    pub fn update_community_metadata(
+        &mut self,
+        handle: CommunityHandle,
+        community_metadata: CommunityMetadata,
+    ) {
+        let mut target_community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+        target_community.metadata = community_metadata;
+        self.communities.insert(&target_community.handle, &target_community);
+    }
+
+    pub fn update_community_admins(
+        &mut self,
+        handle: CommunityHandle,
+        community_admins: Vec<AccountId>,
+    ) {
+        let mut target_community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+        target_community.admins = community_admins;
+        self.communities.insert(&target_community.handle, &target_community);
+    }
+
+    pub fn update_community_bio_markdown(&mut self, handle: CommunityHandle, bio_markdown: String) {
+        let mut target_community = self
+            .get_editable_community(&handle)
+            .expect("Only community admins and hub moderators can configure communities");
+        target_community.bio_markdown = Some(bio_markdown);
+        self.communities.insert(&target_community.handle, &target_community);
+    }
+
     pub fn delete_community(&mut self, handle: CommunityHandle) {
         require!(
             self.has_moderator(env::predecessor_account_id()),
