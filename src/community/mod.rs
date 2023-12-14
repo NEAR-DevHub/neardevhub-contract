@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, require, AccountId};
+use near_sdk::{env, ext_contract, require, AccountId};
 
 pub type CommunityHandle = String;
 
@@ -178,4 +178,11 @@ impl Community {
             self.admins = vec![env::predecessor_account_id()];
         }
     }
+}
+
+pub const DEVHUB_COMMUNITY_FACTORY: &str = "community.devhub.near";
+
+#[ext_contract(ext_devhub_community_factory)]
+pub trait DevhubCommunityFactory {
+    fn create_community_account(&mut self, community: String);
 }

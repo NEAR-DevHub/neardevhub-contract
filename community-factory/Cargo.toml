@@ -1,0 +1,31 @@
+[package]
+name = "devhub-community-factory"
+version = "0.1.0"
+authors = ["NEAR DevHub"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+near-sdk = "5.0.0-alpha.1"
+borsh = "1.0"
+serde_json = { version = "1.0", features = ["preserve_order"] }
+
+[dev-dependencies]
+insta = { version = "1.31.0", features = ["json", "redactions"] }
+regex = "1"
+near-workspaces = { version = "0.7.0", features = ["unstable"]  }
+tokio = { version = "1.10.0", features = ["full"] }
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
+near-units = "0.2.0"
+anyhow = "1.0"
+
+[profile.release]
+codegen-units = 1
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
