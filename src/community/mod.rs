@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, ext_contract, require, AccountId};
+use near_sdk::{env, ext_contract, require, AccountId, Balance, Gas};
 
 pub type CommunityHandle = String;
 
@@ -186,3 +186,14 @@ pub const DEVHUB_COMMUNITY_FACTORY: &str = "community.devhub.near";
 pub trait DevhubCommunityFactory {
     fn create_community_account(&mut self, community: String);
 }
+
+#[ext_contract(ext_devhub_community)]
+pub trait DevhubCommunity {
+    fn destroy(&mut self);
+}
+
+pub const CREATE_COMMUNITY_BALANCE: Balance = 2_000_000_000_000_000_000_000_000; // 2 NEAR
+pub const CREATE_COMMUNITY_GAS: Gas = Gas(50_000_000_000_000); // 50 Tgas
+pub const UPDATE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
+pub const DELETE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
+pub const ADD_COMMUNITY_ANNOUNCEMENT_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas

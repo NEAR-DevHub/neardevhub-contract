@@ -19,7 +19,7 @@ use crate::social_db::{ext_social_db, SOCIAL_DB};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
-use near_sdk::serde_json::{json, Value};
+use near_sdk::serde_json::{json, to_string};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
@@ -33,8 +33,6 @@ type CommentId = u64;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
-
-const CREATE_COMMUNITY_BALANCE: u128 = 2_000_000_000_000_000_000_000_000; // 2 NEAR
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -339,9 +337,11 @@ impl Contract {
             "Community already exists"
         );
 
-        if env::attached_deposit() != CREATE_COMMUNITY_BALANCE {
-            panic!("Require 2 NEAR to create community");
-        }
+        require!(
+            env::attached_deposit() == CREATE_COMMUNITY_BALANCE,
+            "Require 2 NEAR to create community"
+        );
+        require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 50 Tgas");
 
         let mut new_community = Community {
             admins: vec![],
@@ -535,55 +535,43 @@ impl Contract {
         community.validate();
         community.set_default_admin();
 
-        if target_community.handle == community.handle {
-            self.communities.insert(&target_community.handle, &community);
-        } else {
-            // TODO community handle if changed, the near social side is not easy to update
-            require!(
-                self.communities.get(&community.handle).is_none(),
-                "Community handle is already taken"
-            );
-            self.communities.remove(&target_community.handle);
-            self.communities.insert(&community.handle, &community);
-        }
+        require!(target_community.handle == community.handle, "Community handle cannot be changed");
 
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_static_gas(env::prepaid_gas() / 2).set(
-            json!({
-                format!("{}.{}", community.handle, DEVHUB_COMMUNITY_FACTORY)
-                : {
-                    "profile": {
-                        "name": community.name,
-                        "image": {
-                            "url": community.logo_url,
-                        }
+        require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
+        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
+            format!("{}.{}", community.handle, DEVHUB_COMMUNITY_FACTORY)
+            : {
+                "profile": {
+                    "name": community.name,
+                    "image": {
+                        "url": community.logo_url,
                     }
                 }
-            }),
-        );
+            }
+        }));
     }
 
     pub fn add_community_announcement(
         &mut self,
         handle: CommunityHandle,
-        announcement_post: Value,
+        announcement_post: String,
     ) {
         let _ = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can create announcement");
 
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_static_gas(env::prepaid_gas() / 2).set(
-            json!({
-                format!("{}.{}", handle, DEVHUB_COMMUNITY_FACTORY)
-                : {
-                    "post": {
-                        "main": announcement_post,
-                        "index": {
-                            "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
-                          }
+        require!(env::prepaid_gas() >= ADD_COMMUNITY_ANNOUNCEMENT_GAS, "Require at least 30 Tgas");
+        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
+            format!("{}.{}", handle, DEVHUB_COMMUNITY_FACTORY)
+            : {
+                "post": {
+                    "main": to_string(&json!({"type": "md", "text": announcement_post})).unwrap(),
+                    "index": {
+                        "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
                     }
                 }
-            }),
-        );
+            }
+        }));
     }
 
     pub fn update_community_feature_flags(
@@ -646,6 +634,13 @@ impl Contract {
             .expect(&format!("Community with handle `{}` does not exist", handle));
 
         self.communities.remove(&community.handle);
+
+        require!(env::prepaid_gas() >= DELETE_COMMUNITY_GAS, "Require at least 30 Tgas");
+        ext_devhub_community::ext(
+            format!("{}.{}", &community.handle, DEVHUB_COMMUNITY_FACTORY).parse().unwrap(),
+        )
+        .with_unused_gas_weight(1)
+        .destroy();
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
