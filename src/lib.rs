@@ -50,7 +50,7 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V8);
+        migrations::state_version_write(&migrations::StateVersion::V9);
 
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
@@ -344,20 +344,9 @@ impl Contract {
             banner_url: inputs.banner_url,
             bio_markdown: inputs.bio_markdown,
             github_handle: None,
-            telegram_handle: vec![],
+            telegram_handle: None,
             twitter_handle: None,
             website_url: None,
-            github: None,
-            board: None,
-            wiki1: None,
-            wiki2: None,
-
-            features: CommunityFeatureFlags {
-                telegram: true,
-                github: true,
-                board: true,
-                wiki: true,
-            },
             addons: vec![],
         };
 
@@ -532,56 +521,6 @@ impl Contract {
             self.communities.insert(&community.handle, &community);
         }
     }
-
-    pub fn update_community_feature_flags(
-        &mut self,
-        handle: CommunityHandle,
-        features: CommunityFeatureFlags,
-    ) {
-        let mut community = self
-            .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can configure communities");
-
-        community.features = features;
-        self.communities.insert(&handle, &community);
-    }
-
-    pub fn update_community_github(&mut self, handle: CommunityHandle, github: Option<String>) {
-        let mut community = self
-            .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can configure boards");
-
-        community.github = github;
-        self.communities.insert(&handle, &community);
-    }
-
-    pub fn update_community_board(&mut self, handle: CommunityHandle, board: Option<String>) {
-        let mut community = self
-            .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can configure boards");
-
-        community.board = board;
-        self.communities.insert(&handle, &community);
-    }
-
-    pub fn update_community_wiki1(&mut self, handle: CommunityHandle, wiki1: Option<WikiPage>) {
-        let mut community = self
-            .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can edit wiki");
-
-        community.wiki1 = wiki1;
-        self.communities.insert(&handle, &community);
-    }
-
-    pub fn update_community_wiki2(&mut self, handle: CommunityHandle, wiki2: Option<WikiPage>) {
-        let mut community = self
-            .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can edit wiki");
-
-        community.wiki2 = wiki2;
-        self.communities.insert(&handle, &community);
-    }
-
     pub fn delete_community(&mut self, handle: CommunityHandle) {
         require!(
             self.has_moderator(env::predecessor_account_id()),
