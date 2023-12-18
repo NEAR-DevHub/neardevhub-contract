@@ -107,16 +107,9 @@ pub struct Community {
     pub banner_url: String,
     pub bio_markdown: Option<String>,
     pub github_handle: Option<String>,
-    pub telegram_handle: Vec<String>,
+    pub telegram_handle: Option<String>,
     pub twitter_handle: Option<String>,
     pub website_url: Option<String>,
-    /// JSON string of github board configuration
-    pub github: Option<String>,
-    /// JSON string of kanban board configuration
-    pub board: Option<String>,
-    pub wiki1: Option<WikiPage>,
-    pub wiki2: Option<WikiPage>,
-    pub features: CommunityFeatureFlags,
     pub addons: Vec<CommunityAddOn>,
 }
 
