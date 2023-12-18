@@ -104,6 +104,30 @@ impl Contract {
             .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
     }
 
+    pub fn get_children_ids_recursive(&self, post_id: Option<PostId>) -> Vec<PostId> {
+        near_sdk::log!("get_children_ids_recursive");
+        let post_id = post_id.unwrap_or(ROOT_POST_ID);
+
+        fn get_children_recursive_helper(
+            post_id: PostId,
+            post_to_children: &LookupMap<PostId, Vec<PostId>>,
+        ) -> Vec<PostId> {
+            post_to_children
+                .get(&post_id)
+                .map(|children_ids| {
+                    let mut result = Vec::new();
+                    for child_id in children_ids {
+                        result.push(child_id);
+                        result.extend(get_children_recursive_helper(child_id, post_to_children));
+                    }
+                    result
+                })
+                .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
+        }
+
+        get_children_recursive_helper(post_id, &self.post_to_children)
+    }
+
     pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
         near_sdk::log!("get_parent_id");
         let res = self
@@ -631,11 +655,10 @@ mod tests {
 
     use crate::access_control::members::{ActionType, Member, MemberMetadata};
     use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, Community, CommunityAddOn, CommunityInputs};
-    use crate::post::PostBody;
-    use near_sdk::store::vec;
+    use crate::community::{AddOn, CommunityAddOn, CommunityInputs};
+    use crate::post::{Post, PostBody};
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, AccountId, VMContext};
     use regex::Regex;
 
     use super::Contract;
@@ -664,6 +687,36 @@ mod tests {
             .predecessor_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
+    }
+
+    #[test]
+    pub fn test_get_children_ids_recursive() {
+        let context = get_context(false);
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        let body: PostBody = near_sdk::serde_json::from_str(
+            r#"
+        {
+            "name": "title",
+            "description": "Hello",
+            "post_type": "Idea",
+            "idea_version": "V1"
+        }"#,
+        )
+        .unwrap();
+        contract.add_post(None, body.clone(), HashSet::new());
+
+        // An imaginary top post representing the landing page.
+        let all_posts = contract.get_posts(None);
+        let post = Post::from(all_posts[0].clone());
+        assert_eq!(post.id, 0);
+
+        contract.add_post(Some(0), body.clone(), HashSet::new());
+        contract.add_post(Some(1), body.clone(), HashSet::new());
+
+        let all_children = contract.get_children_ids_recursive(Some(0));
+        assert_eq!(all_children.len(), 2);
     }
 
     #[test]
