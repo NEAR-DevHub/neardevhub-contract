@@ -528,16 +528,16 @@ impl Contract {
         handle: CommunityHandle,
         #[allow(unused_mut)] mut community: Community,
     ) {
-        let target_community = self
+        let _ = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");
 
         community.validate();
         community.set_default_admin();
 
-        require!(target_community.handle == community.handle, "Community handle cannot be changed");
-
+        require!(community.handle == handle, "Community handle cannot be changed");
         require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
+        self.communities.insert(&handle, &community);
         ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
             format!("{}.{}", community.handle, DEVHUB_COMMUNITY_FACTORY)
             : {
