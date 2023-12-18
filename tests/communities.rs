@@ -1,14 +1,15 @@
 mod test_env;
 
+use near_workspaces::AccountId;
 use {crate::test_env::*, serde_json::json};
 
 #[tokio::test]
 async fn test_community_addon() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let contract = init_contracts().await?;
+    let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = near_units::parse_near!("0.1");
+    let deposit_amount = near_units::parse_near!("2 N");
 
     // Add a community
     let create_community = contract
@@ -25,6 +26,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
             }
         }))
         .max_gas()
+        .deposit(deposit_amount)
         .transact()
         .await?;
 
@@ -77,9 +79,9 @@ async fn test_community_addon() -> anyhow::Result<()> {
 async fn test_update_community() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let contract = init_contracts().await?;
+    let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = near_units::parse_near!("0.1");
+    let deposit_amount = near_units::parse_near!("2 N");
 
     // Add a community
     let create_community = contract
@@ -96,6 +98,7 @@ async fn test_update_community() -> anyhow::Result<()> {
             }
         }))
         .max_gas()
+        .deposit(deposit_amount)
         .transact()
         .await?;
 
@@ -130,6 +133,94 @@ async fn test_update_community() -> anyhow::Result<()> {
 
     assert_eq!(get_community["tag"].as_str(), Some("other"));
     assert_eq!(get_community["name"].as_str(), Some("Gotham2"));
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_announcement() -> anyhow::Result<()> {
+    // Initialize the devhub and near social contract on chain,
+    // contract is devhub contract instance.
+    let (contract, worker) = init_contracts_from_res().await?;
+
+    let deposit_amount = near_units::parse_near!("2 N");
+
+    // Add a community
+    let create_community = contract
+        .call("create_community")
+        .args_json(json!({
+            "inputs": {
+                "handle": "gotham",
+                "name": "Gotham",
+                "tag": "some",
+                "description": "This is a test community.",
+                "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+                "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+                "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4"
+            }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let community_account = "gotham.community.devhub.near".parse()?;
+
+    // assert community account exists
+    let _ = worker.view_account(&community_account).await?;
+
+    // create announcement
+    let create_announcement = contract
+        .call("add_community_announcement")
+        .args_json(json!({
+            "handle": "gotham",
+            "announcement_post": "what's up"
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(create_announcement.is_success());
+
+    let near_social_account = "social.near".parse()?;
+    let data: serde_json::Value = worker
+        .view(&near_social_account, "get")
+        .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
+        .await?
+        .json()?;
+
+    assert_eq!(data["gotham.community.devhub.near"]["post"]["main"].as_str(), Some("{\"type\":\"md\",\"text\":\"what's up\"}"));
+
+    // update community, intend to change name and logo
+    let update_community = contract
+    .call("update_community")
+    .args_json(json!({
+        "handle": "gotham",
+        "community": {
+            "admins": [],
+            "handle": "gotham",
+            "name": "Gotham2",
+            "tag": "some",
+            "description": "This is a test community.",
+            "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+            "logo_url": "https://example.com/image.png",
+            "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
+            "addons": []
+        }
+    }))
+    .max_gas()
+    .transact()
+    .await?;
+
+    let near_social_account = "social.near".parse()?;
+    let data: serde_json::Value = worker
+        .view(&near_social_account, "get")
+        .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
+        .await?
+        .json()?;
+
+    assert_eq!(data["gotham.community.devhub.near"]["profile"]["name"].as_str(), Some("Gotham2"));
+    assert_eq!(data["gotham.community.devhub.near"]["profile"]["image"]["url"].as_str(), Some("https://example.com/image.png"));
 
     Ok(())
 }

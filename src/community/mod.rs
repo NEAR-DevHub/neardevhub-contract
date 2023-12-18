@@ -173,7 +173,7 @@ impl Community {
     }
 }
 
-pub const DEVHUB_COMMUNITY_FACTORY: &str = "community.devgovgigs.near";
+pub const DEVHUB_COMMUNITY_FACTORY: &str = "community.devhub.near";
 
 #[ext_contract(ext_devhub_community_factory)]
 pub trait DevhubCommunityFactory {
