@@ -98,7 +98,7 @@ async fn test_update_community() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
-    
+
     let update_community = contract
         .call("update_community")
         .args_json(json!({
@@ -112,21 +112,13 @@ async fn test_update_community() -> anyhow::Result<()> {
                 "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
                 "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
                 "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
-                "telegram_handle": [],
-                "features": {
-                    "telegram": true,
-                    "github": true,
-                    "board": true,
-                    "wiki": true
-                },
-              "addons": []
+                "addons": []
             }
         }))
         .max_gas()
         .transact()
         .await?;
-    println!("{:?}", update_community);
-    
+
     let get_community: serde_json::Value = contract
         .call("get_community")
         .args_json(json!({
