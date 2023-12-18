@@ -14,18 +14,8 @@ expression: get_community
   "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
   "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
   "github_handle": null,
-  "telegram_handle": [],
+  "telegram_handle": null,
   "twitter_handle": null,
   "website_url": null,
-  "github": null,
-  "board": null,
-  "wiki1": null,
-  "wiki2": null,
-  "features": {
-    "telegram": true,
-    "github": true,
-    "board": true,
-    "wiki": true
-  },
   "addons": []
 }
