@@ -4,7 +4,7 @@ use crate::social_db::{ext_social_db, SOCIAL_DB};
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
-const DEVHUB: &str = "devhub.near";
+const DEVHUB: &str = "devgovgigs.near";
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Default)]

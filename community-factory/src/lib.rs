@@ -4,7 +4,7 @@ use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
 const CODE: &[u8] = include_bytes!("../../res/devhub_community.wasm");
 const INITIAL_BALANCE: NearToken = NearToken::from_near(2);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
-const DEVHUB: &str = "devhub.near";
+const DEVHUB: &str = "devgovgigs.near";
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Default)]

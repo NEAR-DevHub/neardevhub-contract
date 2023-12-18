@@ -125,6 +125,7 @@ async fn test_update_community() -> anyhow::Result<()> {
         .max_gas()
         .transact()
         .await?;
+    println!("{:?}", update_community);
     
     let get_community: serde_json::Value = contract
         .call("get_community")
