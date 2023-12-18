@@ -1,4 +1,5 @@
 mod attestation;
+mod blog;
 mod comment;
 mod github;
 mod idea;
@@ -8,6 +9,7 @@ mod sponsorship;
 
 use crate::str_serializers::*;
 pub use attestation::*;
+pub use blog::*;
 pub use comment::*;
 pub use idea::*;
 pub use like::*;
@@ -29,6 +31,7 @@ pub enum PostType {
     Attestation,
     Sponsorship,
     Github,
+    Blog, // This is not used anymore?
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -111,6 +114,7 @@ pub enum PostBody {
     Solution(VersionedSolution),
     Attestation(VersionedAttestation),
     Sponsorship(VersionedSponsorship),
+    Blog(VersionedBlog),
 }
 
 pub fn get_post_description(post: Post) -> String {
@@ -120,5 +124,6 @@ pub fn get_post_description(post: Post) -> String {
         PostBody::Solution(solution) => solution.latest_version().description,
         PostBody::Attestation(attestation) => attestation.latest_version().description,
         PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
+        PostBody::Blog(blog) => blog.latest_version().description,
     };
 }
