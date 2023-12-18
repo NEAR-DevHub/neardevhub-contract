@@ -79,8 +79,6 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str, post_type: &str
                     "notify": json!({
                         "key": post_author,
                         "value": {
-                            // the custom types
-                            // action is edit reply like or mention
                             "type": format!("devgovgigs/{}", action),
                             "post": post_id,
                             "post_type": post_type
