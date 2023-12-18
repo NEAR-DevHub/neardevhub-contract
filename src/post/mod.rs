@@ -117,6 +117,19 @@ pub enum PostBody {
     Blog(VersionedBlog),
 }
 
+impl PostBody {
+    pub fn get_post_type(&self) -> &str {
+        match self {
+            PostBody::Comment(_) => "comment",
+            PostBody::Idea(_) => "idea",
+            PostBody::Solution(_) => "solution",
+            PostBody::Attestation(_) => "attestation",
+            PostBody::Sponsorship(_) => "sponsorship",
+            PostBody::Blog(_) => "blog",
+        }
+    }
+}
+
 pub fn get_post_description(post: Post) -> String {
     return match post.snapshot.body.clone() {
         PostBody::Comment(comment) => comment.latest_version().description,

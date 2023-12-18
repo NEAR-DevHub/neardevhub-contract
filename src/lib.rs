@@ -130,8 +130,9 @@ impl Contract {
         let like =
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
-        self.posts.replace(post_id, &post.into());
-        notify::notify_like(post_id, post_author);
+        self.posts.replace(post_id, &post.clone().into());
+        let post_type = post.snapshot.body.get_post_type();
+        notify::notify_like(post_id, post_author, post_type);
     }
 
     #[payable]
@@ -158,7 +159,12 @@ impl Contract {
             id,
             author_id: author_id.clone(),
             likes: Default::default(),
-            snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
+            snapshot: PostSnapshot {
+                editor_id,
+                timestamp: env::block_timestamp(),
+                labels,
+                body: body.clone(),
+            },
             snapshot_history: vec![],
         };
         self.posts.push(&post.clone().into());
@@ -187,11 +193,12 @@ impl Contract {
                 .unwrap_or_else(|| panic!("Parent post with id {} not found", parent_id))
                 .into();
             let parent_author = parent_post.author_id;
-            notify::notify_reply(parent_id, parent_author);
+
+            notify::notify_reply(parent_id, parent_author, body.clone().get_post_type());
         } else {
             repost::repost(post);
         }
-        notify::notify_mentions(desc.as_str(), id);
+        notify::notify_mentions(desc.as_str(), id, body.get_post_type());
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -287,7 +294,7 @@ impl Contract {
             editor_id: editor_id.clone(),
             timestamp: env::block_timestamp(),
             labels: new_labels.clone(),
-            body,
+            body: body.clone(),
         };
         post.snapshot = new_snapshot;
         post.snapshot_history.push(old_snapshot);
@@ -326,7 +333,7 @@ impl Contract {
             self.label_to_posts.insert(&label_to_add, &posts);
         }
 
-        notify::notify_edit(id, post_author);
+        notify::notify_edit(id, post_author, body.get_post_type());
     }
 
     pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
