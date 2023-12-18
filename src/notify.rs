@@ -3,7 +3,7 @@ use crate::PostId;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
-pub fn notify_mentions(text: &str, post_id: PostId) {
+pub fn notify_mentions(text: &str, post_id: PostId, post_type: &str) {
     let mut mentions = Vec::new();
     let mut mention = String::new();
     let mut recording = false;
@@ -40,6 +40,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
                 "value": {
                     "type": "devgovgigs/mention",
                     "post": post_id,
+                    "post_type": post_type,
                 }
             }));
         }
@@ -56,19 +57,19 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
     }
 }
 
-pub fn notify_like(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "like")
+pub fn notify_like(post_id: PostId, post_author: AccountId, post_type: &str) -> Promise {
+    notify(post_id, post_author, "like", post_type)
 }
 
-pub fn notify_reply(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "reply")
+pub fn notify_reply(post_id: PostId, post_author: AccountId, post_type: &str) -> Promise {
+    notify(post_id, post_author, "reply", post_type)
 }
 
-pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "edit")
+pub fn notify_edit(post_id: PostId, post_author: AccountId, post_type: &str) -> Promise {
+    notify(post_id, post_author, "edit", post_type)
 }
 
-fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
+fn notify(post_id: PostId, post_author: AccountId, action: &str, post_type: &str) -> Promise {
     ext_social_db::ext(SOCIAL_DB.parse().unwrap())
         .with_static_gas(env::prepaid_gas() / 4)
         .with_attached_deposit(env::attached_deposit())
@@ -78,8 +79,11 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
                     "notify": json!({
                         "key": post_author,
                         "value": {
+                            // the custom types
+                            // action is edit reply like or mention
                             "type": format!("devgovgigs/{}", action),
                             "post": post_id,
+                            "post_type": post_type
                         },
                     }).to_string()
                 }
@@ -110,7 +114,7 @@ mod tests {
         let context = get_context(false);
         testing_env!(context);
         let text = "Mentioning @a.near and @bcdefg.near";
-        notify_mentions(text, 2);
+        notify_mentions(text, 2, "blog");
         let receipts = get_created_receipts();
         assert_eq!(1, receipts.len());
 
@@ -152,7 +156,7 @@ mod tests {
         let context = get_context(false);
         testing_env!(context);
         let text = "Not mentioning anyone";
-        notify_mentions(text, 2);
+        notify_mentions(text, 2, "blog");
         assert_eq!(0, get_created_receipts().len());
     }
 }
