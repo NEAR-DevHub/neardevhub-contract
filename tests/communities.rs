@@ -171,10 +171,17 @@ async fn test_announcement() -> anyhow::Result<()> {
 
     // create announcement
     let create_announcement = contract
-        .call("add_community_announcement")
+        .call("set_community_socialdb")
         .args_json(json!({
             "handle": "gotham",
-            "announcement_post": "what's up"
+            "data": {
+                "post": {
+                    "main": "{\"type\":\"md\",\"text\":\"what's up\"}"
+                },
+                "index": {
+                    "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
+                }
+            }
         }))
         .max_gas()
         .transact()
@@ -189,7 +196,10 @@ async fn test_announcement() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    assert_eq!(data["gotham.community.devhub.near"]["post"]["main"].as_str(), Some("{\"type\":\"md\",\"text\":\"what's up\"}"));
+    assert_eq!(
+        data["gotham.community.devhub.near"]["post"]["main"].as_str(),
+        Some("{\"type\":\"md\",\"text\":\"what's up\"}")
+    );
 
     // update community, intend to change name and logo
     let update_community = contract
@@ -220,7 +230,10 @@ async fn test_announcement() -> anyhow::Result<()> {
         .json()?;
 
     assert_eq!(data["gotham.community.devhub.near"]["profile"]["name"].as_str(), Some("Gotham2"));
-    assert_eq!(data["gotham.community.devhub.near"]["profile"]["image"]["url"].as_str(), Some("https://example.com/image.png"));
+    assert_eq!(
+        data["gotham.community.devhub.near"]["profile"]["image"]["url"].as_str(),
+        Some("https://example.com/image.png")
+    );
 
     Ok(())
 }

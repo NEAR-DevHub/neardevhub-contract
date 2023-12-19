@@ -19,7 +19,7 @@ use crate::social_db::{ext_social_db, SOCIAL_DB};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
-use near_sdk::serde_json::{json, to_string};
+use near_sdk::serde_json::{json, Value};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
@@ -540,28 +540,17 @@ impl Contract {
         }));
     }
 
-    pub fn add_community_announcement(
-        &mut self,
-        handle: CommunityHandle,
-        announcement_post: String,
-    ) {
+    pub fn set_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
         let _ = self
             .get_editable_community(&handle)
-            .expect("Only community admins and hub moderators can create announcement");
+            .expect("Only community admins and hub moderators can set community Social DB");
 
         require!(env::prepaid_gas() >= ADD_COMMUNITY_ANNOUNCEMENT_GAS, "Require at least 30 Tgas");
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
-            format!("{}.{}", handle, DEVHUB_COMMUNITY_FACTORY)
-            : {
-                "post": {
-                    "main": to_string(&json!({"type": "md", "text": announcement_post})).unwrap(),
-                    "index": {
-                        "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
-                    }
-                }
-            }
-        }));
+        ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+            .with_unused_gas_weight(1)
+            .set(json!({ format!("{}.{}", handle, DEVHUB_COMMUNITY_FACTORY): data }));
     }
+
     pub fn delete_community(&mut self, handle: CommunityHandle) {
         require!(
             self.has_moderator(env::predecessor_account_id()),

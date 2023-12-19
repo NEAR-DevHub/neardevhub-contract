@@ -133,6 +133,10 @@ impl Community {
             "Community handle must contain 3 to 40 characters"
         );
         require!(
+            self.handle.parse::<AccountId>().is_ok() && !self.handle.contains('.'),
+            "Community handle should be lowercase alphanumeric symbols separated either by `_` or `-`, separators are not permitted to immediately follow each other, start or end with separators"
+        );
+        require!(
             matches!(self.name.chars().count(), 3..=30),
             "Community name must contain 3 to 30 characters"
         );
