@@ -112,7 +112,9 @@ impl Contract {
             post_id: PostId,
             post_to_children: &LookupMap<PostId, Vec<PostId>>,
         ) -> Vec<PostId> {
-            post_to_children
+            near_sdk::log!("test");
+
+            return post_to_children
                 .get(&post_id)
                 .map(|children_ids| {
                     let mut result = Vec::new();
@@ -122,7 +124,7 @@ impl Contract {
                     }
                     result
                 })
-                .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
+                .unwrap_or_else(|| panic!("Parent id {} not found", post_id));
         }
 
         get_children_recursive_helper(post_id, &self.post_to_children)
@@ -597,7 +599,7 @@ mod tests {
     use crate::community::{AddOn, CommunityAddOn, CommunityInputs};
     use crate::post::{Post, PostBody};
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, VMContext};
+    use near_sdk::{testing_env, AccountId, Gas, VMContext};
     use regex::Regex;
 
     use super::Contract;
@@ -644,6 +646,16 @@ mod tests {
         }"#,
         )
         .unwrap();
+
+        let commentBody: PostBody = near_sdk::serde_json::from_str(
+            r#"
+      {
+          "description": "Interesting comment",
+          "post_type": "Comment",
+          "comment_version": "V2"
+      }"#,
+        )
+        .unwrap();
         contract.add_post(None, body.clone(), HashSet::new());
 
         // An imaginary top post representing the landing page.
@@ -651,11 +663,20 @@ mod tests {
         let post = Post::from(all_posts[0].clone());
         assert_eq!(post.id, 0);
 
-        contract.add_post(Some(0), body.clone(), HashSet::new());
-        contract.add_post(Some(1), body.clone(), HashSet::new());
+        contract.add_post(Some(0), commentBody.clone(), HashSet::new());
+        contract.add_post(Some(1), commentBody.clone(), HashSet::new());
+        let context = get_context(false);
+        testing_env!(context);
+        contract.add_post(Some(1), commentBody.clone(), HashSet::new());
+        contract.add_post(Some(2), commentBody.clone(), HashSet::new());
+        contract.add_post(Some(3), commentBody.clone(), HashSet::new());
+        let context = get_context(false);
+        testing_env!(context);
+        contract.add_post(Some(3), commentBody.clone(), HashSet::new());
+        contract.add_post(Some(3), commentBody.clone(), HashSet::new());
 
         let all_children = contract.get_children_ids_recursive(Some(0));
-        assert_eq!(all_children.len(), 2);
+        assert_eq!(all_children.len(), 7);
     }
 
     #[test]
