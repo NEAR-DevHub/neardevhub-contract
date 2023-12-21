@@ -29,7 +29,6 @@ pub enum PostType {
     Attestation,
     Sponsorship,
     Github,
-    Blog, // This is not used anymore?
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
