@@ -104,30 +104,21 @@ impl Contract {
             .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
     }
 
-    pub fn get_children_ids_recursive(&self, post_id: Option<PostId>) -> Vec<PostId> {
-        near_sdk::log!("get_children_ids_recursive");
-        let post_id = post_id.unwrap_or(ROOT_POST_ID);
+    pub fn get_all_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
+        let mut result = Vec::new();
+        let mut stack = Vec::new();
 
-        fn get_children_recursive_helper(
-            post_id: PostId,
-            post_to_children: &LookupMap<PostId, Vec<PostId>>,
-        ) -> Vec<PostId> {
-            near_sdk::log!("test");
+        let start_post_id = post_id.unwrap_or(ROOT_POST_ID);
+        stack.push(start_post_id);
 
-            return post_to_children
-                .get(&post_id)
-                .map(|children_ids| {
-                    let mut result = Vec::new();
-                    for child_id in children_ids {
-                        result.push(child_id);
-                        result.extend(get_children_recursive_helper(child_id, post_to_children));
-                    }
-                    result
-                })
-                .unwrap_or_else(|| panic!("Parent id {} not found", post_id));
+        while let Some(current_post_id) = stack.pop() {
+            if let Some(children_ids) = self.post_to_children.get(&current_post_id) {
+                result.extend(children_ids.iter().cloned());
+                stack.extend(children_ids.iter().cloned());
+            }
         }
 
-        get_children_recursive_helper(post_id, &self.post_to_children)
+        result
     }
 
     pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
@@ -631,7 +622,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_get_children_ids_recursive() {
+    pub fn test_get_all_children_ids() {
         let context = get_context(false);
         testing_env!(context);
         let mut contract = Contract::new();
@@ -675,7 +666,7 @@ mod tests {
         contract.add_post(Some(3), commentBody.clone(), HashSet::new());
         contract.add_post(Some(3), commentBody.clone(), HashSet::new());
 
-        let all_children = contract.get_children_ids_recursive(Some(0));
+        let all_children = contract.get_all_children_ids(Some(0));
         assert_eq!(all_children.len(), 7);
     }
 
