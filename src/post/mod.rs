@@ -114,15 +114,13 @@ pub enum PostBody {
 }
 
 impl PostBody {
-    pub fn get_post_type(&self) -> &str {
+    pub fn get_post_type(&self, parent_id: Option<PostId>) -> &str {
         match self {
             PostBody::Comment(_) => {
-                // if parent_id != 0 {
-                //     "comment"
-                // } else {
-                //     "blog"
-                // }
-                "comment"
+                if parent_id.is_some() {
+                    return "comment";
+                }
+                "blog"
             }
             PostBody::Idea(_) => "idea",
             PostBody::Solution(_) => "solution",

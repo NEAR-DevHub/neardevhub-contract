@@ -130,7 +130,7 @@ impl Contract {
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.clone().into());
-        let post_type = post.snapshot.body.get_post_type();
+        let post_type = post.snapshot.body.get_post_type(self.get_parent_id(post_id));
         notify::notify_like(post_id, post_author, post_type);
     }
 
@@ -193,11 +193,15 @@ impl Contract {
                 .into();
             let parent_author = parent_post.author_id;
 
-            notify::notify_reply(parent_id, parent_author, body.clone().get_post_type());
+            notify::notify_reply(
+                parent_id,
+                parent_author,
+                body.clone().get_post_type(Some(parent_id)),
+            );
         } else {
             repost::repost(post);
         }
-        notify::notify_mentions(desc.as_str(), id, body.get_post_type());
+        notify::notify_mentions(desc.as_str(), id, body.get_post_type(Some(parent_id)));
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -332,7 +336,7 @@ impl Contract {
             self.label_to_posts.insert(&label_to_add, &posts);
         }
 
-        notify::notify_edit(id, post_author, body.get_post_type());
+        notify::notify_edit(id, post_author, body.get_post_type(self.get_parent_id(id)));
     }
 
     pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
