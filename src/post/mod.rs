@@ -1,5 +1,4 @@
 mod attestation;
-mod blog;
 mod comment;
 mod github;
 mod idea;
@@ -9,7 +8,6 @@ mod sponsorship;
 
 use crate::str_serializers::*;
 pub use attestation::*;
-pub use blog::*;
 pub use comment::*;
 pub use idea::*;
 pub use like::*;
@@ -114,18 +112,23 @@ pub enum PostBody {
     Solution(VersionedSolution),
     Attestation(VersionedAttestation),
     Sponsorship(VersionedSponsorship),
-    Blog(VersionedBlog),
 }
 
 impl PostBody {
     pub fn get_post_type(&self) -> &str {
         match self {
-            PostBody::Comment(_) => "comment",
+            PostBody::Comment(_) => {
+                // if parent_id != 0 {
+                //     "comment"
+                // } else {
+                //     "blog"
+                // }
+                "comment"
+            }
             PostBody::Idea(_) => "idea",
             PostBody::Solution(_) => "solution",
             PostBody::Attestation(_) => "attestation",
             PostBody::Sponsorship(_) => "sponsorship",
-            PostBody::Blog(_) => "blog",
         }
     }
 }
@@ -137,6 +140,5 @@ pub fn get_post_description(post: Post) -> String {
         PostBody::Solution(solution) => solution.latest_version().description,
         PostBody::Attestation(attestation) => attestation.latest_version().description,
         PostBody::Sponsorship(sponsorship) => sponsorship.latest_version().description,
-        PostBody::Blog(blog) => blog.latest_version().description,
     };
 }

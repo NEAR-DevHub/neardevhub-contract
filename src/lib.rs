@@ -28,7 +28,6 @@ type AttestationId = u64;
 type SolutionId = u64;
 type SponsorshipId = u64;
 type CommentId = u64;
-type BlogId = u64;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
