@@ -91,12 +91,11 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str, post_type: &str
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::convert::TryInto;
 
     use super::notify_mentions;
 
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, VMContext};
 
     use regex::Regex;
 
