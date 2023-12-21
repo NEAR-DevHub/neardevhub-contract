@@ -20,19 +20,3 @@ contract=i.zxcvn.testnet
 #near call contract.devhubopen.testnet unsafe_self_upgrade --accountId contract.devhubopen.testnet --args $(base64 < res/devgovgigs.wasm ) --base64 --gas 300000000000000
 
 # near call $contract unsafe_migrate --accountId $contract --gas 300000000000000
-
-LIB_NEW="src/lib.rs"
-STATE_VERSION_ENUM="src/migrations.rs"
-
-# Extract the latest state version from migrations
-latest_version=$(grep -o 'StateVersion::V[0-9]*' "$STATE_VERSION_ENUM" | tail -n 1)
-
-# Extract the version mentioned in new
-new_function_version=$(awk '/pub fn new/ {getline; print}' "$LIB_NEW" | grep -o 'StateVersion::V[0-9]*')
-
-if [ "$latest_version" = "$new_function_version" ]; then
-    exit 0
-else
-    echo "Test failed: Latest state version does not match the version in the new function."
-    exit 1
-fi

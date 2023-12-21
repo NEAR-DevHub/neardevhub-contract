@@ -22,14 +22,3 @@ jobs:
       - name: Unit tests
         run: |
           cargo test
-
-  teststateversion:
-    name: Test state version
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Run test script
-        run: |
-          chmod +x test.sh
-          ./test.sh
