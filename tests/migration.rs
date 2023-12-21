@@ -283,6 +283,56 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
 
     insta::assert_json_snapshot!(get_community);
+    test_state_version().await?;
+    Ok(())
+}
+
+// async fn test_close_account_non_empty_balance(
+//     user_with_funds: &Account,
+//     contract: &Contract,
+//     worker: &Worker<Sandbox>,
+// ) -> anyhow::Result<()> {
+//     let contract = init_contracts().await?;
+
+//     match user_with_funds
+//         .call(&worker, contract.id(), "storage_unregister")
+//         .args_json(serde_json::json!({}))?
+//         .deposit(1)
+//         .transact()
+//         .await
+//     {
+//         Ok(_result) => {
+//             panic!("storage_unregister worked despite account being funded")
+//         }
+//         Err(e) => {
+//             let e_string = e.to_string();
+//             if !e_string
+//                 .contains("Can't unregister the account with the positive balance without force")
+//             {
+//                 panic!("storage_unregister with balance displays unexpected error message")
+//             }
+//             println!("      Passed ✅ test_close_account_non_empty_balance");
+//         }
+//     }
+//     Ok(())
+// }
+// #[should_panic]
+async fn test_state_version() -> anyhow::Result<()> {
+    let contract = init_contracts().await?;
+
+    let deposit_amount = near_units::parse_near!("0.1");
+
+    // Call self upgrade with current branch code
+    // compile the current code
+    let wasm = near_workspaces::compile_project("./").await?;
+
+    let mut contract_upgrade_result =
+        contract.call("unsafe_self_upgrade").args(wasm).max_gas().transact().await?;
+
+    while contract_upgrade_result.json::<String>()? == "needs-migration" {
+        contract_upgrade_result =
+            contract.call("unsafe_migrate").args_json(json!({})).max_gas().transact().await?;
+    }
 
     Ok(())
 }
