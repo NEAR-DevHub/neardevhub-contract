@@ -26,7 +26,7 @@ pub struct BlogV1 {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-#[serde(tag = "comment_version")]
+#[serde(tag = "blog_version")]
 pub enum VersionedBlog {
     V0(Blog),
     V1(BlogV1),
