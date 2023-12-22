@@ -1,7 +1,7 @@
 use near_sdk::serde_json::Value;
 use near_sdk::{ext_contract, AccountId, PublicKey};
 
-pub const SOCIAL_DB: &str = "social.near";
+pub const SOCIAL_DB: &near_sdk::AccountIdRef = near_sdk::AccountIdRef::new_or_panic("social.near");
 
 #[ext_contract(ext_social_db)]
 pub trait SocialDB {

@@ -4,7 +4,7 @@ use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
 const CODE: &[u8] = include_bytes!("../../res/devhub_community.wasm");
 const INITIAL_BALANCE: NearToken = NearToken::from_near(2);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
-const DEVHUB: &str = "devgovgigs.near";
+const DEVHUB: &near_sdk::AccountIdRef = near_sdk::AccountIdRef::new_or_panic("devhub.near");
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Default)]
@@ -14,7 +14,7 @@ pub struct Contract {}
 impl Contract {
     #[payable]
     pub fn create_community_account(&mut self, community: String) -> Promise {
-        let devhub_account: AccountId = DEVHUB.parse().unwrap();
+        let devhub_account: AccountId = DEVHUB.into();
         require!(
             env::predecessor_account_id() == devhub_account,
             "Can only be called from DevHub contract"

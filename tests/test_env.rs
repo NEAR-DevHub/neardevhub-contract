@@ -5,8 +5,8 @@ use near_workspaces::{Account, AccountId, Worker};
 
 use serde_json::json;
 
-const DEVHUB_CONTRACT_PREFIX: &str = "devgovgigs";
-const DEVHUB_CONTRACT: &str = "devgovgigs.near";
+const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
+const DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
 const NEW_DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &str = "social.near";
@@ -82,13 +82,7 @@ pub async fn init_contracts_from_res(
     let contract = contract_account.deploy(&contract_wasm).await?.into_result()?;
     let outcome = contract.call("new").args_json(json!({})).transact().await?;
 
-    let new_devhub_account = tla_near
-        .create_subaccount(NEW_DEVHUB_CONTRACT_PREFIX)
-        .initial_balance(parse_near!("100 N"))
-        .transact()
-        .await?
-        .into_result()?;
-    let community_factory_account = new_devhub_account
+    let community_factory_account = contract_account
         .create_subaccount(COMMUNITY_FACTORY_PREFIX)
         .initial_balance(parse_near!("10 N"))
         .transact()
