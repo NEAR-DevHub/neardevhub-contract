@@ -15,16 +15,18 @@ Before starting, make sure you have the following installed:
 
 ## Building
 
+From the root directory, run:
+
 ```cmd
 cargo build
-
-./build.sh
 ```
 
 ## Running Tests
 
+From the root directory, run:
+
 ```cmd
-./test.sh
+cargo test
 ```
 
 ## Deploying
