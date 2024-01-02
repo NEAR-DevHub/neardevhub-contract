@@ -1,4 +1,4 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../res/devhub_community.wasm");
@@ -8,6 +8,7 @@ const DEVHUB: &near_sdk::AccountIdRef = near_sdk::AccountIdRef::new_or_panic("de
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Default)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Contract {}
 
 #[near_bindgen]

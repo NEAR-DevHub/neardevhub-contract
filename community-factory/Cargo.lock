@@ -683,7 +683,6 @@ dependencies = [
 name = "devhub-community-factory"
 version = "0.1.0"
 dependencies = [
- "borsh 1.1.2",
  "near-sdk",
 ]
 
