@@ -177,7 +177,13 @@ impl Community {
     }
 }
 
-pub const DEVHUB_COMMUNITY_FACTORY: &str = "community.devhub.near";
+pub fn get_devhub_community_factory() -> AccountId {
+    format!("community.{}", env::current_account_id()).parse().unwrap()
+}
+
+pub fn get_devhub_community_account(handle: &CommunityHandle) -> String {
+    format!("{}.{}", handle, get_devhub_community_factory())
+}
 
 #[ext_contract(ext_devhub_community_factory)]
 pub trait DevhubCommunityFactory {

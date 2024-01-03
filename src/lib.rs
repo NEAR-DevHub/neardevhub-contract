@@ -363,7 +363,7 @@ impl Contract {
         new_community.set_default_admin();
         self.communities.insert(&new_community.handle, &new_community);
 
-        ext_devhub_community_factory::ext(DEVHUB_COMMUNITY_FACTORY.parse().unwrap())
+        ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
             .create_community_account(new_community.handle);
@@ -528,7 +528,7 @@ impl Contract {
         require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
         self.communities.insert(&handle, &community);
         ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
-            format!("{}.{}", community.handle, DEVHUB_COMMUNITY_FACTORY)
+            get_devhub_community_account(&community.handle)
             : {
                 "profile": {
                     "name": community.name,
@@ -548,7 +548,7 @@ impl Contract {
         require!(env::prepaid_gas() >= ADD_COMMUNITY_ANNOUNCEMENT_GAS, "Require at least 30 Tgas");
         ext_social_db::ext(SOCIAL_DB.parse().unwrap())
             .with_unused_gas_weight(1)
-            .set(json!({ format!("{}.{}", handle, DEVHUB_COMMUNITY_FACTORY): data }));
+            .set(json!({ get_devhub_community_account(&handle) : data }));
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
@@ -565,7 +565,7 @@ impl Contract {
 
         require!(env::prepaid_gas() >= DELETE_COMMUNITY_GAS, "Require at least 30 Tgas");
         ext_devhub_community::ext(
-            format!("{}.{}", &community.handle, DEVHUB_COMMUNITY_FACTORY).parse().unwrap(),
+            get_devhub_community_account(&community.handle).parse().unwrap()
         )
         .with_unused_gas_weight(1)
         .destroy();
