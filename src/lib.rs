@@ -545,7 +545,7 @@ impl Contract {
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can set community Social DB");
 
-        require!(env::prepaid_gas() >= ADD_COMMUNITY_ANNOUNCEMENT_GAS, "Require at least 30 Tgas");
+        require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
         social_db_contract()
             .with_unused_gas_weight(1)
             .set(json!({ get_devhub_community_account(&handle): data }));
