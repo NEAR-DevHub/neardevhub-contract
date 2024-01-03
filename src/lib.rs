@@ -15,7 +15,7 @@ use crate::access_control::AccessControl;
 use community::*;
 use post::*;
 
-use crate::social_db::{ext_social_db, SOCIAL_DB};
+use crate::social_db::social_db_contract;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
@@ -527,7 +527,7 @@ impl Contract {
         require!(community.handle == handle, "Community handle cannot be changed");
         require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
         self.communities.insert(&handle, &community);
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap()).with_unused_gas_weight(1).set(json!({
+        social_db_contract().with_unused_gas_weight(1).set(json!({
             get_devhub_community_account(&community.handle)
             : {
                 "profile": {
@@ -546,9 +546,9 @@ impl Contract {
             .expect("Only community admins and hub moderators can set community Social DB");
 
         require!(env::prepaid_gas() >= ADD_COMMUNITY_ANNOUNCEMENT_GAS, "Require at least 30 Tgas");
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+        social_db_contract()
             .with_unused_gas_weight(1)
-            .set(json!({ get_devhub_community_account(&handle) : data }));
+            .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
@@ -564,11 +564,9 @@ impl Contract {
         self.communities.remove(&community.handle);
 
         require!(env::prepaid_gas() >= DELETE_COMMUNITY_GAS, "Require at least 30 Tgas");
-        ext_devhub_community::ext(
-            get_devhub_community_account(&community.handle).parse().unwrap()
-        )
-        .with_unused_gas_weight(1)
-        .destroy();
+        ext_devhub_community::ext(get_devhub_community_account(&community.handle).parse().unwrap())
+            .with_unused_gas_weight(1)
+            .destroy();
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {

@@ -1,6 +1,6 @@
 mod social_db;
 
-use crate::social_db::{ext_social_db, SOCIAL_DB};
+use crate::social_db::social_db_contract;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
@@ -13,7 +13,7 @@ pub struct Contract {}
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        ext_social_db::ext(SOCIAL_DB.into())
+        social_db_contract()
             .with_unused_gas_weight(1)
             .with_attached_deposit(NearToken::from_near(1))
             .grant_write_permission(

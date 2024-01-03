@@ -1,7 +1,5 @@
 use near_sdk::serde_json::Value;
-use near_sdk::{ext_contract, AccountId, PublicKey};
-
-pub const SOCIAL_DB: &near_sdk::AccountIdRef = near_sdk::AccountIdRef::new_or_panic("social.near");
+use near_sdk::{ext_contract, AccountId, PublicKey, env};
 
 #[ext_contract(ext_social_db)]
 pub trait SocialDB {
@@ -12,4 +10,13 @@ pub trait SocialDB {
         public_key: Option<PublicKey>,
         keys: Vec<String>,
     );
+}
+
+pub fn social_db_contract() -> ext_social_db::SocialDBExt {
+    let social_db: AccountId = if env::current_account_id().to_string().ends_with("testnet") {
+        "v1.social08.testnet"
+    } else {
+        "social.near"
+    }.parse().unwrap();
+    ext_social_db::ext(social_db)
 }
