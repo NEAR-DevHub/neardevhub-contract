@@ -283,6 +283,5 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
 
     insta::assert_json_snapshot!(get_community);
-
     Ok(())
 }

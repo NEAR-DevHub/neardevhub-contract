@@ -592,7 +592,7 @@ pub struct ContractV9 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, Debug, PartialEq)]
 pub(crate) enum StateVersion {
     V1,
     V2,
@@ -607,7 +607,7 @@ pub(crate) enum StateVersion {
 
 const VERSION_KEY: &[u8] = b"VERSION";
 
-fn state_version_read() -> StateVersion {
+pub(crate) fn state_version_read() -> StateVersion {
     env::storage_read(VERSION_KEY)
         .map(|data| {
             StateVersion::try_from_slice(&data).expect("Cannot deserialize the contract state.")

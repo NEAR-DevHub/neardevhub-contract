@@ -606,6 +606,7 @@ mod tests {
     use crate::access_control::members::{ActionType, Member, MemberMetadata};
     use crate::access_control::rules::Rule;
     use crate::community::{AddOn, Community, CommunityAddOn, CommunityInputs};
+    use crate::migrations::{self, StateVersion};
     use crate::post::PostBody;
     use crate::CREATE_COMMUNITY_BALANCE;
     use near_sdk::store::vec;
@@ -639,6 +640,39 @@ mod tests {
             .predecessor_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
+    }
+
+    #[test]
+    pub fn test_new_state_version() {
+        let context = get_context(false);
+
+        // Use testing environment
+        testing_env!(context);
+
+        // Deploy the contract
+        let mut contract = Contract::new();
+
+        // Call the needs_migration function to check if migration is needed
+        let state_version = migrations::state_version_read();
+
+        match state_version {
+            StateVersion::V1 => {}
+            StateVersion::V2 => {}
+            StateVersion::V3 { done: false, migrated_count } => {}
+            StateVersion::V3 { done: true, migrated_count: _ } => {}
+            StateVersion::V4 => {}
+            StateVersion::V5 => {}
+            StateVersion::V6 => {}
+            StateVersion::V7 => {}
+            StateVersion::V8 => {}
+            StateVersion::V9 => {}
+            // @petersalomonsen Would need to upgrade this
+            _ => {
+                panic!("State version in new is not the latest version");
+            }
+        }
+        // And this..
+        assert_eq!(state_version, StateVersion::V9);
     }
 
     #[test]
