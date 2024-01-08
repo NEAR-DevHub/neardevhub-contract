@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, require, AccountId};
+use near_sdk::{env, ext_contract, require, AccountId, Balance, Gas};
 
 pub type CommunityHandle = String;
 
@@ -133,6 +133,10 @@ impl Community {
             "Community handle must contain 3 to 40 characters"
         );
         require!(
+            self.handle.parse::<AccountId>().is_ok() && !self.handle.contains('.'),
+            "Community handle should be lowercase alphanumeric symbols separated either by `_` or `-`, separators are not permitted to immediately follow each other, start or end with separators"
+        );
+        require!(
             matches!(self.name.chars().count(), 3..=30),
             "Community name must contain 3 to 30 characters"
         );
@@ -172,3 +176,27 @@ impl Community {
         }
     }
 }
+
+pub fn get_devhub_community_factory() -> AccountId {
+    format!("community.{}", env::current_account_id()).parse().unwrap()
+}
+
+pub fn get_devhub_community_account(handle: &CommunityHandle) -> String {
+    format!("{}.{}", handle, get_devhub_community_factory())
+}
+
+#[ext_contract(ext_devhub_community_factory)]
+pub trait DevhubCommunityFactory {
+    fn create_community_account(&mut self, community: String);
+}
+
+#[ext_contract(ext_devhub_community)]
+pub trait DevhubCommunity {
+    fn destroy(&mut self);
+}
+
+pub const CREATE_COMMUNITY_BALANCE: Balance = 2_000_000_000_000_000_000_000_000; // 2 NEAR
+pub const CREATE_COMMUNITY_GAS: Gas = Gas(50_000_000_000_000); // 50 Tgas
+pub const UPDATE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
+pub const DELETE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
+pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas

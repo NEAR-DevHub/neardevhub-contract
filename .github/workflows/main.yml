@@ -19,6 +19,12 @@ jobs:
           default: true
       - uses: Swatinem/rust-cache@v1
       - run: rustup target add wasm32-unknown-unknown
+      - name: Build community contract
+        run: cd community && ./build.sh
+      - name: Build community factory contract
+        run: cd community-factory && ./build.sh
+      - name: Build devhub contract
+        run: ./build.sh
       - name: Unit tests
         run: |
           cargo test

@@ -1,4 +1,4 @@
-use crate::social_db::{ext_social_db, SOCIAL_DB};
+use crate::social_db::social_db_contract;
 use crate::PostId;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
@@ -44,7 +44,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
             }));
         }
 
-        ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+        social_db_contract()
             .with_static_gas(env::prepaid_gas() / 4)
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
@@ -69,7 +69,7 @@ pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
 }
 
 fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
-    ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+    social_db_contract()
         .with_static_gas(env::prepaid_gas() / 4)
         .with_attached_deposit(env::attached_deposit())
         .set(json!({

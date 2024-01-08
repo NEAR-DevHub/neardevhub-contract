@@ -12,7 +12,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let contract = init_contracts().await?;
+    let contract = init_contracts_from_mainnet().await?;
 
     let deposit_amount = near_units::parse_near!("0.1");
 

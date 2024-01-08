@@ -1,5 +1,5 @@
 use crate::post::{get_post_description, Post, PostBody};
-use crate::social_db::{ext_social_db, SOCIAL_DB};
+use crate::social_db::social_db_contract;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
@@ -47,7 +47,7 @@ fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_j
 }
 
 pub fn repost(post: Post) -> Promise {
-    ext_social_db::ext(SOCIAL_DB.parse().unwrap())
+    social_db_contract()
         .with_static_gas(env::prepaid_gas() / 3)
         .with_attached_deposit(env::attached_deposit())
         .set(repost_internal(post, env::current_account_id()))
