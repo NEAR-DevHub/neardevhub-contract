@@ -1,4 +1,4 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
     BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default,
 )]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct RulesList {
     #[serde(flatten)]
     pub rules: HashMap<Rule, VersionedRuleMetadata>,
@@ -13,6 +14,7 @@ pub struct RulesList {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct RuleMetadata {
     pub description: String,
 }
@@ -20,6 +22,7 @@ pub struct RuleMetadata {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "rule_metadata_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedRuleMetadata {
     V0(RuleMetadata),
 }
@@ -46,6 +49,7 @@ impl From<RuleMetadata> for VersionedRuleMetadata {
 #[serde(crate = "near_sdk::serde")]
 #[serde(from = "String")]
 #[serde(into = "String")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum Rule {
     /// Labels can be any string, but rules are created by the NEAR account owner of this contract,
     /// or small circle of moderators. So this code cannot be abused. Likely creating a label that

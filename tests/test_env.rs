@@ -1,4 +1,4 @@
-use near_units::parse_near;
+use near_sdk::NearToken;
 use near_workspaces::network::Sandbox;
 use near_workspaces::types::{AccessKey, KeyType, SecretKey};
 use near_workspaces::{Account, AccountId, Worker};
@@ -22,7 +22,7 @@ pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Co
     let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
     let near_social = worker
         .import_contract(&near_social_id, &mainnet)
-        .initial_balance(parse_near!("10000 N"))
+        .initial_balance(NearToken::from_near(10000))
         .transact()
         .await?;
     near_social.call("new").transact().await?.into_result()?;
@@ -31,7 +31,7 @@ pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Co
     let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
     let contract = worker
         .import_contract(&contract_id, &mainnet)
-        .initial_balance(parse_near!("1000 N"))
+        .initial_balance(NearToken::from_near(1000))
         .transact()
         .await?;
     let outcome = contract.call("new").args_json(json!({})).transact().await?;
@@ -50,7 +50,7 @@ pub async fn init_contracts_from_res(
     let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
     let near_social = worker
         .import_contract(&near_social_id, &mainnet)
-        .initial_balance(parse_near!("10000 N"))
+        .initial_balance(NearToken::from_near(10000))
         .transact()
         .await?;
     near_social.call("new").transact().await?.into_result()?;
@@ -75,7 +75,7 @@ pub async fn init_contracts_from_res(
         .await?;
     let contract_account = tla_near
         .create_subaccount(DEVHUB_CONTRACT_PREFIX)
-        .initial_balance(parse_near!("100 N"))
+        .initial_balance(NearToken::from_near(100))
         .transact()
         .await?
         .into_result()?;
@@ -84,7 +84,7 @@ pub async fn init_contracts_from_res(
 
     let community_factory_account = contract_account
         .create_subaccount(COMMUNITY_FACTORY_PREFIX)
-        .initial_balance(parse_near!("10 N"))
+        .initial_balance(NearToken::from_near(10))
         .transact()
         .await?
         .into_result()?;

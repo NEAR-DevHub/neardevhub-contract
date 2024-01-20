@@ -1,12 +1,13 @@
 use super::{Like, PostStatus};
-use crate::{str_serializers::*, CommentId, SolutionId, SponsorshipId};
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use crate::{str_serializers::*, CommentId, SolutionId, SponsorshipId, Balance};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, Balance, Timestamp};
+use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum SponsorshipToken {
     NEAR,
     NEP141 { address: AccountId },
@@ -15,6 +16,7 @@ pub enum SponsorshipToken {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Sponsorship {
     // Common fields
     pub id: SponsorshipId,
@@ -38,6 +40,7 @@ pub struct Sponsorship {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct SponsorshipV1 {
     pub name: String,
     pub description: String,
@@ -50,6 +53,7 @@ pub struct SponsorshipV1 {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "sponsorship_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
     V1(SponsorshipV1),

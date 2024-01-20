@@ -16,7 +16,7 @@ use community::*;
 use post::*;
 
 use crate::social_db::social_db_contract;
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
 use near_sdk::serde_json::{json, Value};
@@ -31,11 +31,14 @@ type SolutionId = u64;
 type SponsorshipId = u64;
 type CommentId = u64;
 
+pub type Balance = u128;
+
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Contract {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -610,7 +613,7 @@ mod tests {
     use crate::CREATE_COMMUNITY_BALANCE;
     use near_sdk::store::vec;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, Balance, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, AccountId, MockedBlockchain, VMContext};
     use regex::Regex;
 
     use super::Contract;

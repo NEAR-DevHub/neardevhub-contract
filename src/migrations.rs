@@ -3,11 +3,12 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{env, near_bindgen, Promise};
+use near_sdk::{env, near_bindgen, Promise, NearToken, borsh::to_vec};
 use std::cmp::min;
 use std::collections::HashSet;
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV1 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -48,6 +49,7 @@ impl Contract {
 // }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV2 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -94,6 +96,7 @@ impl Contract {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV3 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -128,6 +131,7 @@ impl Contract {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV4 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -165,6 +169,7 @@ impl Contract {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityV1 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -186,6 +191,7 @@ pub struct CommunityV1 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV5 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -261,6 +267,7 @@ impl Contract {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityV2 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -282,6 +289,7 @@ pub struct CommunityV2 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV6 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -364,6 +372,7 @@ impl Contract {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityV3 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -387,6 +396,7 @@ pub struct CommunityV3 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV7 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -465,6 +475,7 @@ impl Contract {
 }
 
 #[derive(BorshSerialize, BorshDeserialize)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityV4 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -489,6 +500,7 @@ pub struct CommunityV4 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV8 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -563,6 +575,7 @@ impl Contract {
 }
 
 #[derive(BorshSerialize, BorshDeserialize)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityV5 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -580,6 +593,7 @@ pub struct CommunityV5 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct ContractV9 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -593,6 +607,7 @@ pub struct ContractV9 {
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[borsh(crate = "near_sdk::borsh")]
 pub(crate) enum StateVersion {
     V1,
     V2,
@@ -616,7 +631,7 @@ fn state_version_read() -> StateVersion {
 }
 
 pub(crate) fn state_version_write(version: &StateVersion) {
-    let data = version.try_to_vec().expect("Cannot serialize the contract state.");
+    let data = to_vec(&version).expect("Cannot serialize the contract state.");
     env::storage_write(VERSION_KEY, &data);
     near_sdk::log!("Migrated to version: {:?}", version);
 }
@@ -632,8 +647,8 @@ impl Contract {
             .then(Promise::new(env::current_account_id()).function_call(
                 "unsafe_migrate".to_string(),
                 Vec::new(),
-                0u128,
-                env::prepaid_gas() - near_sdk::Gas(100_000_000_000_000),
+                NearToken::from_near(0),
+                env::prepaid_gas().saturating_sub(near_sdk::Gas::from_tgas(100)),
             ))
             .as_return();
     }

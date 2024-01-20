@@ -11,7 +11,7 @@ pub use attestation::*;
 pub use comment::*;
 pub use idea::*;
 pub use like::*;
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, BorshStorageKey, CryptoHash, Timestamp};
 pub use solution::*;
@@ -22,6 +22,7 @@ pub type PostId = u64;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum PostType {
     Comment,
     Idea,
@@ -33,12 +34,14 @@ pub enum PostType {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum PostStatus {
     Open,
     Closed { reason: String },
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum StorageKey {
     Ideas,
     Solutions,
@@ -60,12 +63,14 @@ pub enum StorageKey {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "post_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedPost {
     V0(Post),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Post {
     pub id: PostId,
     pub author_id: AccountId,
@@ -93,6 +98,7 @@ impl From<Post> for VersionedPost {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct PostSnapshot {
     pub editor_id: AccountId,
     #[serde(with = "u64_dec_format")]
@@ -105,6 +111,7 @@ pub struct PostSnapshot {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "post_type")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum PostBody {
     Comment(VersionedComment),
     Idea(VersionedIdea),

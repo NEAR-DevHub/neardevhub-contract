@@ -1,5 +1,6 @@
 mod test_env;
 
+use near_sdk::NearToken;
 use {crate::test_env::*, serde_json::json};
 
 #[tokio::test]
@@ -14,7 +15,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let contract = init_contracts_from_mainnet().await?;
 
-    let deposit_amount = near_units::parse_near!("0.1");
+    let deposit_amount = NearToken::from_millinear(100);
 
     // Add Posts
     let add_idea_post = contract

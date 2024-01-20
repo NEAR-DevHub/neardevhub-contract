@@ -1,13 +1,14 @@
 use super::{Like, PostStatus};
 use crate::str_serializers::*;
 use crate::{AttestationId, CommentId, SolutionId};
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Attestation {
     // Common fields
     pub id: AttestationId,
@@ -27,6 +28,7 @@ pub struct Attestation {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct AttestationV1 {
     pub name: String,
     pub description: String,
@@ -35,6 +37,7 @@ pub struct AttestationV1 {
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "attestation_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedAttestation {
     V0(Attestation),
     V1(AttestationV1),
