@@ -48,7 +48,7 @@ fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_j
 
 pub fn repost(post: Post) -> Promise {
     social_db_contract()
-        .with_static_gas(env::prepaid_gas() / 3)
+        .with_static_gas(env::prepaid_gas().saturating_div(3))
         .with_attached_deposit(env::attached_deposit())
         .set(repost_internal(post, env::current_account_id()))
 }

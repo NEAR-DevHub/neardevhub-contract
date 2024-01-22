@@ -1,13 +1,14 @@
 use super::Like;
 use crate::str_serializers::*;
 use crate::CommentId;
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommentV0 {
     pub author_id: AccountId,
     #[serde(with = "u64_dec_format")]
@@ -19,6 +20,7 @@ pub struct CommentV0 {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Comment {
     pub id: CommentId,
     pub author_id: AccountId,
@@ -31,6 +33,7 @@ pub struct Comment {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommentV2 {
     pub description: String,
 }
@@ -38,6 +41,7 @@ pub struct CommentV2 {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "comment_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedComment {
     V0(CommentV0),
     V1(Comment),

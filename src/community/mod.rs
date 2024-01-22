@@ -1,6 +1,6 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, ext_contract, require, AccountId, Balance, Gas};
+use near_sdk::{env, ext_contract, require, AccountId, Gas, NearToken};
 
 pub type CommunityHandle = String;
 
@@ -8,6 +8,7 @@ pub type AddOnId = String;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityInputs {
     pub handle: CommunityHandle,
     pub name: String,
@@ -20,6 +21,7 @@ pub struct CommunityInputs {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityMetadata {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -33,6 +35,7 @@ pub struct CommunityMetadata {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityFeatureFlags {
     pub telegram: bool,
     pub github: bool,
@@ -42,6 +45,7 @@ pub struct CommunityFeatureFlags {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct WikiPage {
     name: String,
     content_markdown: String,
@@ -49,6 +53,7 @@ pub struct WikiPage {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityAddOn {
     pub id: String,
     pub addon_id: AddOnId,
@@ -59,6 +64,7 @@ pub struct CommunityAddOn {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct AddOn {
     pub id: AddOnId,
     pub title: String,
@@ -97,6 +103,7 @@ impl AddOn {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Community {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -115,12 +122,14 @@ pub struct Community {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct FeaturedCommunity {
     pub handle: CommunityHandle,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct CommunityPermissions {
     pub can_configure: bool,
     pub can_delete: bool,
@@ -195,8 +204,8 @@ pub trait DevhubCommunity {
     fn destroy(&mut self);
 }
 
-pub const CREATE_COMMUNITY_BALANCE: Balance = 2_000_000_000_000_000_000_000_000; // 2 NEAR
-pub const CREATE_COMMUNITY_GAS: Gas = Gas(50_000_000_000_000); // 50 Tgas
-pub const UPDATE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
-pub const DELETE_COMMUNITY_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
-pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas(30_000_000_000_000); // 30 Tgas
+pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(2);
+pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(50);
+pub const UPDATE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
+pub const DELETE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
+pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas::from_tgas(30);

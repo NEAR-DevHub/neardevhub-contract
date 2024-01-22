@@ -1,12 +1,13 @@
 use super::{Like, PostStatus};
 use crate::{CommentId, IdeaId, SolutionId};
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct Idea {
     // Common Fields
     pub id: IdeaId,
@@ -24,6 +25,7 @@ pub struct Idea {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct IdeaV1 {
     pub name: String,
     pub description: String,
@@ -32,6 +34,7 @@ pub struct IdeaV1 {
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "idea_version")]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedIdea {
     V0(Idea),
     V1(IdeaV1),

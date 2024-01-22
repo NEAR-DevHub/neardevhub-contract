@@ -1,6 +1,6 @@
 use crate::access_control::members::{Member, MembersList, VersionedMemberMetadata};
 use crate::access_control::rules::{Rule, RulesList};
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -9,6 +9,7 @@ pub mod rules;
 
 #[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone, Default)]
 #[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct AccessControl {
     pub rules_list: RulesList,
     pub members_list: MembersList,

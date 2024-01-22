@@ -1,5 +1,6 @@
 mod test_env;
 
+use near_sdk::NearToken;
 use near_workspaces::AccountId;
 use {crate::test_env::*, serde_json::json};
 
@@ -9,7 +10,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = near_units::parse_near!("2 N");
+    let deposit_amount = NearToken::from_near(2);
 
     // Add a community
     let create_community = contract
@@ -81,7 +82,7 @@ async fn test_update_community() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = near_units::parse_near!("2 N");
+    let deposit_amount = NearToken::from_near(2);
 
     // Add a community
     let create_community = contract
@@ -143,7 +144,7 @@ async fn test_announcement() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, worker) = init_contracts_from_res().await?;
 
-    let deposit_amount = near_units::parse_near!("2 N");
+    let deposit_amount = NearToken::from_near(2);
 
     // Add a community
     let create_community = contract
