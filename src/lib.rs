@@ -23,6 +23,7 @@ use near_sdk::serde_json::{json, Value};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
+use std::str::FromStr;
 
 type PostId = u64;
 type IdeaId = u64;
@@ -348,7 +349,7 @@ impl Contract {
 
         let mut new_community = Community {
             admins: vec![],
-            handle: inputs.handle,
+            handle: inputs.handle.clone(),
             name: inputs.name,
             tag: inputs.tag,
             description: inputs.description,
@@ -369,7 +370,21 @@ impl Contract {
         ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
-            .create_community_account(new_community.handle);
+            .create_community_account(new_community.handle.clone());
+
+        ext_devhub_community::ext(
+            AccountId::from_str(&get_devhub_community_discussions_account(&inputs.handle.clone()))
+                .expect(
+                    format!(
+                        "Account with handle `{}` does not exist",
+                        get_devhub_community_discussions_account(&inputs.handle.clone())
+                    )
+                    .as_str(),
+                ),
+        )
+        .with_unused_gas_weight(1)
+        .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
+        .create_discussions_account(new_community.handle);
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
@@ -552,6 +567,13 @@ impl Contract {
         social_db_contract()
             .with_unused_gas_weight(1)
             .set(json!({ get_devhub_community_account(&handle): data }));
+    }
+
+    pub fn set_discussions_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
+        require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
+        social_db_contract()
+            .with_unused_gas_weight(1)
+            .set(json!({ format!("discussions.{}", get_devhub_community_discussions_account(&handle)): data }));
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
