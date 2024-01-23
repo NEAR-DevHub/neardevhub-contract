@@ -373,14 +373,13 @@ impl Contract {
             .create_community_account(new_community.handle.clone());
 
         ext_devhub_community::ext(
-            AccountId::from_str(&get_devhub_community_discussions_account(&inputs.handle.clone()))
-                .expect(
-                    format!(
-                        "Account with handle `{}` does not exist",
-                        get_devhub_community_discussions_account(&inputs.handle.clone())
-                    )
-                    .as_str(),
-                ),
+            AccountId::from_str(&get_devhub_discussions_account(&inputs.handle.clone())).expect(
+                format!(
+                    "Account with handle `{}` does not exist",
+                    get_devhub_discussions_account(&inputs.handle.clone())
+                )
+                .as_str(),
+            ),
         )
         .with_unused_gas_weight(1)
         .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
@@ -571,9 +570,9 @@ impl Contract {
 
     pub fn set_discussions_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
         require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
-        social_db_contract()
-            .with_unused_gas_weight(1)
-            .set(json!({ format!("discussions.{}", get_devhub_community_discussions_account(&handle)): data }));
+        social_db_contract().with_unused_gas_weight(1).set(
+            json!({ format!("discussions.{}", get_devhub_discussions_account(&handle)): data }),
+        );
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
