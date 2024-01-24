@@ -568,7 +568,7 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
-    pub fn set_discussions_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
+    pub fn repost_user_post_to_community(&mut self, handle: CommunityHandle, data: Value) {
         require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
         social_db_contract().with_unused_gas_weight(1).set(
             json!({ format!("discussions.{}", get_devhub_discussions_account(&handle)): data }),
@@ -624,18 +624,13 @@ impl Contract {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::collections::{HashMap, HashSet};
-    use std::convert::TryInto;
-
-    use crate::access_control::members::{ActionType, Member, MemberMetadata};
-    use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, Community, CommunityAddOn, CommunityInputs};
+    use crate::community::AddOn;
     use crate::post::PostBody;
-    use crate::CREATE_COMMUNITY_BALANCE;
-    use near_sdk::store::vec;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, VMContext};
     use regex::Regex;
+    use std::collections::HashSet;
+    use std::convert::TryInto;
 
     use super::Contract;
 
