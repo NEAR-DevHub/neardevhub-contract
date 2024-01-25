@@ -12,7 +12,10 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
+use crate::social_db::GetOptions;
 use community::*;
+use near_sdk::env::predecessor_account_id;
+use near_sdk::{BlockHeight, PromiseError};
 use post::*;
 
 use crate::social_db::social_db_contract;
@@ -568,10 +571,64 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
-    pub fn set_discussions_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
-        require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
+    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) {
+        require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 100 Tgas");
+        // Post the discussion on the user social account
+        let post_initiator = env::predecessor_account_id();
+
+        let status = social_db_contract()
+            .with_unused_gas_weight(1)
+            .set(json!({ format!("{}", env::predecessor_account_id()): data }))
+            .then(Self::ext(env::current_account_id()).on_set_post(handle, data, post_initiator));
+    }
+
+    #[private]
+    pub fn on_set_post(&self, handle: CommunityHandle, data: Value, post_initiator: AccountId) {
+        // Obtain the blockHeight from the user post
+        let promise = social_db_contract().with_unused_gas_weight(1).get(
+            vec![format!("{}/post/**", post_initiator)],
+            Some(GetOptions {
+                with_block_height: Some(true),
+                with_node_id: None,
+                return_deleted: None,
+            }),
+        );
+
+        promise.then(Self::ext(env::current_account_id()).on_get_block_height(
+            handle,
+            data,
+            post_initiator,
+        ));
+    }
+
+    #[private] // Public - but only callable by env::current_account_id()
+    pub fn on_get_block_height(
+        &self,
+        #[callback_result] call_result: Result<Value, PromiseError>,
+        handle: CommunityHandle,
+        data: Value,
+        post_initiator: AccountId,
+    ) {
+        if call_result.is_err() {
+            panic!("There was an error getting the user post block height");
+        }
+
+        // Use the block height to repost to the community discussions account
+        let object: Value = call_result.unwrap();
+        let block_height =
+            object[post_initiator.to_string()][":block"].as_u64().expect("Block height not found");
+
+        let repost = format!("[{{\"key\":\"main\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}},{{\"key\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}},\"value\":{{\"type\":\"repost\"}}}}]", post_initiator, block_height, post_initiator, block_height);
+        let notify = format!("{{\"key\":\"{}\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}}", post_initiator, post_initiator, block_height);
+
+        // Repost to the community
         social_db_contract().with_unused_gas_weight(1).set(
-            json!({ format!("discussions.{}", get_devhub_discussions_account(&handle)): data }),
+            json!({ get_devhub_community_account(&handle) : {
+                "index": {
+                  "repost": repost,
+                  "notify": notify
+                }
+            }}),
         );
     }
 
@@ -624,18 +681,13 @@ impl Contract {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::collections::{HashMap, HashSet};
-    use std::convert::TryInto;
-
-    use crate::access_control::members::{ActionType, Member, MemberMetadata};
-    use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, Community, CommunityAddOn, CommunityInputs};
+    use crate::community::AddOn;
     use crate::post::PostBody;
-    use crate::CREATE_COMMUNITY_BALANCE;
-    use near_sdk::store::vec;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, VMContext};
     use regex::Regex;
+    use std::collections::HashSet;
+    use std::convert::TryInto;
 
     use super::Contract;
 

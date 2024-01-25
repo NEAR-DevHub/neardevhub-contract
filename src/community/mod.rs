@@ -215,3 +215,4 @@ pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(50);
 pub const UPDATE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const DELETE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas::from_tgas(30);
+pub const CREATE_DISCUSSION_GAS: Gas = Gas::from_tgas(100);
