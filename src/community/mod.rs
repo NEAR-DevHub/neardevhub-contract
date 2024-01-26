@@ -194,10 +194,6 @@ pub fn get_devhub_community_account(handle: &CommunityHandle) -> String {
     format!("{}.{}", handle, get_devhub_community_factory())
 }
 
-pub fn get_devhub_discussions_account(handle: &CommunityHandle) -> String {
-    format!("discussions.{}", get_devhub_community_account(handle))
-}
-
 #[ext_contract(ext_devhub_community_factory)]
 pub trait DevhubCommunityFactory {
     fn create_community_account(&mut self, community: String);
@@ -206,8 +202,6 @@ pub trait DevhubCommunityFactory {
 #[ext_contract(ext_devhub_community)]
 pub trait DevhubCommunity {
     fn destroy(&mut self);
-
-    fn create_discussions_account(&mut self, community: String);
 }
 
 pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(2);
