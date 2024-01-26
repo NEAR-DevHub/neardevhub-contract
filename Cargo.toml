@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 near-sdk = "5.0.0-alpha.2"
 near-contract-standards = "5.0.0-alpha.2"
-serde_json = { version = "1.0", features = ["preserve_order"] }
+serde_json = { version = "1.0", features = ["preserve_order", "derive"] }
 
 [dev-dependencies]
 insta = { version = "1.31.0", features = ["json", "redactions"] }
