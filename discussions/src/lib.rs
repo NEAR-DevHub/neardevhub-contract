@@ -33,8 +33,14 @@ impl Contract {
         Promise::new(env::current_account_id()).delete_account(devhub_account);
     }
 
+    /**
+     * current_account_id = discussions.{{community}}.community.devhub.near
+     * return devhub.near
+     */
     fn get_devhub_account() -> AccountId {
         env::current_account_id()
+            .get_parent_account_id()
+            .expect("Discussions contract should be deployed on a child account")
             .get_parent_account_id()
             .expect("Community contract should be deployed on a child account")
             .get_parent_account_id()

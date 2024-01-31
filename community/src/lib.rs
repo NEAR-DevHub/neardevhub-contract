@@ -41,8 +41,6 @@ impl Contract {
     fn get_devhub_account() -> AccountId {
         env::current_account_id()
             .get_parent_account_id()
-            .expect("Discussions contract should be deployed on a child account")
-            .get_parent_account_id()
             .expect("Community contract should be deployed on a child account")
             .get_parent_account_id()
             .expect("Community factory should be deployed on a child account")
@@ -64,11 +62,11 @@ impl Contract {
             "Require 2 NEAR to create discussions account"
         );
 
-        let community_account_id: AccountId =
+        let account_id: AccountId =
             format!("discussions.{}", env::current_account_id()).parse().unwrap();
 
         let pubkey = PUBKEY_STR.parse().unwrap();
-        Promise::new(community_account_id)
+        Promise::new(account_id)
             .create_account()
             .add_full_access_key(pubkey)
             .transfer(INITIAL_BALANCE)
