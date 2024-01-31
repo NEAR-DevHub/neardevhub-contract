@@ -41,9 +41,9 @@ impl Contract {
     fn get_devhub_account() -> AccountId {
         env::current_account_id()
             .get_parent_account_id()
-            .expect("Community contract should be deployed on a child account")
+            .expect("Discussions contract should be deployed on a child account")
             .get_parent_account_id()
-            .expect("Community factory should be deployed on a child account")
+            .expect("Community contract should be deployed on a child account")
             .get_parent_account_id()
             .expect("Community factory should be deployed on a child account")
             .into()
@@ -53,7 +53,7 @@ impl Contract {
     pub fn create_discussions_account(&mut self, community: String) -> Promise {
         let parent_account: AccountId = env::current_account_id()
             .get_parent_account_id()
-            .expect("Community factory should be deployed on a child account")
+            .expect("Community should be deployed on a child account")
             .into();
         require!(
             env::predecessor_account_id() == parent_account,
@@ -67,7 +67,6 @@ impl Contract {
         let community_account_id: AccountId =
             format!("discussions.{}", env::current_account_id()).parse().unwrap();
 
-        // TODO shouldn't be a static pub key probably
         let pubkey = PUBKEY_STR.parse().unwrap();
         Promise::new(community_account_id)
             .create_account()
