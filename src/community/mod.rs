@@ -210,8 +210,9 @@ pub trait DevhubCommunity {
     fn create_discussions_account(&mut self, community: String);
 }
 
-pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(2);
-pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(50);
+pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(4);
+pub const CREATE_DISCUSSION_BALANCE: NearToken = NearToken::from_near(2);
+pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(100);
 pub const UPDATE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const DELETE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas::from_tgas(30);
