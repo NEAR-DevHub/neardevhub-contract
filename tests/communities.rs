@@ -10,7 +10,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = NearToken::from_near(2);
+    let deposit_amount = NearToken::from_near(4);
 
     // Add a community
     let create_community = contract
@@ -32,7 +32,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
         .await?;
 
     // Create add-on
-    contract
+    let _ = contract
         .call("create_addon")
         .args_json(json!({"addon": {
             "id": "CommunityAddOnId",
@@ -46,7 +46,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    contract
+    let _ = contract
         .call("set_community_addons")
         .args_json(json!({
             "handle": "gotham",
@@ -82,10 +82,10 @@ async fn test_update_community() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, _) = init_contracts_from_res().await?;
 
-    let deposit_amount = NearToken::from_near(2);
+    let deposit_amount = NearToken::from_near(4);
 
     // Add a community
-    let create_community = contract
+    let _ = contract
         .call("create_community")
         .args_json(json!({
             "inputs": {
@@ -103,7 +103,7 @@ async fn test_update_community() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    let update_community = contract
+    let _ = contract
         .call("update_community")
         .args_json(json!({
             "handle": "gotham",
@@ -144,7 +144,7 @@ async fn test_announcement() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, worker) = init_contracts_from_res().await?;
 
-    let deposit_amount = NearToken::from_near(2);
+    let deposit_amount = NearToken::from_near(4);
 
     // Add a community
     let create_community = contract
@@ -245,7 +245,7 @@ async fn test_discussions() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, worker) = init_contracts_from_res().await?;
 
-    let deposit_amount = NearToken::from_near(2);
+    let deposit_amount = NearToken::from_near(4);
 
     // Add a community
     let create_community = contract
