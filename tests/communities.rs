@@ -238,3 +238,139 @@ async fn test_announcement() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn test_discussions() -> anyhow::Result<()> {
+    // Initialize the devhub and near social contract on chain,
+    // contract is devhub contract instance.
+    let (contract, worker) = init_contracts_from_res().await?;
+
+    let deposit_amount = NearToken::from_near(2);
+
+    // Add a community
+    let create_community = contract
+        .call("create_community")
+        .args_json(json!({
+            "inputs": {
+                "handle": "gotham",
+                "name": "Gotham",
+                "tag": "some",
+                "description": "This is a test community.",
+                "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+                "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+                "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4"
+            }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let community_account = "gotham.community.devhub.near".parse()?;
+    let discussions_account = "discussions.gotham.community.devhub.near".parse()?;
+
+    // assert community account exists
+    let _ = worker.view_account(&community_account).await?;
+    // assert discussions account exists
+    let _ = worker.view_account(&discussions_account).await?;
+
+    // create announcement
+    let create_announcement = contract
+        .call("set_community_socialdb")
+        .args_json(json!({
+            "handle": "gotham",
+            "data": {
+                "post": {
+                    "main": "{\"type\":\"md\",\"text\":\"what's up\"}"
+                },
+                "index": {
+                    "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
+                }
+            }
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(create_announcement.is_success());
+
+    // create discussions
+    let create_announcement = contract
+        .call("create_discussion")
+        .args_json(json!({
+            "handle": "gotham",
+            "data": {
+                "post": {
+                    "main": "{\"type\":\"md\",\"text\":\"what's up\"}"
+                },
+                "index": {
+                    "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
+                }
+            }
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(create_announcement.is_success());
+
+    let near_social_account = "social.near".parse()?;
+    let data: serde_json::Value = worker
+        .view(&near_social_account, "get")
+        .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
+        .await?
+        .json()?;
+
+    let discussion_data: serde_json::Value = worker
+        .view(&near_social_account, "get")
+        .args_json(json!({"keys": ["discussions.gotham.community.devhub.near/**"]}))
+        .await?
+        .json()?;
+
+    assert_eq!(
+        data["gotham.community.devhub.near"]["post"]["main"].as_str(),
+        Some("{\"type\":\"md\",\"text\":\"what's up\"}")
+    );
+
+    assert_eq!(
+        discussion_data["dicussions.gotham.community.devhub.near"]["post"]["main"].as_str(),
+        Some("{\"type\":\"md\",\"text\":\"what's up\"}")
+    );
+
+    // TODO test update community with discussion implementation
+    // update community, intend to change name and logo
+    // let update_community = contract
+    // .call("update_community")
+    // .args_json(json!({
+    //     "handle": "gotham",
+    //     "community": {
+    //         "admins": [],
+    //         "handle": "gotham",
+    //         "name": "Gotham2",
+    //         "tag": "some",
+    //         "description": "This is a test community.",
+    //         "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+    //         "logo_url": "https://example.com/image.png",
+    //         "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
+    //         "addons": []
+    //     }
+    // }))
+    // .max_gas()
+    // .transact()
+    // .await?;
+
+    // let near_social_account = "social.near".parse()?;
+    // let data: serde_json::Value = worker
+    //     .view(&near_social_account, "get")
+    //     .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
+    //     .await?
+    //     .json()?;
+
+    // assert_eq!(data["gotham.community.devhub.near"]["profile"]["name"].as_str(), Some("Gotham2"));
+    // assert_eq!(
+    //     data["gotham.community.devhub.near"]["profile"]["image"]["url"].as_str(),
+    //     Some("https://example.com/image.png")
+    // );
+
+    Ok(())
+}
