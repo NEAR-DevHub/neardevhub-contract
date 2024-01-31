@@ -190,6 +190,10 @@ pub fn get_devhub_community_factory() -> AccountId {
     format!("community.{}", env::current_account_id()).parse().unwrap()
 }
 
+pub fn get_devhub_discussions_factory(handle: &CommunityHandle) -> AccountId {
+    get_devhub_community_account(handle).parse().unwrap()
+}
+
 pub fn get_devhub_community_account(handle: &CommunityHandle) -> String {
     format!("{}.{}", handle, get_devhub_community_factory())
 }
