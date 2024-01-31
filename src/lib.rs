@@ -12,10 +12,7 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use crate::social_db::GetOptions;
 use community::*;
-use near_sdk::env::predecessor_account_id;
-use near_sdk::{BlockHeight, PromiseError};
 use post::*;
 
 use crate::social_db::social_db_contract;
