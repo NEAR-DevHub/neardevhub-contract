@@ -374,6 +374,19 @@ impl Contract {
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
             .create_community_account(new_community.handle.clone());
+
+        ext_devhub_community::ext(
+            AccountId::from_str(&get_devhub_discussions_account(&inputs.handle.clone())).expect(
+                format!(
+                    "Account with handle `{}` does not exist",
+                    get_devhub_discussions_account(&inputs.handle.clone())
+                )
+                .as_str(),
+            ),
+        )
+        .with_unused_gas_weight(1)
+        .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
+        .create_discussions_account(new_community.handle);
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
