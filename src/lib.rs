@@ -578,58 +578,7 @@ impl Contract {
 
         let status = social_db_contract()
             .with_unused_gas_weight(1)
-            .set(json!({ format!("{}", env::predecessor_account_id()): data }))
-            .then(Self::ext(env::current_account_id()).on_set_post(handle, data, post_initiator));
-    }
-
-    #[private]
-    pub fn on_set_post(&self, handle: CommunityHandle, data: Value, post_initiator: AccountId) {
-        // Obtain the blockHeight from the user post
-        let promise = social_db_contract().with_unused_gas_weight(1).get(
-            vec![format!("{}/post/**", post_initiator)],
-            Some(GetOptions {
-                with_block_height: Some(true),
-                with_node_id: None,
-                return_deleted: None,
-            }),
-        );
-
-        promise.then(Self::ext(env::current_account_id()).on_get_block_height(
-            handle,
-            data,
-            post_initiator,
-        ));
-    }
-
-    #[private] // Public - but only callable by env::current_account_id()
-    pub fn on_get_block_height(
-        &self,
-        #[callback_result] call_result: Result<Value, PromiseError>,
-        handle: CommunityHandle,
-        data: Value,
-        post_initiator: AccountId,
-    ) {
-        if call_result.is_err() {
-            panic!("There was an error getting the user post block height");
-        }
-
-        // Use the block height to repost to the community discussions account
-        let object: Value = call_result.unwrap();
-        let block_height =
-            object[post_initiator.to_string()][":block"].as_u64().expect("Block height not found");
-
-        let repost = format!("[{{\"key\":\"main\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}},{{\"key\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}},\"value\":{{\"type\":\"repost\"}}}}]", post_initiator, block_height, post_initiator, block_height);
-        let notify = format!("{{\"key\":\"{}\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}}", post_initiator, post_initiator, block_height);
-
-        // Repost to the community
-        social_db_contract().with_unused_gas_weight(1).set(
-            json!({ get_devhub_community_account(&handle) : {
-                "index": {
-                  "repost": repost,
-                  "notify": notify
-                }
-            }}),
-        );
+            .set(json!({ format!("{}", env::predecessor_account_id()): data }));
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {

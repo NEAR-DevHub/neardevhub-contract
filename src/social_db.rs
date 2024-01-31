@@ -10,8 +10,6 @@ pub struct GetOptions {
 #[ext_contract(ext_social_db)]
 pub trait SocialDB {
     fn set(&mut self, data: Value);
-
-    fn get(&self, keys: Vec<String>, options: Option<GetOptions>) -> Value;
 }
 
 pub fn social_db_contract() -> ext_social_db::SocialDBExt {
