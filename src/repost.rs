@@ -55,8 +55,6 @@ pub fn repost(post: Post) -> Promise {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryInto;
-
     use crate::post::{IdeaV1, Post, PostBody, PostSnapshot, VersionedIdea};
     use crate::repost::repost_internal;
     use near_sdk::serde_json::json;

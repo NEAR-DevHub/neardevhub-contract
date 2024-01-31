@@ -23,7 +23,6 @@ use near_sdk::serde_json::{json, Value};
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 use std::collections::HashSet;
-use std::str::FromStr;
 
 type PostId = u64;
 type IdeaId = u64;
@@ -367,17 +366,17 @@ impl Contract {
         new_community.set_default_admin();
         self.communities.insert(&new_community.handle, &new_community);
 
-        let promise = ext_devhub_community_factory::ext(get_devhub_community_factory())
+        ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
             .create_community_account(new_community.handle.clone());
 
-        promise.then(
-            ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
-                .with_unused_gas_weight(1)
-                .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
-                .create_discussions_account(new_community.handle),
-        );
+        // promise.then(
+        //     ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
+        //         .with_unused_gas_weight(1)
+        //         .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
+        //         .create_discussions_account(new_community.handle),
+        // );
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
@@ -649,13 +648,6 @@ mod tests {
     fn get_context_with_current(is_view: bool, signer: String) -> VMContext {
         VMContextBuilder::new()
             .current_account_id(signer.try_into().unwrap())
-            .is_view(is_view)
-            .build()
-    }
-
-    fn get_context_with_predecessor(is_view: bool, signer: String) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
     }
