@@ -244,7 +244,7 @@ async fn test_discussions() -> anyhow::Result<()> {
     // contract is devhub contract instance.
     let (contract, worker) = init_contracts_from_res().await?;
 
-    let deposit_amount = NearToken::from_near(4);
+    let deposit_amount = NearToken::from_near(6);
 
     // Add a community
     let _ = contract

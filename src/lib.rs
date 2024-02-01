@@ -341,9 +341,10 @@ impl Contract {
         );
 
         require!(
-            env::attached_deposit() == CREATE_COMMUNITY_BALANCE,
-            "Require 4 NEAR to create community"
+            env::attached_deposit() >= CREATE_COMMUNITY_BALANCE,
+            "Require 2 NEAR to create community"
         );
+
         require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 100 Tgas");
 
         let mut new_community = Community {
@@ -366,17 +367,19 @@ impl Contract {
         new_community.set_default_admin();
         self.communities.insert(&new_community.handle, &new_community);
 
-        ext_devhub_community_factory::ext(get_devhub_community_factory())
+        let promise = ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
             .create_community_account(new_community.handle.clone());
 
-        // promise.then(
-        //     ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
-        //         .with_unused_gas_weight(1)
-        //         .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
-        //         .create_discussions_account(new_community.handle),
-        // );
+        // TODO move this to where it makes sense
+        // TODO update the tgas and deposit where it is needed
+        promise.then(
+            ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
+                .with_unused_gas_weight(1)
+                .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
+                .create_discussions_account(new_community.handle),
+        );
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
