@@ -18,7 +18,12 @@ Before starting, make sure you have the following installed:
 From the root directory, run:
 
 ```cmd
-cargo build
+cd community
+./build.sh
+cd ../community-factory
+./build.sh
+cd ..
+./build.sh
 ```
 
 ## Running Tests
