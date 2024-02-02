@@ -299,7 +299,6 @@ impl Contract {
         self.posts.replace(id, &post.into());
 
         // Update labels index.
-
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;
