@@ -211,7 +211,7 @@ pub trait DevhubCommunityFactory {
 pub trait DevhubCommunity {
     fn destroy(&mut self);
 
-    fn create_discussions_account(&mut self, community: String);
+    fn create_discussions_account(&mut self);
 }
 
 pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(2);

@@ -1,7 +1,7 @@
 mod social_db;
-
 use crate::social_db::social_db_contract;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::Gas;
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../res/devhub_discussions.wasm");
@@ -48,8 +48,10 @@ impl Contract {
     }
 
     #[payable]
-    pub fn create_discussions_account(&mut self, community: String) -> Promise {
+    pub fn create_discussions_account(&mut self) -> Promise {
         let parent_account: AccountId = env::current_account_id()
+            .get_parent_account_id()
+            .expect("Community should be deployed on a child account")
             .get_parent_account_id()
             .expect("Community should be deployed on a child account")
             .into();

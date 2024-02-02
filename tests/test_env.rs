@@ -7,9 +7,11 @@ use serde_json::json;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
+const TEST_DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
 const NEW_DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &str = "social.near";
+const TEST_NEAR_SOCIAL: &str = "v1.social08.testnet";
 const TEST_SEED: &str = "testificate";
 const DEVHUB_CONTRACT_PATH: &str = "./res/devgovgigs.wasm";
 const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./res/devhub_community_factory.wasm";
@@ -45,9 +47,11 @@ pub async fn init_contracts_from_res(
 ) -> anyhow::Result<(near_workspaces::Contract, Worker<Sandbox>)> {
     let worker: Worker<Sandbox> = near_workspaces::sandbox().await?;
     let mainnet = near_workspaces::mainnet_archival().await?;
+    // let mainnet = near_workspaces::testnet_archival().await?; // TODO
 
     // NEAR social deployment
     let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
+    // let near_social_id: AccountId = TEST_NEAR_SOCIAL.parse()?; // TODO
     let near_social = worker
         .import_contract(&near_social_id, &mainnet)
         .initial_balance(NearToken::from_near(10000))
@@ -91,5 +95,5 @@ pub async fn init_contracts_from_res(
     let community_factory_wasm = std::fs::read(COMMUNITY_FACTORY_CONTRACT_PATH)?;
     let community_factory =
         community_factory_account.deploy(&community_factory_wasm).await?.into_result()?;
-    Ok((contract, worker))
+    Ok((contract, worker, near_social))
 }

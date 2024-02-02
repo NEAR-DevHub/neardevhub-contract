@@ -7,7 +7,7 @@ use {crate::test_env::*, serde_json::json};
 async fn test_community_addon() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, _) = init_contracts_from_res().await?;
+    let (contract, _, _) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(4);
 
@@ -79,7 +79,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
 async fn test_update_community() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, _) = init_contracts_from_res().await?;
+    let (contract, _, _) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(4);
 
@@ -141,7 +141,7 @@ async fn test_update_community() -> anyhow::Result<()> {
 async fn test_announcement() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, worker) = init_contracts_from_res().await?;
+    let (contract, worker, _) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(4);
 
@@ -242,7 +242,7 @@ async fn test_announcement() -> anyhow::Result<()> {
 async fn test_discussions() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, worker) = init_contracts_from_res().await?;
+    let (contract, worker, near_social) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(6);
 
@@ -273,9 +273,24 @@ async fn test_discussions() -> anyhow::Result<()> {
     // assert discussions account exists
     let _ = worker.view_account(&discussions_account).await?;
 
+    // TODO grant_write_permission
+    let user = worker.create_account("bob.near").await?;
+
+    let grant_write_permission_result = user
+        .call(near_social.account_id(), "grant_write_permission") // maybe just 'social.near'?
+        .args_json(json!({
+            "predecessor_id": contract.account_id(), // TODO maybe just 'devhub.near'?
+            "keys": ["bob.near/post/main"],
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    println("grant_write_permission_result: {:?}", grant_write_permission_result);
+
     // create announcement
-    let create_announcement = contract
-        .call("set_community_socialdb")
+    let create_discussion = user
+        .call(contract.account_id(), "create_discussion")
         .args_json(json!({
             "handle": "gotham",
             "data": {

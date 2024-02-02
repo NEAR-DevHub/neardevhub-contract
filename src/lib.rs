@@ -372,13 +372,12 @@ impl Contract {
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
             .create_community_account(new_community.handle.clone());
 
-        // TODO move this to where it makes sense
-        // TODO update the tgas and deposit where it is needed
+        env::log_str("Community created successfully. Creating discussions account.");
         promise.then(
             ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
-                .with_unused_gas_weight(1)
+                .with_unused_gas_weight(2)
                 .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
-                .create_discussions_account(new_community.handle),
+                .create_discussions_account(),
         );
     }
 
@@ -567,14 +566,16 @@ impl Contract {
     pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) {
         require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 60 Tgas");
         // Post the discussion on the user social account
-        social_db_contract()
+        let promise = social_db_contract()
             .with_unused_gas_weight(1)
             .set(json!({ format!("{}", env::predecessor_account_id()): data }));
 
         // Post to discussions account
-        social_db_contract()
-            .with_unused_gas_weight(1)
-            .set(json!({ get_devhub_discussions_account(&handle): data }));
+        promise.then(
+          social_db_contract()
+          .with_unused_gas_weight(1)
+          .set(json!({ get_devhub_discussions_account(&handle): data }));
+        )
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
