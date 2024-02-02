@@ -273,22 +273,20 @@ async fn test_discussions() -> anyhow::Result<()> {
     // assert discussions account exists
     let _ = worker.view_account(&discussions_account).await?;
 
-    // TODO grant_write_permission
+    // grant write permission to discussions account from a user
     let user = worker.dev_create_account().await?;
 
     let grant_write_permission_result = user
-        .call(near_social.id(), "grant_write_permission") // maybe just 'social.near'?
+        .call(near_social.id(), "grant_write_permission")
         .args_json(json!({
-            "predecessor_id": contract.id(), // TODO maybe just 'devhub.near'?
+            "predecessor_id": contract.id(),
             "keys": ["bob.near/post/main"],
         }))
         .max_gas()
         .transact()
         .await?;
 
-    // println("grant_write_permission_result: {:?}", grant_write_permission_result);
-
-    // create discussion
+    // create discussion as user
     let create_discussion = user
         .call(contract.id(), "create_discussion")
         .args_json(json!({
@@ -308,10 +306,8 @@ async fn test_discussions() -> anyhow::Result<()> {
 
     assert!(create_discussion.is_success());
 
-    let near_social_account = "social.near".parse()?;
-
     let discussion_data: serde_json::Value = worker
-        .view(&near_social_account, "get")
+        .view(&near_social.id(), "get")
         .args_json(json!({"keys": ["discussions.gotham.community.devhub.near/**"]}))
         .await?
         .json()?;
@@ -320,41 +316,6 @@ async fn test_discussions() -> anyhow::Result<()> {
         discussion_data["discussions.gotham.community.devhub.near"]["post"]["main"].as_str(),
         Some("{\"type\":\"md\",\"text\":\"what's up\"}")
     );
-
-    // TODO test update community with discussion implementation
-    // update community, intend to change name and logo
-    // let update_community = contract
-    // .call("update_community")
-    // .args_json(json!({
-    //     "handle": "gotham",
-    //     "community": {
-    //         "admins": [],
-    //         "handle": "gotham",
-    //         "name": "Gotham2",
-    //         "tag": "some",
-    //         "description": "This is a test community.",
-    //         "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
-    //         "logo_url": "https://example.com/image.png",
-    //         "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
-    //         "addons": []
-    //     }
-    // }))
-    // .max_gas()
-    // .transact()
-    // .await?;
-
-    // let near_social_account = "social.near".parse()?;
-    // let data: serde_json::Value = worker
-    //     .view(&near_social_account, "get")
-    //     .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
-    //     .await?
-    //     .json()?;
-
-    // assert_eq!(data["gotham.community.devhub.near"]["profile"]["name"].as_str(), Some("Gotham2"));
-    // assert_eq!(
-    //     data["gotham.community.devhub.near"]["profile"]["image"]["url"].as_str(),
-    //     Some("https://example.com/image.png")
-    // );
 
     Ok(())
 }
