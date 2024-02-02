@@ -6,7 +6,6 @@ use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../res/devhub_discussions.wasm");
 const INITIAL_BALANCE: NearToken = NearToken::from_near(2);
-// @ailisp: This is the public key of the devhub account. It should be from the <handle>.community.devhub.near account
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
 #[near_bindgen]

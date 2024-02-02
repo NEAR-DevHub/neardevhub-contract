@@ -35,7 +35,7 @@ impl Contract {
 
     /**
      * current_account_id = discussions.{{community}}.community.devhub.near
-     * return devhub.near
+     * returns devhub.near
      */
     fn get_devhub_account() -> AccountId {
         env::current_account_id()
