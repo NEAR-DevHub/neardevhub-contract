@@ -572,10 +572,10 @@ impl Contract {
 
         // Post to discussions account
         promise.then(
-          social_db_contract()
-          .with_unused_gas_weight(1)
-          .set(json!({ get_devhub_discussions_account(&handle): data }));
-        )
+            social_db_contract()
+                .with_unused_gas_weight(1)
+                .set(json!({ get_devhub_discussions_account(&handle): data })),
+        );
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {

@@ -44,7 +44,7 @@ pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Co
 }
 
 pub async fn init_contracts_from_res(
-) -> anyhow::Result<(near_workspaces::Contract, Worker<Sandbox>)> {
+) -> anyhow::Result<(near_workspaces::Contract, Worker<Sandbox>, near_workspaces::Contract)> {
     let worker: Worker<Sandbox> = near_workspaces::sandbox().await?;
     let mainnet = near_workspaces::mainnet_archival().await?;
     // let mainnet = near_workspaces::testnet_archival().await?; // TODO

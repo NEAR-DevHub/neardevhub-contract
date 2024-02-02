@@ -274,23 +274,23 @@ async fn test_discussions() -> anyhow::Result<()> {
     let _ = worker.view_account(&discussions_account).await?;
 
     // TODO grant_write_permission
-    let user = worker.create_account("bob.near").await?;
+    let user = worker.dev_create_account().await?;
 
     let grant_write_permission_result = user
-        .call(near_social.account_id(), "grant_write_permission") // maybe just 'social.near'?
+        .call(near_social.id(), "grant_write_permission") // maybe just 'social.near'?
         .args_json(json!({
-            "predecessor_id": contract.account_id(), // TODO maybe just 'devhub.near'?
+            "predecessor_id": contract.id(), // TODO maybe just 'devhub.near'?
             "keys": ["bob.near/post/main"],
         }))
         .max_gas()
         .transact()
         .await?;
 
-    println("grant_write_permission_result: {:?}", grant_write_permission_result);
+    // println("grant_write_permission_result: {:?}", grant_write_permission_result);
 
-    // create announcement
+    // create discussion
     let create_discussion = user
-        .call(contract.account_id(), "create_discussion")
+        .call(contract.id(), "create_discussion")
         .args_json(json!({
             "handle": "gotham",
             "data": {
@@ -306,34 +306,9 @@ async fn test_discussions() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    assert!(create_announcement.is_success());
-
-    // create discussions
-    let create_announcement = contract
-        .call("create_discussion")
-        .args_json(json!({
-            "handle": "gotham",
-            "data": {
-                "post": {
-                    "main": "{\"type\":\"md\",\"text\":\"what's up\"}"
-                },
-                "index": {
-                    "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
-                }
-            }
-        }))
-        .max_gas()
-        .transact()
-        .await?;
-
-    assert!(create_announcement.is_success());
+    assert!(create_discussion.is_success());
 
     let near_social_account = "social.near".parse()?;
-    let data: serde_json::Value = worker
-        .view(&near_social_account, "get")
-        .args_json(json!({"keys": ["gotham.community.devhub.near/**"]}))
-        .await?
-        .json()?;
 
     let discussion_data: serde_json::Value = worker
         .view(&near_social_account, "get")
@@ -342,12 +317,7 @@ async fn test_discussions() -> anyhow::Result<()> {
         .json()?;
 
     assert_eq!(
-        data["gotham.community.devhub.near"]["post"]["main"].as_str(),
-        Some("{\"type\":\"md\",\"text\":\"what's up\"}")
-    );
-
-    assert_eq!(
-        discussion_data["dicussions.gotham.community.devhub.near"]["post"]["main"].as_str(),
+        discussion_data["discussions.gotham.community.devhub.near"]["post"]["main"].as_str(),
         Some("{\"type\":\"md\",\"text\":\"what's up\"}")
     );
 
