@@ -12,15 +12,15 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::*;
-use post::*;
-
 use crate::social_db::social_db_contract;
+use community::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
 use near_sdk::serde_json::{json, Value};
+use near_sdk::NearToken;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
+use post::*;
 
 use std::collections::HashSet;
 
@@ -341,8 +341,8 @@ impl Contract {
         );
 
         require!(
-            env::attached_deposit() >= CREATE_COMMUNITY_BALANCE,
-            "Require 2 NEAR to create community"
+            env::attached_deposit() >= NearToken::from_near(4),
+            "Require 4 NEAR to create community"
         );
 
         require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 100 Tgas");
