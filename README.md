@@ -19,7 +19,7 @@ From the root directory, run:
 
 ```cmd
 cd community
-./build.sh
+cargo near build
 cd ../community-factory
 ./build.sh
 cd ..
@@ -40,4 +40,5 @@ Using [NEAR CLI RS](https://github.com/near/near-cli-rs), run the following comm
 
 ```cmd
 near contract deploy {{account.near}} use-file ./target/wasm32-unknown-unknown/release/devgovgigs.wasm without-init-call network-config {{env}}
+near contract deploy {{community.account.near}} use-file ./target/wasm32-unknown-unknown/release/devhub_community_factory.wasm without-init-call network-config {{env}}
 ```
