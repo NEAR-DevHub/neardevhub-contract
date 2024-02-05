@@ -562,19 +562,14 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
-    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) {
-        require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 60 Tgas");
-        // Post the discussion on the user social account
-        let promise = social_db_contract()
-            .with_unused_gas_weight(1)
-            .set(json!({ format!("{}", env::predecessor_account_id()): data }));
 
-        // Post to discussions account
-        promise.then(
-            social_db_contract()
-                .with_unused_gas_weight(1)
-                .set(json!({ get_devhub_discussions_account(&handle): data })),
-        );
+    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) {
+        require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 30 Tgas");
+        // TODO check if data is index/repost and index/notify
+
+        social_db_contract()
+            .with_unused_gas_weight(1)
+            .set(json!({ get_devhub_discussions_account(&handle): data })),
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
