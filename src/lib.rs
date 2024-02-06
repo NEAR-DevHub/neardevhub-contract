@@ -19,6 +19,7 @@ use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
 use near_sdk::serde_json::{json, Value};
 use near_sdk::NearToken;
+use near_sdk::Promise;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
 
@@ -562,13 +563,13 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
-    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) {
+    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) -> Promise {
         require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 30 Tgas");
         // TODO check if data is index/repost and index/notify
 
         social_db_contract()
             .with_unused_gas_weight(1)
-            .set(json!({ get_devhub_discussions_account(&handle): data }));
+            .set(json!({ get_devhub_discussions_account(&handle): data }))
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
