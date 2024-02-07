@@ -276,22 +276,14 @@ async fn test_discussions() -> anyhow::Result<()> {
     // grant write permission to discussions account from a user
     let user = worker.dev_create_account().await?;
 
-    let grant_write_permission_result = user
-        .call(near_social.id(), "grant_write_permission")
-        .args_json(json!({
-            "predecessor_id": contract.id(),
-            "keys": ["bob.near/post/main"],
-        }))
-        .max_gas()
-        .transact()
-        .await?;
+    let deposit_amount = NearToken::from_near(1);
 
-    // create discussion as user
-    let create_discussion = user
-        .call(contract.id(), "create_discussion")
+    // user make a post on social.near
+    let create_post = user
+        .call(near_social.id(), "set")
         .args_json(json!({
-            "handle": "gotham",
             "data": {
+              user.id().to_string(): {
                 "post": {
                     "main": "{\"type\":\"md\",\"text\":\"what's up\"}"
                 },
@@ -299,22 +291,51 @@ async fn test_discussions() -> anyhow::Result<()> {
                     "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
                 }
             }
+          }
+        }))
+        .deposit(deposit_amount)
+        .max_gas()
+        .transact()
+        .await?;
+
+    assert!(create_post.is_success());
+
+    let get_block_height: serde_json::Value = worker
+        .view(&near_social.id(), "get")
+        .args_json(json!({"keys": [format!("{}/**", user.id())], "options": {
+          "with_block_height": true,
+        }}))
+        .await?
+        .json()?;
+
+    let block_height = get_block_height[user.id().as_str()]["post"][":block"].clone();
+    assert!(block_height.is_number());
+
+    // create discussion as user
+    let repost_discussion = user
+        .call(contract.id(), "create_discussion")
+        .args_json(json!({
+            "handle": "gotham",
+            "block_height": block_height,
         }))
         .max_gas()
         .transact()
         .await?;
 
-    assert!(create_discussion.is_success());
+    assert!(repost_discussion.is_success());
 
     let discussion_data: serde_json::Value = worker
         .view(&near_social.id(), "get")
-        .args_json(json!({"keys": ["discussions.gotham.community.devhub.near/**"]}))
+        .args_json(json!({"keys": ["discussions.gotham.community.devhub.near/index/**"]}))
         .await?
         .json()?;
 
+    let post_initiator = user.id().to_string();
+    let repost = format!("[{{\"key\":\"main\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}},{{\"key\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}},\"value\":{{\"type\":\"repost\"}}}}]", post_initiator, block_height, post_initiator, block_height);
+
     assert_eq!(
-        discussion_data["discussions.gotham.community.devhub.near"]["post"]["main"].as_str(),
-        Some("{\"type\":\"md\",\"text\":\"what's up\"}")
+        discussion_data["discussions.gotham.community.devhub.near"]["index"]["repost"].as_str(),
+        Some(repost.as_str())
     );
 
     Ok(())

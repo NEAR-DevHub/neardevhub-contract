@@ -21,6 +21,7 @@ use near_sdk::serde_json::{json, Value};
 use near_sdk::Promise;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
+use serde_json::Number;
 
 use std::collections::HashSet;
 
@@ -557,13 +558,20 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
-    pub fn create_discussion(&mut self, handle: CommunityHandle, data: Value) -> Promise {
+    pub fn create_discussion(&mut self, handle: CommunityHandle, block_height: Number) -> Promise {
         require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 30 Tgas");
-        // TODO check if data is index/repost and index/notify
 
-        social_db_contract()
-            .with_unused_gas_weight(1)
-            .set(json!({ get_devhub_discussions_account(&handle): data }))
+        let post_initiator = env::predecessor_account_id();
+        let repost = format!("[{{\"key\":\"main\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}},{{\"key\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}},\"value\":{{\"type\":\"repost\"}}}}]", post_initiator, block_height, post_initiator, block_height);
+        let notify = format!("{{\"key\":\"{}\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}}", post_initiator, post_initiator, block_height);
+        social_db_contract().with_unused_gas_weight(1).set(
+            json!({ get_devhub_discussions_account(&handle): {
+              "index": {
+                "repost": repost,
+                "notify": notify
+              }
+            } }),
+        )
     }
 
     pub fn delete_community(&mut self, handle: CommunityHandle) {
