@@ -2,7 +2,7 @@ use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../res/devhub_community.wasm");
-const INITIAL_BALANCE: NearToken = NearToken::from_near(2);
+const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
 #[near_bindgen]
@@ -23,8 +23,8 @@ impl Contract {
             "Can only be called from parent contract"
         );
         require!(
-            env::attached_deposit() == INITIAL_BALANCE,
-            "Require 2 NEAR to create community account"
+            env::attached_deposit() >= INITIAL_BALANCE,
+            "Require 4 NEAR to create community account"
         );
 
         let community_account_id: AccountId =
@@ -40,7 +40,7 @@ impl Contract {
                 "new".to_string(),
                 b"{}".to_vec(),
                 NearToken::from_near(0),
-                Gas::from_tgas(20),
+                Gas::from_tgas(50),
             )
     }
 }

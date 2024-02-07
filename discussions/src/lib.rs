@@ -20,7 +20,8 @@ impl Contract {
                 Some(Contract::get_devhub_account()),
                 None,
                 vec![env::current_account_id().to_string()],
-            );
+            )
+            .as_return();
         Contract {}
     }
 

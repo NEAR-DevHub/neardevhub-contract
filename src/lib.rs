@@ -18,7 +18,6 @@ use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
 use near_sdk::serde_json::{json, Value};
-use near_sdk::NearToken;
 use near_sdk::Promise;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use post::*;
@@ -334,18 +333,21 @@ impl Contract {
     }
 
     #[payable]
-    pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
+    pub fn create_community(
+        &mut self,
+        #[allow(unused_mut)] mut inputs: CommunityInputs,
+    ) -> Promise {
         require!(
             self.get_community(inputs.handle.to_owned()).is_none(),
             "Community already exists"
         );
 
         require!(
-            env::attached_deposit() >= NearToken::from_near(4),
+            env::attached_deposit() >= CREATE_COMMUNITY_BALANCE,
             "Require 4 NEAR to create community"
         );
 
-        require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 100 Tgas");
+        require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 200 Tgas");
 
         let mut new_community = Community {
             admins: vec![],
@@ -367,18 +369,10 @@ impl Contract {
         new_community.set_default_admin();
         self.communities.insert(&new_community.handle, &new_community);
 
-        let promise = ext_devhub_community_factory::ext(get_devhub_community_factory())
+        ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
-            .create_community_account(new_community.handle.clone());
-
-        env::log_str("Community created successfully. Creating discussions account.");
-        promise.then(
-            ext_devhub_community::ext(get_devhub_discussions_factory(&new_community.handle))
-                .with_unused_gas_weight(2)
-                .with_attached_deposit(CREATE_DISCUSSION_BALANCE)
-                .create_discussions_account(),
-        );
+            .create_community_account(new_community.handle.clone())
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {

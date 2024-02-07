@@ -1,11 +1,12 @@
 mod social_db;
 use crate::social_db::social_db_contract;
+use near_sdk;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::Gas;
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../res/devhub_discussions.wasm");
-const INITIAL_BALANCE: NearToken = NearToken::from_near(2);
+const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
 #[near_bindgen]
@@ -15,8 +16,8 @@ pub struct Contract {}
 
 #[near_bindgen]
 impl Contract {
-    #[init]
-    pub fn new() -> Self {
+    #[payable]
+    pub fn new(&mut self) -> Promise {
         social_db_contract()
             .with_unused_gas_weight(1)
             .with_attached_deposit(NearToken::from_near(1))
@@ -25,7 +26,8 @@ impl Contract {
                 None,
                 vec![env::current_account_id().to_string()],
             );
-        Contract {}
+
+        self.create_discussions_account()
     }
 
     pub fn destroy(&mut self) {
@@ -46,23 +48,7 @@ impl Contract {
             .into()
     }
 
-    #[payable]
     pub fn create_discussions_account(&mut self) -> Promise {
-        let parent_account: AccountId = env::current_account_id()
-            .get_parent_account_id()
-            .expect("Community should be deployed on a child account")
-            .get_parent_account_id()
-            .expect("Community should be deployed on a child account")
-            .into();
-        require!(
-            env::predecessor_account_id() == parent_account,
-            "Can only be called from parent contract"
-        );
-        require!(
-            env::attached_deposit() == INITIAL_BALANCE,
-            "Require 2 NEAR to create discussions account"
-        );
-
         let account_id: AccountId =
             format!("discussions.{}", env::current_account_id()).parse().unwrap();
 
@@ -70,7 +56,7 @@ impl Contract {
         Promise::new(account_id)
             .create_account()
             .add_full_access_key(pubkey)
-            .transfer(INITIAL_BALANCE)
+            .transfer(NearToken::from_near(2))
             .deploy_contract(CODE.to_vec())
             .function_call(
                 "new".to_string(),
