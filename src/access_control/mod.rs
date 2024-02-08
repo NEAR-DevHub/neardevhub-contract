@@ -7,9 +7,10 @@ use std::collections::{HashMap, HashSet};
 pub mod members;
 pub mod rules;
 
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone, Default)]
+#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone, Default, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct AccessControl {
     pub rules_list: RulesList,
     pub members_list: MembersList,

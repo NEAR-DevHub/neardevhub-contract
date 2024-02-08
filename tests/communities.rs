@@ -12,7 +12,7 @@ async fn test_community_addon() -> anyhow::Result<()> {
     let deposit_amount = NearToken::from_near(4);
 
     // Add a community
-    let _ = contract
+    let _create_community = contract
         .call("create_community")
         .args_json(json!({
             "inputs": {
@@ -84,7 +84,7 @@ async fn test_update_community() -> anyhow::Result<()> {
     let deposit_amount = NearToken::from_near(4);
 
     // Add a community
-    let _ = contract
+    let _create_community = contract
         .call("create_community")
         .args_json(json!({
             "inputs": {
@@ -102,7 +102,7 @@ async fn test_update_community() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    let _ = contract
+    let _update_community = contract
         .call("update_community")
         .args_json(json!({
             "handle": "gotham",
@@ -146,7 +146,7 @@ async fn test_announcement() -> anyhow::Result<()> {
     let deposit_amount = NearToken::from_near(4);
 
     // Add a community
-    let _ = contract
+    let _create_community = contract
         .call("create_community")
         .args_json(json!({
             "inputs": {
@@ -163,6 +163,8 @@ async fn test_announcement() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
+
+    println!("{:?}", _create_community);
 
     let community_account = "gotham.community.devhub.near".parse()?;
 
@@ -202,7 +204,7 @@ async fn test_announcement() -> anyhow::Result<()> {
     );
 
     // update community, intend to change name and logo
-    let _ = contract
+    let _update_community = contract
     .call("update_community")
     .args_json(json!({
         "handle": "gotham",

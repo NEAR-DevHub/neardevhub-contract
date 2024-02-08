@@ -1,59 +1,76 @@
 use super::{Like, PostStatus};
-use crate::{str_serializers::*, CommentId, SolutionId, SponsorshipId, Balance};
+use crate::{str_serializers::*, Balance, CommentId, SolutionId, SponsorshipId};
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum SponsorshipToken {
     NEAR,
     NEP141 { address: AccountId },
     USD,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct Sponsorship {
     // Common fields
     pub id: SponsorshipId,
     pub name: String,
     pub description: String,
     pub author_id: AccountId,
-    #[serde(with = "u64_dec_format")]
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
     pub timestamp: Timestamp,
     pub status: PostStatus,
     pub likes: HashSet<Like>,
     pub comments: Vec<CommentId>,
 
     // Specific fields
-    #[serde(with = "u64_dec_format")]
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
     pub submission_id: SolutionId,
     pub sponsorship_token: SponsorshipToken,
-    #[serde(with = "u128_dec_format")]
+    #[serde(
+        serialize_with = "u128_dec_format::serialize",
+        deserialize_with = "u128_dec_format::deserialize"
+    )]
     pub amount: Balance,
     pub supervisor: AccountId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct SponsorshipV1 {
     pub name: String,
     pub description: String,
     pub sponsorship_token: SponsorshipToken,
-    #[serde(with = "u128_dec_format")]
+    #[serde(
+        serialize_with = "u128_dec_format::serialize",
+        deserialize_with = "u128_dec_format::deserialize"
+    )]
     pub amount: Balance,
     pub supervisor: AccountId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "sponsorship_version")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedSponsorship {
     V0(Sponsorship),
     V1(SponsorshipV1),

@@ -1,28 +1,61 @@
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default,
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Default,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct RulesList {
     #[serde(flatten)]
     pub rules: HashMap<Rule, VersionedRuleMetadata>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    JsonSchema,
+)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct RuleMetadata {
     pub description: String,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    JsonSchema,
+)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "rule_metadata_version")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedRuleMetadata {
     V0(RuleMetadata),
 }
@@ -45,11 +78,13 @@ impl From<RuleMetadata> for VersionedRuleMetadata {
     Eq,
     Hash,
     Debug,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[serde(from = "String")]
 #[serde(into = "String")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum Rule {
     /// Labels can be any string, but rules are created by the NEAR account owner of this contract,
     /// or small circle of moderators. So this code cannot be abused. Likely creating a label that

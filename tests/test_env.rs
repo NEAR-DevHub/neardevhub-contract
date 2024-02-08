@@ -7,15 +7,16 @@ use serde_json::json;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
-const TEST_DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
-const NEW_DEVHUB_CONTRACT_PREFIX: &str = "devhub";
+const _TEST_DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
+const _NEW_DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &str = "social.near";
-const TEST_NEAR_SOCIAL: &str = "v1.social08.testnet";
+const _TEST_NEAR_SOCIAL: &str = "v1.social08.testnet";
 const TEST_SEED: &str = "testificate";
 const DEVHUB_CONTRACT_PATH: &str = "./res/devgovgigs.wasm";
 const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./res/devhub_community_factory.wasm";
 
+#[allow(dead_code)]
 pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Contract> {
     let worker = near_workspaces::sandbox().await?;
     let mainnet = near_workspaces::mainnet_archival().await?;
@@ -43,6 +44,7 @@ pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Co
     Ok(contract)
 }
 
+#[allow(dead_code)]
 pub async fn init_contracts_from_res(
 ) -> anyhow::Result<(near_workspaces::Contract, Worker<Sandbox>, near_workspaces::Contract)> {
     let worker: Worker<Sandbox> = near_workspaces::sandbox().await?;
@@ -68,7 +70,7 @@ pub async fn init_contracts_from_res(
     let contract_wasm = std::fs::read(DEVHUB_CONTRACT_PATH)?;
     let sk = SecretKey::from_seed(KeyType::ED25519, TEST_SEED);
 
-    let test_near = worker.root_account()?;
+    let _test_near = worker.root_account()?;
     let tla_near = Account::from_secret_key("near".parse()?, sk.clone(), &worker);
     worker
         .patch(tla_near.id())
@@ -82,7 +84,7 @@ pub async fn init_contracts_from_res(
         .await?
         .into_result()?;
     let contract = contract_account.deploy(&contract_wasm).await?.into_result()?;
-    let outcome = contract.call("new").args_json(json!({})).transact().await?;
+    let _outcome = contract.call("new").args_json(json!({})).transact().await?;
 
     let community_factory_account = contract_account
         .create_subaccount(COMMUNITY_FACTORY_PREFIX)
@@ -91,7 +93,7 @@ pub async fn init_contracts_from_res(
         .await?
         .into_result()?;
     let community_factory_wasm = std::fs::read(COMMUNITY_FACTORY_CONTRACT_PATH)?;
-    let community_factory =
+    let _community_factory =
         community_factory_account.deploy(&community_factory_wasm).await?.into_result()?;
     Ok((contract, worker, near_social))
 }
