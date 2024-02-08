@@ -12,15 +12,16 @@ pub mod str_serializers;
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use community::*;
-use post::*;
-
 use crate::social_db::social_db_contract;
+use community::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::require;
 use near_sdk::serde_json::{json, Value};
+use near_sdk::Promise;
 use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
+use post::*;
+use serde_json::Number;
 
 use std::collections::HashSet;
 
@@ -299,7 +300,6 @@ impl Contract {
         self.posts.replace(id, &post.into());
 
         // Update labels index.
-
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;
@@ -334,21 +334,25 @@ impl Contract {
     }
 
     #[payable]
-    pub fn create_community(&mut self, #[allow(unused_mut)] mut inputs: CommunityInputs) {
+    pub fn create_community(
+        &mut self,
+        #[allow(unused_mut)] mut inputs: CommunityInputs,
+    ) -> Promise {
         require!(
             self.get_community(inputs.handle.to_owned()).is_none(),
             "Community already exists"
         );
 
         require!(
-            env::attached_deposit() == CREATE_COMMUNITY_BALANCE,
-            "Require 2 NEAR to create community"
+            env::attached_deposit() >= CREATE_COMMUNITY_BALANCE,
+            "Require 4 NEAR to create community"
         );
-        require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 50 Tgas");
+
+        require!(env::prepaid_gas() >= CREATE_COMMUNITY_GAS, "Require at least 200 Tgas");
 
         let mut new_community = Community {
             admins: vec![],
-            handle: inputs.handle,
+            handle: inputs.handle.clone(),
             name: inputs.name,
             tag: inputs.tag,
             description: inputs.description,
@@ -369,7 +373,7 @@ impl Contract {
         ext_devhub_community_factory::ext(get_devhub_community_factory())
             .with_unused_gas_weight(1)
             .with_attached_deposit(CREATE_COMMUNITY_BALANCE)
-            .create_community_account(new_community.handle);
+            .create_community_account(new_community.handle.clone())
     }
 
     pub fn get_community(&self, handle: CommunityHandle) -> Option<Community> {
@@ -554,6 +558,22 @@ impl Contract {
             .set(json!({ get_devhub_community_account(&handle): data }));
     }
 
+    pub fn create_discussion(&mut self, handle: CommunityHandle, block_height: Number) -> Promise {
+        require!(env::prepaid_gas() >= CREATE_DISCUSSION_GAS, "Require at least 30 Tgas");
+
+        let post_initiator = env::predecessor_account_id();
+        let repost = format!("[{{\"key\":\"main\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}},{{\"key\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}},\"value\":{{\"type\":\"repost\"}}}}]", post_initiator, block_height, post_initiator, block_height);
+        let notify = format!("{{\"key\":\"{}\",\"value\":{{\"type\":\"repost\",\"item\":{{\"type\":\"social\",\"path\":\"{}/post/main\",\"blockHeight\":{}}}}}}}", post_initiator, post_initiator, block_height);
+        social_db_contract().with_unused_gas_weight(1).set(
+            json!({ get_devhub_discussions_account(&handle): {
+              "index": {
+                "repost": repost,
+                "notify": notify
+              }
+            } }),
+        )
+    }
+
     pub fn delete_community(&mut self, handle: CommunityHandle) {
         require!(
             self.has_moderator(env::predecessor_account_id()),
@@ -603,18 +623,13 @@ impl Contract {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use std::collections::{HashMap, HashSet};
-    use std::convert::TryInto;
-
-    use crate::access_control::members::{ActionType, Member, MemberMetadata};
-    use crate::access_control::rules::Rule;
-    use crate::community::{AddOn, Community, CommunityAddOn, CommunityInputs};
+    use crate::community::AddOn;
     use crate::post::PostBody;
-    use crate::CREATE_COMMUNITY_BALANCE;
-    use near_sdk::store::vec;
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId, MockedBlockchain, VMContext};
+    use near_sdk::{testing_env, VMContext};
     use regex::Regex;
+    use std::collections::HashSet;
+    use std::convert::TryInto;
 
     use super::Contract;
 
@@ -633,13 +648,6 @@ mod tests {
     fn get_context_with_current(is_view: bool, signer: String) -> VMContext {
         VMContextBuilder::new()
             .current_account_id(signer.try_into().unwrap())
-            .is_view(is_view)
-            .build()
-    }
-
-    fn get_context_with_predecessor(is_view: bool, signer: String) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(signer.try_into().unwrap())
             .is_view(is_view)
             .build()
     }

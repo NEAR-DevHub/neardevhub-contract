@@ -190,8 +190,16 @@ pub fn get_devhub_community_factory() -> AccountId {
     format!("community.{}", env::current_account_id()).parse().unwrap()
 }
 
+pub fn get_devhub_discussions_factory(handle: &CommunityHandle) -> AccountId {
+    get_devhub_community_account(handle).parse().unwrap()
+}
+
 pub fn get_devhub_community_account(handle: &CommunityHandle) -> String {
     format!("{}.{}", handle, get_devhub_community_factory())
+}
+
+pub fn get_devhub_discussions_account(handle: &CommunityHandle) -> String {
+    format!("discussions.{}", get_devhub_community_account(handle))
 }
 
 #[ext_contract(ext_devhub_community_factory)]
@@ -202,10 +210,14 @@ pub trait DevhubCommunityFactory {
 #[ext_contract(ext_devhub_community)]
 pub trait DevhubCommunity {
     fn destroy(&mut self);
+
+    fn create_discussions_account(&mut self);
 }
 
-pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(2);
-pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(50);
+pub const CREATE_COMMUNITY_BALANCE: NearToken = NearToken::from_near(4);
+pub const CREATE_DISCUSSION_BALANCE: NearToken = NearToken::from_near(2);
+pub const CREATE_COMMUNITY_GAS: Gas = Gas::from_tgas(200);
 pub const UPDATE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const DELETE_COMMUNITY_GAS: Gas = Gas::from_tgas(30);
 pub const SET_COMMUNITY_SOCIALDB_GAS: Gas = Gas::from_tgas(30);
+pub const CREATE_DISCUSSION_GAS: Gas = Gas::from_tgas(30);

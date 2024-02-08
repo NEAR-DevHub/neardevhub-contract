@@ -1,9 +1,15 @@
 use near_sdk::serde_json::Value;
-use near_sdk::{env, ext_contract, AccountId};
+use near_sdk::{ext_contract, AccountId, PublicKey, env};
 
 #[ext_contract(ext_social_db)]
 pub trait SocialDB {
     fn set(&mut self, data: Value);
+    fn grant_write_permission(
+        &mut self,
+        predecessor_id: Option<AccountId>,
+        public_key: Option<PublicKey>,
+        keys: Vec<String>,
+    );
 }
 
 pub fn social_db_contract() -> ext_social_db::SocialDBExt {
@@ -11,8 +17,6 @@ pub fn social_db_contract() -> ext_social_db::SocialDBExt {
         "v1.social08.testnet"
     } else {
         "social.near"
-    }
-    .parse()
-    .unwrap();
+    }.parse().unwrap();
     ext_social_db::ext(social_db)
 }

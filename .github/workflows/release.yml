@@ -18,6 +18,8 @@ jobs:
       uses: actions/checkout@v2
     - uses: Swatinem/rust-cache@v1
     - run: rustup target add wasm32-unknown-unknown
+    - name: Build discussions contract
+      run: cd discussions && ./build.sh
     - name: Build community contract
       run: cd community && ./build.sh
     - name: Build community factory contract
