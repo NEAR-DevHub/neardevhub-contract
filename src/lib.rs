@@ -150,7 +150,7 @@ impl Contract {
 
     pub fn get_all_proposal_ids(&self) -> Vec<ProposalId> {
         near_sdk::log!("get_all_proposal_ids");
-        (0..self.proposals.len()).map(|x| x.try_into().unwrap()).collect()
+        (0..self.proposals.len().try_into().unwrap()).collect()
     }
 
     #[payable]
@@ -232,7 +232,7 @@ impl Contract {
     #[payable]
     pub fn add_proposal(&mut self, body: VersionedProposalBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("add_proposal");
-        let id = self.proposals.len();
+        let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
 
@@ -259,16 +259,16 @@ impl Contract {
 
         for label in &labels {
             let mut other_proposals = self.label_to_proposals.get(label).unwrap_or_default();
-            other_proposals.insert(id.try_into().unwrap());
+            other_proposals.insert(id);
             self.label_to_proposals.insert(label, &other_proposals);
         }
 
         let mut author_proposals = self.author_proposals.get(&author_id).unwrap_or_default();
-        author_proposals.insert(id.try_into().unwrap());
+        author_proposals.insert(id);
         self.author_proposals.insert(&author_id, &author_proposals);
 
         let proposal = Proposal {
-            id: id.try_into().unwrap(),
+            id: id,
             author_id: author_id.clone(),
             social_db_post_block_height: 0u64,
             snapshot: ProposalSnapshot {
@@ -300,7 +300,7 @@ impl Contract {
     ) -> BlockHeightCallbackRetValue {
         proposal.social_db_post_block_height = set_result.block_height.into();
         self.proposals.push(&proposal.clone().into());
-        BlockHeightCallbackRetValue { proposal_id: near_sdk::json_types::U64(proposal.id.try_into().unwrap()) }
+        BlockHeightCallbackRetValue { proposal_id: proposal.id }
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -565,7 +565,7 @@ impl Contract {
         );
         let editor_id = env::predecessor_account_id();
         let mut proposal: Proposal =
-            self.proposals.get(id.try_into().unwrap()).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
+            self.proposals.get(id.into()).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
 
         let proposal_body = body.clone().latest_version();
 
@@ -893,7 +893,7 @@ impl Contract {
 #[serde(crate = "near_sdk::serde")]
 #[schemars(crate = "near_sdk::schemars")]
 pub struct BlockHeightCallbackRetValue {
-    proposal_id: near_sdk::json_types::U64,
+    proposal_id: ProposalId,
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
