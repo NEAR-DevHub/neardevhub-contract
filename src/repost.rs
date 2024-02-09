@@ -4,7 +4,7 @@ use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
 fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_json::Value {
-    let post_link = format!("/devgovgigs.near/widget/Post?id={}", post.id);
+    let post_link = format!("/devhub.near/widget/app?page=post&id={}", post.id);
     let title = match post.snapshot.body.clone() {
         PostBody::Idea(idea) => format!("## Idea: {}\n", idea.latest_version().name),
         PostBody::Solution(solution) => {
