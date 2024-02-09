@@ -121,10 +121,6 @@ impl VersionedProposalBody {
     }
 }
 
-pub fn get_proposal_summary(proposal_body: VersionedProposalBody) -> String {
-    proposal_body.clone().latest_version().summary
-}
-
 pub fn get_subscribers(proposal_body: &ProposalBodyV0) -> Vec<String> {
     let mut result = [
         get_text_mentions(proposal_body.description.as_str()),
