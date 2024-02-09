@@ -19,6 +19,7 @@ pub use solution::*;
 pub use sponsorship::*;
 use std::collections::HashSet;
 
+pub type Balance = u128;
 pub type PostId = u64;
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]

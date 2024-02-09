@@ -18,7 +18,6 @@ use community::*;
 use near_sdk::schemars::JsonSchema;
 use post::*;
 use proposal::*;
-use timeline::{is_draft, is_empty_review};
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
@@ -30,6 +29,7 @@ use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 use serde_json::Number;
 
 use std::collections::HashSet;
+use std::convert::TryInto;
 
 type PostId = u64;
 type IdeaId = u64;
@@ -37,8 +37,6 @@ type AttestationId = u64;
 type SolutionId = u64;
 type SponsorshipId = u64;
 type CommentId = u64;
-
-pub type Balance = u128;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
@@ -146,13 +144,13 @@ impl Contract {
     pub fn get_proposal(&self, proposal_id: ProposalId) -> VersionedProposal {
         near_sdk::log!("get_proposal");
         self.proposals
-            .get(proposal_id)
+            .get(proposal_id.into())
             .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
     }
 
     pub fn get_all_proposal_ids(&self) -> Vec<ProposalId> {
         near_sdk::log!("get_all_proposal_ids");
-        (0..self.proposals.len()).collect()
+        (0..self.proposals.len()).map(|x| x.try_into().unwrap()).collect()
     }
 
     #[payable]
@@ -232,7 +230,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_proposal(&mut self, body: VersionedProposalBody, labels: HashSet<String>) {
+    pub fn add_proposal(&mut self, body: VersionedProposalBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("add_proposal");
         let id = self.proposals.len();
         let author_id = env::predecessor_account_id();
@@ -255,22 +253,22 @@ impl Contract {
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         require!(
-            is_draft(&proposal_body.timeline),
+            proposal_body.timeline.is_draft(),
             "Cannot create proposal which is not in a draft state"
         );
 
         for label in &labels {
             let mut other_proposals = self.label_to_proposals.get(label).unwrap_or_default();
-            other_proposals.insert(id);
+            other_proposals.insert(id.try_into().unwrap());
             self.label_to_proposals.insert(label, &other_proposals);
         }
 
         let mut author_proposals = self.author_proposals.get(&author_id).unwrap_or_default();
-        author_proposals.insert(id);
+        author_proposals.insert(id.try_into().unwrap());
         self.author_proposals.insert(&author_id, &author_proposals);
 
         let proposal = Proposal {
-            id,
+            id: id.try_into().unwrap(),
             author_id: author_id.clone(),
             social_db_post_block_height: 0u64,
             snapshot: ProposalSnapshot {
@@ -282,7 +280,7 @@ impl Contract {
             snapshot_history: vec![],
         };
 
-        proposal::repost::publish_to_socialdb_feed(
+        let socialdb_promise = proposal::repost::publish_to_socialdb_feed(
             Self::ext(env::current_account_id())
                 .with_static_gas(env::prepaid_gas().saturating_div(3))
                 .set_block_height_callback(proposal.clone()),
@@ -290,6 +288,8 @@ impl Contract {
         );
 
         notify::notify_proposal_subscribers(&proposal);
+
+        socialdb_promise
     }
 
     #[private]
@@ -300,7 +300,7 @@ impl Contract {
     ) -> BlockHeightCallbackRetValue {
         proposal.social_db_post_block_height = set_result.block_height.into();
         self.proposals.push(&proposal.clone().into());
-        BlockHeightCallbackRetValue { proposal_id: near_sdk::json_types::U64(proposal.id) }
+        BlockHeightCallbackRetValue { proposal_id: near_sdk::json_types::U64(proposal.id.try_into().unwrap()) }
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -368,7 +368,7 @@ impl Contract {
         near_sdk::log!("is_allowed_to_edit_proposal");
         let proposal: Proposal = self
             .proposals
-            .get(proposal_id)
+            .get(proposal_id.try_into().unwrap())
             .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
             .into();
         let editor = editor.unwrap_or_else(env::predecessor_account_id);
@@ -565,16 +565,16 @@ impl Contract {
         );
         let editor_id = env::predecessor_account_id();
         let mut proposal: Proposal =
-            self.proposals.get(id).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
+            self.proposals.get(id.try_into().unwrap()).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
 
         let proposal_body = body.clone().latest_version();
 
         require!(
             self.has_moderator(editor_id.clone())
                 || editor_id.clone() == env::current_account_id()
-                || (is_draft(&proposal.snapshot.body.clone().latest_version().timeline)
-                    && (is_empty_review(&proposal_body.timeline)
-                        || is_draft(&proposal_body.timeline))),
+                || (proposal.snapshot.body.clone().latest_version().timeline.is_draft())
+                    && (proposal_body.timeline.is_empty_review()
+                        || proposal_body.timeline.is_draft()),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
@@ -592,7 +592,7 @@ impl Contract {
         proposal.snapshot = new_snapshot;
         proposal.snapshot_history.push(old_snapshot);
         let proposal_author = proposal.author_id.clone();
-        self.proposals.replace(id, &proposal.into());
+        self.proposals.replace(id.try_into().unwrap(), &proposal.into());
 
         // Update labels index.
 
@@ -960,7 +960,7 @@ mod tests {
         assert_eq!(3, receipts.len());
 
         if let near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } =
-            &receipts[2].actions[0]
+            &receipts[0].actions[0]
         {
             assert_eq!(method_name, b"set");
             assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}}]\"}}}}");

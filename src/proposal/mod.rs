@@ -7,7 +7,7 @@ use self::timeline::TimelineStatus;
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
-use crate::{Balance, SponsorshipToken};
+use crate::{SponsorshipToken};
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::Base58CryptoHash;
@@ -15,7 +15,7 @@ use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, BlockHeight, Timestamp};
 
-pub type ProposalId = u64;
+pub type ProposalId = u32;
 
 type PostTag = String;
 
@@ -86,10 +86,10 @@ pub struct ProposalBodyV0 {
     pub description: String,
     pub linked_proposals: Vec<ProposalId>,
     #[serde(
-        serialize_with = "u128_dec_format::serialize",
-        deserialize_with = "u128_dec_format::deserialize"
+        serialize_with = "u32_dec_format::serialize",
+        deserialize_with = "u32_dec_format::deserialize"
     )]
-    pub requested_sponsorship_amount: Balance,
+    pub requested_sponsorship_amount: u32,
     pub requested_sponsorship_token: SponsorshipToken,
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,

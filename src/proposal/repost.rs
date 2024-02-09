@@ -4,7 +4,7 @@ use near_sdk::{env, AccountId, Promise};
 use crate::{get_proposal_description, social_db::social_db_contract, Proposal};
 
 fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk::serde_json::Value {
-    let proposal_link = format!("/devgovgigs.near/widget/Proposal?id={}", proposal.id);
+    let proposal_link = format!("/devhub.near/widget/app?page=proposal&id={}", proposal.id);
     let title = proposal.snapshot.body.clone().latest_version().name;
 
     let desc = get_proposal_description(proposal.snapshot.body.clone());

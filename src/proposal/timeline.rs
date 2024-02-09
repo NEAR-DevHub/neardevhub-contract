@@ -16,6 +16,21 @@ pub enum TimelineStatus {
     Funded(FundedStatus),
 }
 
+impl TimelineStatus {
+    pub fn is_draft(&self) -> bool {
+        matches!(self, TimelineStatus::Draft)
+    }
+
+    pub fn is_empty_review(&self) -> bool {
+        match self {
+            TimelineStatus::Review(review_status) => {
+                !review_status.sponsor_requested_review && !review_status.reviewer_completed_attestation
+            }
+            _ => false,
+        }
+    }
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
@@ -45,17 +60,4 @@ pub struct FundedStatus {
     #[serde(flatten)]
     payment_processing_status: PaymentProcessingStatus,
     trustees_released_payment: bool,
-}
-
-pub fn is_draft(ts: &TimelineStatus) -> bool {
-    matches!(ts, TimelineStatus::Draft)
-}
-
-pub fn is_empty_review(ts: &TimelineStatus) -> bool {
-    match ts {
-        TimelineStatus::Review(review_status) => {
-            !review_status.sponsor_requested_review && !review_status.reviewer_completed_attestation
-        }
-        _ => false,
-    }
 }
