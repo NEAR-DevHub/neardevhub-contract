@@ -78,7 +78,7 @@ mod tests {
         let expected = json!({
             "devgovgigs.near": {
                 "post": {
-                  "main": "{\"type\":\"md\",\"text\":\"@neardevgov.near [Posted on DevHub](/devgovgigs.near/widget/Post?id=0)\\n## Idea: A call for Zero Knowledge Work Group members!\\nWe are excited to create a more formal Zero Knowledge Work Group (WG) to oversee official decisions on Zero Knowledge proposals. We’re looking for 3-7 experts to participate. Reply to the post if you’re interested in becoming a work group member.\"}"
+                  "main": "{\"type\":\"md\",\"text\":\"@neardevgov.near [Posted on DevHub](/devhub.near/widget/app?page=post&id=0)\\n## Idea: A call for Zero Knowledge Work Group members!\\nWe are excited to create a more formal Zero Knowledge Work Group (WG) to oversee official decisions on Zero Knowledge proposals. We’re looking for 3-7 experts to participate. Reply to the post if you’re interested in becoming a work group member.\"}"
                 },
                 "index": {
                   "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"
