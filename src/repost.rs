@@ -4,7 +4,7 @@ use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
 fn repost_internal(post: Post, contract_address: AccountId) -> near_sdk::serde_json::Value {
-    let post_link = format!("/devgovgigs.near/widget/Post?id={}", post.id);
+    let post_link = format!("/devhub.near/widget/app?page=post&id={}", post.id);
     let title = match post.snapshot.body.clone() {
         PostBody::Idea(idea) => format!("## Idea: {}\n", idea.latest_version().name),
         PostBody::Solution(solution) => {
@@ -78,7 +78,7 @@ mod tests {
         let expected = json!({
             "devgovgigs.near": {
                 "post": {
-                  "main": "{\"type\":\"md\",\"text\":\"@neardevgov.near [Posted on DevHub](/devgovgigs.near/widget/Post?id=0)\\n## Idea: A call for Zero Knowledge Work Group members!\\nWe are excited to create a more formal Zero Knowledge Work Group (WG) to oversee official decisions on Zero Knowledge proposals. We’re looking for 3-7 experts to participate. Reply to the post if you’re interested in becoming a work group member.\"}"
+                  "main": "{\"type\":\"md\",\"text\":\"@neardevgov.near [Posted on DevHub](/devhub.near/widget/app?page=post&id=0)\\n## Idea: A call for Zero Knowledge Work Group members!\\nWe are excited to create a more formal Zero Knowledge Work Group (WG) to oversee official decisions on Zero Knowledge proposals. We’re looking for 3-7 experts to participate. Reply to the post if you’re interested in becoming a work group member.\"}"
                 },
                 "index": {
                   "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}"

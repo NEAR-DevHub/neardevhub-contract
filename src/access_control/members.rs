@@ -1,5 +1,6 @@
 use crate::access_control::rules::Rule;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
 use std::collections::hash_map::Entry;
@@ -17,11 +18,13 @@ use std::collections::{HashMap, HashSet};
     Ord,
     Eq,
     Hash,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[serde(from = "String")]
 #[serde(into = "String")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum Member {
     /// NEAR account names do not allow `:` character so this structure cannot be abused.
     Account(AccountId),
@@ -51,10 +54,20 @@ impl Into<String> for Member {
 }
 
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Default, Debug, Eq, PartialEq,
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Default,
+    Debug,
+    Eq,
+    PartialEq,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct MemberMetadata {
     pub description: String,
     pub permissions: HashMap<Rule, HashSet<ActionType>>,
@@ -74,10 +87,12 @@ pub struct MemberMetadata {
     Eq,
     Hash,
     Debug,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[serde(rename_all = "kebab-case")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum ActionType {
     /// Can edit posts that have these labels.
     EditPost,
@@ -85,10 +100,21 @@ pub enum ActionType {
     UseLabels,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    JsonSchema,
+)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "member_metadata_version")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedMemberMetadata {
     V0(MemberMetadata),
 }
@@ -108,10 +134,20 @@ impl From<MemberMetadata> for VersionedMemberMetadata {
 }
 
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Default,
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Default,
+    JsonSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
+#[schemars(crate = "near_sdk::schemars")]
 pub struct MembersList {
     #[serde(flatten)]
     pub members: HashMap<Member, VersionedMemberMetadata>,

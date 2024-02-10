@@ -1,9 +1,9 @@
 use crate::social_db::social_db_contract;
-use crate::PostId;
+use crate::{get_subscribers, PostId, Proposal, ProposalId};
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
-pub fn notify_mentions(text: &str, post_id: PostId) {
+pub fn get_text_mentions(text: &str) -> Vec<String> {
     let mut mentions = Vec::new();
     let mut mention = String::new();
     let mut recording = false;
@@ -31,16 +31,17 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
         mentions.push(mention);
     }
 
-    if mentions.len() > 0 {
+    mentions
+}
+
+pub fn notify_accounts(accounts: Vec<String>, notify_value: serde_json::Value) {
+    if !accounts.is_empty() {
         let mut notify_values = Vec::new();
 
-        for mention in mentions {
+        for account in accounts {
             notify_values.push(json!({
-                "key": mention,
-                "value": {
-                    "type": "devgovgigs/mention",
-                    "post": post_id,
-                }
+                "key": account,
+                "value": notify_value,
             }));
         }
 
@@ -56,19 +57,60 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
     }
 }
 
+pub fn notify_proposal_subscribers(proposal: &Proposal) {
+    let accounts = get_subscribers(&proposal.snapshot.body.clone().latest_version());
+
+    notify_accounts(
+        accounts,
+        json!({
+            "type": "devgovgigs/mention",
+            "proposal": proposal.id,
+        }),
+    )
+}
+
+pub fn notify_mentions(text: &str, post_id: PostId) {
+    let mentions = get_text_mentions(text);
+
+    notify_accounts(
+        mentions,
+        json!({
+            "type": "devgovgigs/mention",
+            "post": post_id,
+        }),
+    )
+}
+
 pub fn notify_like(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "like")
+    notify(post_author, notify_value(post_id, "like"))
 }
 
 pub fn notify_reply(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "reply")
+    notify(post_author, notify_value(post_id, "reply"))
 }
 
 pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_id, post_author, "edit")
+    notify(post_author, notify_value(post_id, "edit"))
 }
 
-fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
+pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> Promise {
+    notify(
+        post_author,
+        json!({
+            "type": format!("devgovgigs/{}", "edit"),
+            "proposal": proposal_id,
+        }),
+    )
+}
+
+fn notify_value(post_id: PostId, action: &str) -> serde_json::Value {
+    json!({
+        "type": format!("devgovgigs/{}", action),
+        "post": post_id,
+    })
+}
+
+fn notify(post_author: AccountId, notify_value: serde_json::Value) -> Promise {
     social_db_contract()
         .with_static_gas(env::prepaid_gas().saturating_div(4))
         .with_attached_deposit(env::attached_deposit())
@@ -77,10 +119,7 @@ fn notify(post_id: PostId, post_author: AccountId, action: &str) -> Promise {
                 "index": {
                     "notify": json!({
                         "key": post_author,
-                        "value": {
-                            "type": format!("devgovgigs/{}", action),
-                            "post": post_id,
-                        },
+                        "value": notify_value,
                     }).to_string()
                 }
             }
@@ -93,8 +132,6 @@ mod tests {
 
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, VMContext};
-
-    use regex::Regex;
 
     fn get_context(is_view: bool) -> VMContext {
         VMContextBuilder::new()
@@ -112,36 +149,13 @@ mod tests {
         let receipts = get_created_receipts();
         assert_eq!(1, receipts.len());
 
-        let receipt = receipts.get(0).unwrap();
-        let receipt_str = format!("{:?}", receipt);
-        let re = Regex::new(r#"method_name: (\[[^\]]*\]), args: (\[[^\]]*\])"#).unwrap();
-
-        // Extract the method_name and args values
-        for cap in re.captures_iter(&receipt_str) {
-            let method_name = &cap[1];
-
-            let args = &cap[2];
-
-            let method_name = method_name
-                .trim_start_matches('[')
-                .trim_end_matches(']')
-                .split(", ")
-                .map(|s| s.parse().unwrap())
-                .collect::<Vec<u8>>();
-            let method_name =
-                String::from_utf8(method_name).expect("Failed to convert method_name to String");
-
-            assert_eq!("set", method_name);
-
-            let args = args
-                .trim_start_matches('[')
-                .trim_end_matches(']')
-                .split(", ")
-                .map(|s| s.parse().unwrap())
-                .collect::<Vec<u8>>();
-            let args = String::from_utf8(args).expect("Failed to convert args to String");
-
-            assert_eq!("{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"a.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}},{\\\"key\\\":\\\"bcdefg.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}}]\"}}}}", args);
+        if let near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } =
+            &receipts[0].actions[0]
+        {
+            assert_eq!(method_name, b"set");
+            assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"a.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}},{\\\"key\\\":\\\"bcdefg.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}}]\"}}}}");
+        } else {
+            assert!(false, "Expected a function call ...")
         }
     }
 

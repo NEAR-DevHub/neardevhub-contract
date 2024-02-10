@@ -3,7 +3,7 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{env, near_bindgen, Promise, NearToken, borsh::to_vec};
+use near_sdk::{borsh::to_vec, env, near_bindgen, NearToken, Promise};
 use std::cmp::min;
 use std::collections::HashSet;
 
@@ -606,6 +606,58 @@ pub struct ContractV9 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
+// From ContractV9 to ContractV10
+#[near_bindgen]
+impl Contract {
+    fn unsafe_add_proposals() {
+        let ContractV9 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            communities,
+            featured_communities,
+            available_addons,
+        } = env::state_read().unwrap();
+
+        env::state_write(&ContractV10 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            proposals: Vector::new(StorageKey::Proposals),
+            label_to_proposals: UnorderedMap::new(StorageKey::LabelToProposals),
+            author_proposals: UnorderedMap::new(StorageKey::AuthorProposals),
+            proposal_categories: default_categories(),
+            communities,
+            featured_communities,
+            available_addons,
+        });
+    }
+}
+
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
+pub struct ContractV10 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub proposals: Vector<VersionedProposal>,
+    pub label_to_proposals: UnorderedMap<String, HashSet<ProposalId>>,
+    pub author_proposals: UnorderedMap<AccountId, HashSet<ProposalId>>,
+    pub proposal_categories: Vec<String>,
+    pub communities: UnorderedMap<CommunityHandle, CommunityV5>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+    pub available_addons: UnorderedMap<AddOnId, AddOn>,
+}
+
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
 #[borsh(crate = "near_sdk::borsh")]
 pub(crate) enum StateVersion {
@@ -618,6 +670,7 @@ pub(crate) enum StateVersion {
     V7,
     V8,
     V9,
+    V10,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -703,6 +756,10 @@ impl Contract {
             StateVersion::V8 => {
                 Contract::unsafe_clean_up_community();
                 state_version_write(&StateVersion::V9);
+            }
+            StateVersion::V9 => {
+                Contract::unsafe_add_proposals();
+                state_version_write(&StateVersion::V10);
             }
             _ => {
                 return Contract::migration_done();
