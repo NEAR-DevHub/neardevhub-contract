@@ -17,6 +17,7 @@ use crate::social_db::{social_db_contract, SetReturnType};
 use community::*;
 use near_sdk::schemars::JsonSchema;
 use post::*;
+use proposal::timeline::TimelineStatus;
 use proposal::*;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
@@ -230,7 +231,11 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_proposal(&mut self, body: VersionedProposalBody, labels: HashSet<String>) -> Promise {
+    pub fn add_proposal(
+        &mut self,
+        body: VersionedProposalBody,
+        labels: HashSet<String>,
+    ) -> Promise {
         near_sdk::log!("add_proposal");
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
@@ -559,22 +564,48 @@ impl Contract {
         labels: HashSet<String>,
     ) {
         near_sdk::log!("edit_proposal");
+        self.edit_proposal_internal(id, body.clone(), labels);
+    }
+
+    #[payable]
+    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) {
+        near_sdk::log!("edit_proposal_timeline");
+        let proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+        let mut body = proposal.snapshot.body.latest_version();
+        body.timeline = timeline;
+
+        self.edit_proposal_internal(id, body.into(), HashSet::new());
+    }
+
+    fn edit_proposal_internal(
+        &mut self,
+        id: ProposalId,
+        body: VersionedProposalBody,
+        labels: HashSet<String>,
+    ) {
         require!(
             self.is_allowed_to_edit_proposal(id, Option::None),
             "The account is not allowed to edit this proposal"
         );
         let editor_id = env::predecessor_account_id();
-        let mut proposal: Proposal =
-            self.proposals.get(id.into()).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
+        let mut proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
 
         let proposal_body = body.clone().latest_version();
 
         require!(
             self.has_moderator(editor_id.clone())
-                || editor_id.clone() == env::current_account_id()
-                || (proposal.snapshot.body.clone().latest_version().timeline.is_draft())
-                    && (proposal_body.timeline.is_empty_review()
-                        || proposal_body.timeline.is_draft()),
+            || editor_id.clone() == env::current_account_id()
+            || (proposal.snapshot.body.clone().latest_version().timeline.is_draft())
+                && (proposal_body.timeline.is_empty_review()
+                || proposal_body.timeline.is_draft()),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
@@ -587,7 +618,7 @@ impl Contract {
             editor_id: editor_id.clone(),
             timestamp: env::block_timestamp(),
             labels: new_labels.clone(),
-            body,
+            body: body,
         };
         proposal.snapshot = new_snapshot;
         proposal.snapshot_history.push(old_snapshot);
@@ -595,7 +626,6 @@ impl Contract {
         self.proposals.replace(id.try_into().unwrap(), &proposal.into());
 
         // Update labels index.
-
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add = &new_labels_set - &old_labels_set;

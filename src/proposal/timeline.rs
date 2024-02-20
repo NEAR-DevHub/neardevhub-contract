@@ -24,7 +24,8 @@ impl TimelineStatus {
     pub fn is_empty_review(&self) -> bool {
         match self {
             TimelineStatus::Review(review_status) => {
-                !review_status.sponsor_requested_review && !review_status.reviewer_completed_attestation
+                !review_status.sponsor_requested_review
+                    && !review_status.reviewer_completed_attestation
             }
             _ => false,
         }

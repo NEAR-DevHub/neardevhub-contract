@@ -7,7 +7,7 @@ use self::timeline::TimelineStatus;
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
-use crate::{SponsorshipToken};
+use crate::SponsorshipToken;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::Base58CryptoHash;
@@ -112,6 +112,12 @@ impl From<VersionedProposalBody> for ProposalBodyV0 {
         match solution {
             VersionedProposalBody::V0(v0) => v0,
         }
+    }
+}
+
+impl From<ProposalBodyV0> for VersionedProposalBody {
+    fn from(p: ProposalBodyV0) -> Self {
+        VersionedProposalBody::V0(p)
     }
 }
 
