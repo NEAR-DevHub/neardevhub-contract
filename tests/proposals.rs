@@ -52,6 +52,18 @@ async fn test_proposal() -> anyhow::Result<()> {
         get_proposal["social_db_post_block_height"].as_str().unwrap().parse::<u64>()?;
     assert!(social_db_post_block_height > 0);
 
+    let first_proposal_social_post = String::from_utf8(
+        near_social
+            .call("get")
+            .args_json(json!({"keys": [format!("{}/post/main", contract.id())]}))
+            .view()
+            .await?
+            .result,
+    )
+    .unwrap();
+
+    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"There is a new proposal on DevHub from @devhub.near: “another post“\\\\n> sum\\\\n__Read the full proposal [here](/devhub.near/widget/app?page=proposal&id=0)__\\\"}\"}}}");
+
     let _edit_proposal_category = contract
         .call("edit_proposal")
         .args_json(json!({
@@ -168,6 +180,18 @@ async fn test_proposal() -> anyhow::Result<()> {
         .deposit(NearToken::from_near(1))
         .transact()
         .await?;
+
+    let second_proposal_social_post = String::from_utf8(
+        near_social
+            .call("get")
+            .args_json(json!({"keys": [format!("{}/post/main", contract.id())]}))
+            .view()
+            .await?
+            .result,
+    )
+    .unwrap();
+
+    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"There is a new proposal on DevHub from @second.test.near: “another author“\\\\n> sum\\\\n__Read the full proposal [here](/devhub.near/widget/app?page=proposal&id=2)__\\\"}\"}}}");
 
     let get_second_author_proposal: serde_json::Value = contract
         .call("get_proposal")
@@ -593,31 +617,5 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_timeline_funded.is_success());
 
-     let text = "My comment to the proposal";
-     let account_id = contract.as_account().id().as_str();
-
-     let comment_string = format!(r#"{{"item":{{"type":"social","path":"{}/post/main","blockHeight":{}}},"type":"md","text":"{}"}}"#, account_id, social_db_post_block_height, text);
-     let index_comment_string = format!(r#"{{"key":{{"type":"social","path":"{}/post/main","blockHeight":{}}},"value":{{"type":"md"}}}}"#, account_id, social_db_post_block_height);
-     let index_notify_string = format!(r#"{{"key":"{}/post/main","value":{{"type":"comment","item":{{"type":"social","path":"{}/post/main","blockHeight":{}}}}}}}"#, account_id, account_id, social_db_post_block_height);
- 
-    let _comment_result = near_social.call("set")
-        .args_json(json!({
-            "data": {
-                account_id: {
-                    "post": {
-                        "comment": comment_string
-                    },
-                    "index": {
-                        "comment": index_comment_string,
-                        "notify": index_notify_string
-                    }
-                }
-            }
-          })).max_gas()
-        .transact()
-        .await?;
-
-    println!("set_greeting outcome: {:#?}",  _comment_result);
-    assert!(_comment_result.is_success());
     Ok(())
 }

@@ -1,5 +1,6 @@
 {
     "postCreateCommand": "./.devcontainer/post-create.sh",
+    "image": "mcr.microsoft.com/devcontainers/rust",
     "customizations": {
         "vscode": {
             "extensions": ["dtsvet.vscode-wasm", "rust-lang.rust-analyzer"]
