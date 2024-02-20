@@ -8,7 +8,7 @@ use {crate::test_env::*, serde_json::json};
 async fn test_proposal() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, worker, ..) = init_contracts_from_res().await?;
+    let (contract, worker, near_social) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(2);
 
@@ -593,5 +593,31 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_timeline_funded.is_success());
 
+     let text = "My comment to the proposal";
+     let account_id = contract.as_account().id().as_str();
+
+     let comment_string = format!(r#"{{"item":{{"type":"social","path":"{}/post/main","blockHeight":{}}},"type":"md","text":"{}"}}"#, account_id, social_db_post_block_height, text);
+     let index_comment_string = format!(r#"{{"key":{{"type":"social","path":"{}/post/main","blockHeight":{}}},"value":{{"type":"md"}}}}"#, account_id, social_db_post_block_height);
+     let index_notify_string = format!(r#"{{"key":"{}/post/main","value":{{"type":"comment","item":{{"type":"social","path":"{}/post/main","blockHeight":{}}}}}}}"#, account_id, account_id, social_db_post_block_height);
+ 
+    let _comment_result = near_social.call("set")
+        .args_json(json!({
+            "data": {
+                account_id: {
+                    "post": {
+                        "comment": comment_string
+                    },
+                    "index": {
+                        "comment": index_comment_string,
+                        "notify": index_notify_string
+                    }
+                }
+            }
+          })).max_gas()
+        .transact()
+        .await?;
+
+    println!("set_greeting outcome: {:#?}",  _comment_result);
+    assert!(_comment_result.is_success());
     Ok(())
 }
