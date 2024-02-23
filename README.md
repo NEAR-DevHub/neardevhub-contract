@@ -2,7 +2,7 @@
 
 ## Overview
 
-The smart contract responsible for managing the communities, posts, and permissions made available via the [NEAR DevHub frontend](https://devhub.near.social). The repository for the frontend widgets can be found [here](https://github.com/NEAR-DevHub/neardevhub-bos).
+The smart contract responsible for managing the communities, posts, and permissions made available via the [NEAR DevHub frontend](https://neardevhub.org). The repository for the frontend widgets can be found [here](https://github.com/NEAR-DevHub/neardevhub-bos).
 
 ## Getting Started
 
@@ -10,35 +10,38 @@ The smart contract responsible for managing the communities, posts, and permissi
 
 Before starting, make sure you have the following installed:
 
-1. [NEAR CLI RS](https://github.com/near/near-cli-rs), to deploy and interact with the contract.
-2. [cargo-near](https://github.com/near/cargo-near), to easily create testnet accounts.
+1. [cargo-near](https://github.com/near/cargo-near), to easily create testnet accounts, build and deploy contracts.
+2. [NEAR CLI RS](https://github.com/near/near-cli-rs), to interact with the contract.
 
 ## Building
 
 From the root directory, run:
 
-```cmd
-cd community
+```sh
+cd discussions
+cargo near build
+cd ../community
 cargo near build
 cd ../community-factory
-./build.sh
+cargo near build
 cd ..
-./build.sh
+cargo near build
 ```
 
 ## Running Tests
 
 From the root directory, run:
 
-```cmd
+```sh
 cargo test
 ```
 
 ## Deploying
 
-Using [NEAR CLI RS](https://github.com/near/near-cli-rs), run the following command. Be sure to set your own account id and corresponding network.
+Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.
 
-```cmd
-near contract deploy {{account.near}} use-file ./target/wasm32-unknown-unknown/release/devgovgigs.wasm without-init-call network-config {{env}}
-near contract deploy {{community.account.near}} use-file ./target/wasm32-unknown-unknown/release/devhub_community_factory.wasm without-init-call network-config {{env}}
+```sh
+cargo near deploy {{account.near}}
+cd community-factory
+cargo near deploy {{community.account.near}}
 ```

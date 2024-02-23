@@ -1,15 +1,13 @@
 use crate::str_serializers::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, Timestamp};
+use near_sdk::{AccountId, NearSchema, Timestamp};
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Ord, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Ord, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Like {
     pub author_id: AccountId,
     #[serde(

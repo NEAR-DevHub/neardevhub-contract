@@ -15,18 +15,14 @@ use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use crate::social_db::{social_db_contract, SetReturnType};
 use community::*;
-use near_sdk::schemars::JsonSchema;
 use post::*;
 use proposal::*;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
-use near_sdk::require;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::serde_json::{json, Value};
-use near_sdk::Promise;
-use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
-use serde_json::Number;
+use near_sdk::serde_json::{json, Number, Value};
+use near_sdk::{env, near_bindgen, require, AccountId, NearSchema, PanicOnDefault, Promise};
 
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -230,7 +226,11 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_proposal(&mut self, body: VersionedProposalBody, labels: HashSet<String>) -> Promise {
+    pub fn add_proposal(
+        &mut self,
+        body: VersionedProposalBody,
+        labels: HashSet<String>,
+    ) -> Promise {
         near_sdk::log!("add_proposal");
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
@@ -564,8 +564,11 @@ impl Contract {
             "The account is not allowed to edit this proposal"
         );
         let editor_id = env::predecessor_account_id();
-        let mut proposal: Proposal =
-            self.proposals.get(id.into()).unwrap_or_else(|| panic!("Proposal id {} not found", id)).into();
+        let mut proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
 
         let proposal_body = body.clone().latest_version();
 
@@ -889,9 +892,8 @@ impl Contract {
     }
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, JsonSchema)]
+#[derive(Copy, Clone, Serialize, Deserialize, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct BlockHeightCallbackRetValue {
     proposal_id: ProposalId,
 }

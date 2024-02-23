@@ -6,15 +6,13 @@ use near_workspaces::{Account, AccountId, Worker};
 use serde_json::json;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
-const DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
-const _TEST_DEVHUB_CONTRACT: &str = "devgovgigs.near"; // current production contract
-const _NEW_DEVHUB_CONTRACT_PREFIX: &str = "devhub";
+const DEVHUB_CONTRACT: &str = "devhub.near";
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &str = "social.near";
 const _TEST_NEAR_SOCIAL: &str = "v1.social08.testnet";
 const TEST_SEED: &str = "testificate";
-const DEVHUB_CONTRACT_PATH: &str = "./res/devgovgigs.wasm";
-const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./res/devhub_community_factory.wasm";
+const DEVHUB_CONTRACT_PATH: &str = "./target/near/devhub.wasm";
+const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./community-factory/target/near/devhub_community_factory.wasm";
 
 #[allow(dead_code)]
 pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Contract> {

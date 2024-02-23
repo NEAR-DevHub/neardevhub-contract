@@ -4,9 +4,7 @@ expression: get_sponsorship_post_with_nep141
 ---
 {
   "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "6"
-  },
+  "id": 6,
   "author_id": "devgovgigs.near",
   "likes": [],
   "snapshot": {

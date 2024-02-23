@@ -5,9 +5,7 @@ expression: get_comment_posts
 [
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "2"
-    },
+    "id": 2,
     "author_id": "devgovgigs.near",
     "likes": [],
     "snapshot": {

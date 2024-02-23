@@ -4,9 +4,7 @@ expression: get_sponsorship_post_with_usd
 ---
 {
   "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "5"
-  },
+  "id": 5,
   "author_id": "devgovgigs.near",
   "likes": [],
   "snapshot": {

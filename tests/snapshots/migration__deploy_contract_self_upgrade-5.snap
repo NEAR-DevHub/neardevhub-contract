@@ -4,9 +4,7 @@ expression: get_sponsorship_post_with_near
 ---
 {
   "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "4"
-  },
+  "id": 4,
   "author_id": "devgovgigs.near",
   "likes": [],
   "snapshot": {

@@ -1,10 +1,10 @@
-use crate::*;
-use near_sdk::near_bindgen;
 use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{near_bindgen, NearSchema};
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+use crate::*;
+
+#[derive(Serialize, Deserialize, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Stats {
     pub num_posts: u64,
 }

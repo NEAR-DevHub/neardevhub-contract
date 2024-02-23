@@ -4,9 +4,7 @@ expression: get_solution_v2_post
 ---
 {
   "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "1"
-  },
+  "id": 1,
   "author_id": "devgovgigs.near",
   "likes": [],
   "snapshot": {

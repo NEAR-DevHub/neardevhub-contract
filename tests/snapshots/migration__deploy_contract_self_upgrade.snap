@@ -4,9 +4,7 @@ expression: get_idea_post
 ---
 {
   "post_version": "V0",
-  "id": {
-    "$serde_json::private::Number": "0"
-  },
+  "id": 0,
   "author_id": "devgovgigs.near",
   "likes": [],
   "snapshot": {

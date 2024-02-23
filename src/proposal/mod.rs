@@ -7,31 +7,28 @@ use self::timeline::TimelineStatus;
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
-use crate::{SponsorshipToken};
+use crate::SponsorshipToken;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::Base58CryptoHash;
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, BlockHeight, Timestamp};
+use near_sdk::{AccountId, BlockHeight, NearSchema, Timestamp};
 
 pub type ProposalId = u32;
 
 type PostTag = String;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "proposal_version")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedProposal {
     V0(Proposal),
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Proposal {
     pub id: ProposalId,
     pub author_id: AccountId,
@@ -59,10 +56,9 @@ impl From<Proposal> for VersionedProposal {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct ProposalSnapshot {
     pub editor_id: AccountId,
     #[serde(
@@ -75,10 +71,9 @@ pub struct ProposalSnapshot {
     pub body: VersionedProposalBody,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct ProposalBodyV0 {
     pub name: String,
     pub category: String,
@@ -98,11 +93,10 @@ pub struct ProposalBodyV0 {
     pub timeline: TimelineStatus,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "proposal_body_version")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedProposalBody {
     V0(ProposalBodyV0),
 }

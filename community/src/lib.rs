@@ -5,8 +5,7 @@ use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::Gas;
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
-const CODE: &[u8] = include_bytes!("../../res/devhub_discussions.wasm");
-const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
+const CODE: &[u8] = include_bytes!("../../discussions/target/near/devhub_discussions.wasm");
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
 #[near_bindgen]

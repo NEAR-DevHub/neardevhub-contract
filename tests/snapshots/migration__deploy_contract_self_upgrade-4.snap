@@ -5,9 +5,7 @@ expression: get_attestation_sponsorship_posts
 [
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "3"
-    },
+    "id": 3,
     "author_id": "devgovgigs.near",
     "likes": [],
     "snapshot": {
@@ -23,9 +21,7 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "4"
-    },
+    "id": 4,
     "author_id": "devgovgigs.near",
     "likes": [],
     "snapshot": {
@@ -44,9 +40,7 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "5"
-    },
+    "id": 5,
     "author_id": "devgovgigs.near",
     "likes": [],
     "snapshot": {
@@ -65,9 +59,7 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "6"
-    },
+    "id": 6,
     "author_id": "devgovgigs.near",
     "likes": [],
     "snapshot": {
