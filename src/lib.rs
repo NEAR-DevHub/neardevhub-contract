@@ -578,7 +578,7 @@ impl Contract {
         let mut body = proposal.snapshot.body.latest_version();
         body.timeline = timeline;
 
-        self.edit_proposal_internal(id, body.into(), HashSet::new());
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels);
     }
 
     fn edit_proposal_internal(
