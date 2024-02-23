@@ -1,16 +1,14 @@
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, ext_contract, require, AccountId, Gas, NearToken};
+use near_sdk::{env, ext_contract, require, AccountId, Gas, NearSchema, NearToken};
 
 pub type CommunityHandle = String;
 
 pub type AddOnId = String;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct CommunityInputs {
     pub handle: CommunityHandle,
     pub name: String,
@@ -21,10 +19,9 @@ pub struct CommunityInputs {
     pub bio_markdown: Option<String>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct CommunityMetadata {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -55,11 +52,10 @@ pub struct WikiPage {
 }
 
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug, JsonSchema,
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug, NearSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct CommunityAddOn {
     pub id: String,
     pub addon_id: AddOnId,
@@ -69,11 +65,10 @@ pub struct CommunityAddOn {
 }
 
 #[derive(
-    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug, JsonSchema,
+    BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, PartialEq, Debug, NearSchema,
 )]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct AddOn {
     pub id: AddOnId,
     pub title: String,
@@ -110,10 +105,9 @@ impl AddOn {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Community {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -137,10 +131,9 @@ pub struct FeaturedCommunity {
     pub handle: CommunityHandle,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct CommunityPermissions {
     pub can_configure: bool,
     pub can_delete: bool,

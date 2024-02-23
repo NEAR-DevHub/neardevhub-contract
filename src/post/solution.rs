@@ -2,15 +2,13 @@ use super::{Like, PostStatus, SponsorshipToken};
 use crate::str_serializers::*;
 use crate::{AttestationId, Balance, CommentId, SolutionId, SponsorshipId};
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, Timestamp};
+use near_sdk::{AccountId, NearSchema, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct SolutionV0 {
     // Common fields
     pub id: SolutionId,
@@ -36,19 +34,17 @@ pub struct SolutionV0 {
     pub sponsorships: Vec<SponsorshipId>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct SolutionV1 {
     pub name: String,
     pub description: String,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct SolutionV2 {
     pub name: String,
     pub description: String,
@@ -61,11 +57,10 @@ pub struct SolutionV2 {
     pub requested_sponsorship_token: Option<SponsorshipToken>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "solution_version")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedSolution {
     V0(SolutionV0),
     V1(SolutionV1),

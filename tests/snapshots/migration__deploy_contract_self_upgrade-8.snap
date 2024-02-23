@@ -4,7 +4,7 @@ expression: get_community
 ---
 {
   "admins": [
-    "devgovgigs.near"
+    "devhub.near"
   ],
   "handle": "gotham",
   "name": "Gotham",

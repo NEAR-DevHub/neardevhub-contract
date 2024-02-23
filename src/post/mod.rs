@@ -12,9 +12,8 @@ pub use comment::*;
 pub use idea::*;
 pub use like::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, BorshStorageKey, CryptoHash, Timestamp};
+use near_sdk::{AccountId, BorshStorageKey, CryptoHash, NearSchema, Timestamp};
 pub use solution::*;
 pub use sponsorship::*;
 use std::collections::HashSet;
@@ -34,10 +33,9 @@ pub enum PostType {
     Github,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum PostStatus {
     Open,
     Closed { reason: String },
@@ -66,19 +64,17 @@ pub enum StorageKey {
     AuthorProposals,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "post_version")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedPost {
     V0(Post),
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Post {
     pub id: PostId,
     pub author_id: AccountId,
@@ -104,10 +100,9 @@ impl From<Post> for VersionedPost {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct PostSnapshot {
     pub editor_id: AccountId,
     #[serde(
@@ -120,11 +115,10 @@ pub struct PostSnapshot {
     pub body: PostBody,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "post_type")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum PostBody {
     Comment(VersionedComment),
     Idea(VersionedIdea),

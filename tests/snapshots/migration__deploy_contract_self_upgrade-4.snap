@@ -5,13 +5,11 @@ expression: get_attestation_sponsorship_posts
 [
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "3"
-    },
-    "author_id": "devgovgigs.near",
+    "id": 3,
+    "author_id": "devhub.near",
     "likes": [],
     "snapshot": {
-      "editor_id": "devgovgigs.near",
+      "editor_id": "devhub.near",
       "timestamp": "[timestamp]",
       "labels": [],
       "post_type": "Attestation",
@@ -23,13 +21,11 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "4"
-    },
-    "author_id": "devgovgigs.near",
+    "id": 4,
+    "author_id": "devhub.near",
     "likes": [],
     "snapshot": {
-      "editor_id": "devgovgigs.near",
+      "editor_id": "devhub.near",
       "timestamp": "[timestamp]",
       "labels": [],
       "post_type": "Sponsorship",
@@ -44,13 +40,11 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "5"
-    },
-    "author_id": "devgovgigs.near",
+    "id": 5,
+    "author_id": "devhub.near",
     "likes": [],
     "snapshot": {
-      "editor_id": "devgovgigs.near",
+      "editor_id": "devhub.near",
       "timestamp": "[timestamp]",
       "labels": [],
       "post_type": "Sponsorship",
@@ -65,13 +59,11 @@ expression: get_attestation_sponsorship_posts
   },
   {
     "post_version": "V0",
-    "id": {
-      "$serde_json::private::Number": "6"
-    },
-    "author_id": "devgovgigs.near",
+    "id": 6,
+    "author_id": "devhub.near",
     "likes": [],
     "snapshot": {
-      "editor_id": "devgovgigs.near",
+      "editor_id": "devhub.near",
       "timestamp": "[timestamp]",
       "labels": [],
       "post_type": "Sponsorship",
