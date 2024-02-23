@@ -179,11 +179,12 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4"
             }
         }))
+        .deposit(NearToken::from_near(4))
         .max_gas()
         .transact()
         .await?;
 
-    assert!(create_community.is_success());
+    assert!(dbg!(create_community).is_success());
 
     // Call self upgrade with current branch code
     // compile the current code

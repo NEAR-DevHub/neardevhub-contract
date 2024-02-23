@@ -5,10 +5,10 @@ expression: get_idea_post
 {
   "post_version": "V0",
   "id": 0,
-  "author_id": "devgovgigs.near",
+  "author_id": "devhub.near",
   "likes": [],
   "snapshot": {
-    "editor_id": "devgovgigs.near",
+    "editor_id": "devhub.near",
     "timestamp": "[timestamp]",
     "labels": [],
     "post_type": "Idea",

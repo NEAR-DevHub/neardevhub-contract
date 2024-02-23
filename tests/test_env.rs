@@ -1,15 +1,16 @@
-use near_sdk::NearToken;
+use near_sdk::{NearToken, AccountIdRef};
 use near_workspaces::network::Sandbox;
 use near_workspaces::types::{AccessKey, KeyType, SecretKey};
-use near_workspaces::{Account, AccountId, Worker};
+use near_workspaces::{Account, Worker};
 
 use serde_json::json;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
-const DEVHUB_CONTRACT: &str = "devhub.near";
+const DEVHUB_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("devhub.near");
+const DEVHUB_COMMUNITY_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("community.devhub.near");
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
-const NEAR_SOCIAL: &str = "social.near";
-const _TEST_NEAR_SOCIAL: &str = "v1.social08.testnet";
+const NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("social.near");
+const _TEST_NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("v1.social08.testnet");
 const TEST_SEED: &str = "testificate";
 const DEVHUB_CONTRACT_PATH: &str = "./target/near/devhub.wasm";
 const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./community-factory/target/near/devhub_community_factory.wasm";
@@ -20,26 +21,39 @@ pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Co
     let mainnet = near_workspaces::mainnet_archival().await?;
 
     // NEAR social deployment
-    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
     let near_social = worker
-        .import_contract(&near_social_id, &mainnet)
+        .import_contract(&NEAR_SOCIAL.to_owned(), &mainnet)
         .initial_balance(NearToken::from_near(10000))
         .transact()
         .await?;
     near_social.call("new").transact().await?.into_result()?;
+    near_social
+        .call("set_status")
+        .args_json(json!({
+            "status": "Live"
+        }))
+        .transact()
+        .await?
+        .into_result()?;
 
     // Devhub contract deployment
-    let contract_id: AccountId = DEVHUB_CONTRACT.parse()?;
-    let contract = worker
-        .import_contract(&contract_id, &mainnet)
+    let devhub_contract = worker
+        .import_contract(&DEVHUB_CONTRACT.to_owned(), &mainnet)
         .initial_balance(NearToken::from_near(1000))
         .transact()
         .await?;
-    let outcome = contract.call("new").args_json(json!({})).transact().await?;
+    let outcome = devhub_contract.call("new").args_json(json!({})).transact().await?;
     assert!(outcome.is_success());
     assert!(format!("{:?}", outcome).contains("Migrated to version:"));
 
-    Ok(contract)
+    // Devhub Community contract deployment
+    worker
+        .import_contract(&DEVHUB_COMMUNITY_CONTRACT.to_owned(), &mainnet)
+        .initial_balance(NearToken::from_near(10))
+        .transact()
+        .await?;
+
+    Ok(devhub_contract)
 }
 
 #[allow(dead_code)]
@@ -49,9 +63,8 @@ pub async fn init_contracts_from_res(
     let mainnet = near_workspaces::mainnet_archival().await?;
 
     // NEAR social deployment
-    let near_social_id: AccountId = NEAR_SOCIAL.parse()?;
     let near_social = worker
-        .import_contract(&near_social_id, &mainnet)
+        .import_contract(&NEAR_SOCIAL.to_owned(), &mainnet)
         .initial_balance(NearToken::from_near(10000))
         .transact()
         .await?;

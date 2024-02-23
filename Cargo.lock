@@ -306,15 +306,6 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
-name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
@@ -334,21 +325,11 @@ dependencies = [
 
 [[package]]
 name = "borsh"
-version = "0.10.3"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4114279215a005bc675e386011e594e1d9b800918cea18fcadadcce864a2046b"
+checksum = "f58b559fd6448c6e2fd0adb5720cd98a2506594cafa4737ff98c396f3e82f667"
 dependencies = [
- "borsh-derive 0.10.3",
- "hashbrown 0.12.3",
-]
-
-[[package]]
-name = "borsh"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18a744ac76a433734df0902926ed12edd997391a8da3add87f6d706afc2dcbea"
-dependencies = [
- "borsh-derive 1.1.2",
+ "borsh-derive 1.3.1",
  "cfg_aliases",
 ]
 
@@ -358,8 +339,8 @@ version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6441c552f230375d18e3cc377677914d2ca2b0d36e52129fe15450a2dce46775"
 dependencies = [
- "borsh-derive-internal 0.9.3",
- "borsh-schema-derive-internal 0.9.3",
+ "borsh-derive-internal",
+ "borsh-schema-derive-internal",
  "proc-macro-crate 0.1.5",
  "proc-macro2",
  "syn 1.0.109",
@@ -367,25 +348,12 @@ dependencies = [
 
 [[package]]
 name = "borsh-derive"
-version = "0.10.3"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0754613691538d51f329cce9af41d7b7ca150bc973056f1156611489475f54f7"
-dependencies = [
- "borsh-derive-internal 0.10.3",
- "borsh-schema-derive-internal 0.10.3",
- "proc-macro-crate 0.1.5",
- "proc-macro2",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "borsh-derive"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b22bf794b9f8c87b51ea4d9e2710907ce13aa81dd2b8ac18a78fcca68ac738ef"
+checksum = "7aadb5b6ccbd078890f6d7003694e33816e6b784358f18e15e7e6d9f065a57cd"
 dependencies = [
  "once_cell",
- "proc-macro-crate 2.0.1",
+ "proc-macro-crate 3.1.0",
  "proc-macro2",
  "quote",
  "syn 2.0.28",
@@ -404,32 +372,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "borsh-derive-internal"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afb438156919598d2c7bad7e1c0adf3d26ed3840dbc010db1a882a65583ca2fb"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "borsh-schema-derive-internal"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdbd5696d8bfa21d53d9fe39a714a18538bad11492a42d066dbbc395fb1951c0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "borsh-schema-derive-internal"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "634205cc43f74a1b9046ef87c4540ebda95696ec0f315024860cad7c5b0f5ccd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -547,7 +493,7 @@ dependencies = [
  "rustc_version",
  "schemars",
  "serde_json",
- "sha2 0.10.7",
+ "sha2",
  "symbolic-debuginfo",
  "zstd",
 ]
@@ -871,19 +817,6 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "3.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90f9d052967f590a76e62eb387bd0bbb1b000182c3cefe5364db6b7211651bc0"
-dependencies = [
- "byteorder",
- "digest 0.9.0",
- "rand_core 0.5.1",
- "subtle",
- "zeroize",
-]
-
-[[package]]
-name = "curve25519-dalek"
 version = "4.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a677b8922c94e01bdbb12126b0bc852f00447528dee1782229af9c720c3f348"
@@ -1018,7 +951,7 @@ version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
- "block-buffer 0.10.4",
+ "block-buffer",
  "crypto-common",
  "subtle",
 ]
@@ -1064,34 +997,11 @@ checksum = "53aff6fdc1b181225acdcb5b14c47106726fd8e486707315b1b138baed68ee31"
 
 [[package]]
 name = "ed25519"
-version = "1.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91cff35c70bba8a626e3185d8cd48cc11b5437e1a5bcd15b9b5fa3c64b6dfee7"
-dependencies = [
- "signature 1.6.4",
-]
-
-[[package]]
-name = "ed25519"
 version = "2.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115531babc129696a58c64a4fef0a8bf9e9698629fb97e9e40767d235cfbcd53"
 dependencies = [
- "signature 2.2.0",
-]
-
-[[package]]
-name = "ed25519-dalek"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c762bae6dcaf24c4c84667b8579785430908723d5c889f469d76a41d59cc7a9d"
-dependencies = [
- "curve25519-dalek 3.2.1",
- "ed25519 1.5.3",
- "rand 0.7.3",
- "serde",
- "sha2 0.9.9",
- "zeroize",
+ "signature",
 ]
 
 [[package]]
@@ -1100,10 +1010,10 @@ version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a3daa8e81a3963a60642bcc1f90a670680bd4a77535faa384e9d1c79d620871"
 dependencies = [
- "curve25519-dalek 4.1.2",
- "ed25519 2.2.3",
+ "curve25519-dalek",
+ "ed25519",
  "rand_core 0.6.4",
- "sha2 0.10.7",
+ "sha2",
  "subtle",
 ]
 
@@ -1450,9 +1360,6 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-dependencies = [
- "ahash",
-]
 
 [[package]]
 name = "hashbrown"
@@ -1958,55 +1865,34 @@ dependencies = [
 
 [[package]]
 name = "near-account-id"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc0cb40869cab7f5232f934f45db35bffe0f2d2a7cb0cd0346202fbe4ebf2dd7"
-dependencies = [
- "borsh 0.10.3",
- "serde",
-]
-
-[[package]]
-name = "near-account-id"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35cbb989542587b47205e608324ddd391f0cee1c22b4b64ae49f458334b95907"
 dependencies = [
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "serde",
 ]
 
 [[package]]
 name = "near-chain-configs"
-version = "0.17.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4f9a1c805846237d56f99b328ba6ab77e5d43ef59aaaf8d2a41d42fdc708a7b"
+checksum = "d05e5a8ace81c09d7eb165dffc1742358a021b2fa761f2160943305f83216003"
 dependencies = [
  "anyhow",
+ "bytesize",
  "chrono",
  "derive_more",
- "near-config-utils 0.17.0",
- "near-crypto 0.17.0",
- "near-o11y 0.17.0",
- "near-primitives 0.17.0",
+ "near-config-utils",
+ "near-crypto",
+ "near-parameters",
+ "near-primitives",
  "num-rational",
  "once_cell",
  "serde",
  "serde_json",
- "sha2 0.10.7",
+ "sha2",
  "smart-default",
- "tracing",
-]
-
-[[package]]
-name = "near-config-utils"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5523e7dce493c45bc3241eb3100d943ec471852f9b1f84b46a34789eadf17031"
-dependencies = [
- "anyhow",
- "json_comments",
- "thiserror",
  "tracing",
 ]
 
@@ -2033,48 +1919,21 @@ dependencies = [
 
 [[package]]
 name = "near-crypto"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff6b382b626e7e0cd372d027c6672ac97b4b6ee6114288c9e58d8180b935d315"
-dependencies = [
- "blake2",
- "borsh 0.10.3",
- "bs58 0.4.0",
- "c2-chacha",
- "curve25519-dalek 3.2.1",
- "derive_more",
- "ed25519-dalek 1.0.1",
- "hex",
- "near-account-id 0.17.0",
- "near-config-utils 0.17.0",
- "near-stdx 0.17.0",
- "once_cell",
- "primitive-types",
- "rand 0.7.3",
- "secp256k1",
- "serde",
- "serde_json",
- "subtle",
- "thiserror",
-]
-
-[[package]]
-name = "near-crypto"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2991d2912218a80ec0733ac87f84fa803accea105611eea209d4419271957667"
 dependencies = [
  "blake2",
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "bs58 0.4.0",
  "c2-chacha",
- "curve25519-dalek 4.1.2",
+ "curve25519-dalek",
  "derive_more",
- "ed25519-dalek 2.1.1",
+ "ed25519-dalek",
  "hex",
- "near-account-id 1.0.0",
- "near-config-utils 0.20.1",
- "near-stdx 0.20.1",
+ "near-account-id",
+ "near-config-utils",
+ "near-stdx",
  "once_cell",
  "primitive-types",
  "rand 0.7.3",
@@ -2083,15 +1942,6 @@ dependencies = [
  "serde_json",
  "subtle",
  "thiserror",
-]
-
-[[package]]
-name = "near-fmt"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c44c842c6cfcd9b8c387cccd4cd0619a5f21920cde5d5c292af3cc5d40510672"
-dependencies = [
- "near-primitives-core 0.17.0",
 ]
 
 [[package]]
@@ -2100,7 +1950,7 @@ version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7d998dfc1e04001608899b2498ad5a782c7d036b73769d510de21964db99286"
 dependencies = [
- "near-primitives-core 0.20.1",
+ "near-primitives-core",
 ]
 
 [[package]]
@@ -2109,24 +1959,24 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14e75c875026229902d065e4435804497337b631ec69ba746b102954273e9ad1"
 dependencies = [
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "schemars",
  "serde",
 ]
 
 [[package]]
 name = "near-jsonrpc-client"
-version = "0.6.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "118f44c02ad211db805c1370ad3ff26576af6ff554093c9fece1b835d29d233a"
+checksum = "18ad81e015f7aced8925d5b9ba3f369b36da9575c15812cfd0786bc1213284ca"
 dependencies = [
- "borsh 0.10.3",
+ "borsh 1.3.1",
  "lazy_static",
  "log",
  "near-chain-configs",
- "near-crypto 0.17.0",
+ "near-crypto",
  "near-jsonrpc-primitives",
- "near-primitives 0.17.0",
+ "near-primitives",
  "reqwest",
  "serde",
  "serde_json",
@@ -2135,44 +1985,18 @@ dependencies = [
 
 [[package]]
 name = "near-jsonrpc-primitives"
-version = "0.17.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97b2934b5ab243e25e951c984525ba0aff0e719ed915c988c5195405aa0f6987"
+checksum = "b0ce745e954ae776eef05957602e638ee9581106a3675946fb43c2fe7e38ef03"
 dependencies = [
  "arbitrary",
  "near-chain-configs",
- "near-crypto 0.17.0",
- "near-primitives 0.17.0",
- "near-rpc-error-macro 0.17.0",
+ "near-crypto",
+ "near-primitives",
+ "near-rpc-error-macro",
  "serde",
  "serde_json",
  "thiserror",
-]
-
-[[package]]
-name = "near-o11y"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af7d35397b02b131c188c72f3885e97daeccab134ec2fc8cc0073a94cf1cfe19"
-dependencies = [
- "actix",
- "atty",
- "clap 4.2.0",
- "near-crypto 0.17.0",
- "near-primitives-core 0.17.0",
- "once_cell",
- "opentelemetry",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
- "prometheus",
- "serde",
- "strum 0.24.1",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-appender",
- "tracing-opentelemetry",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -2184,9 +2008,9 @@ dependencies = [
  "actix",
  "base64 0.21.2",
  "clap 4.2.0",
- "near-crypto 0.20.1",
- "near-fmt 0.20.1",
- "near-primitives-core 0.20.1",
+ "near-crypto",
+ "near-fmt",
+ "near-primitives-core",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",
@@ -2210,10 +2034,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9f16a59b6c3e69b0585be951af6fe42a0ba86c0e207cb8c63badd19efd16680"
 dependencies = [
  "assert_matches",
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "enum-map",
- "near-account-id 1.0.0",
- "near-primitives-core 0.20.1",
+ "near-account-id",
+ "near-primitives-core",
  "num-rational",
  "serde",
  "serde_repr",
@@ -2224,50 +2048,13 @@ dependencies = [
 
 [[package]]
 name = "near-primitives"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f7051aaf199adc4d068620fca6d5f70f906a1540d03a8bb3701271f8881835"
-dependencies = [
- "arbitrary",
- "borsh 0.10.3",
- "bytesize",
- "cfg-if 1.0.0",
- "chrono",
- "derive_more",
- "easy-ext",
- "enum-map",
- "hex",
- "near-crypto 0.17.0",
- "near-fmt 0.17.0",
- "near-primitives-core 0.17.0",
- "near-rpc-error-macro 0.17.0",
- "near-stdx 0.17.0",
- "near-vm-errors",
- "num-rational",
- "once_cell",
- "primitive-types",
- "rand 0.8.5",
- "reed-solomon-erasure",
- "serde",
- "serde_json",
- "serde_with",
- "serde_yaml",
- "smart-default",
- "strum 0.24.1",
- "thiserror",
- "time",
- "tracing",
-]
-
-[[package]]
-name = "near-primitives"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0462b067732132babcc89d5577db3bfcb0a1bcfbaaed3f2db4c11cd033666314"
 dependencies = [
  "arbitrary",
  "base64 0.21.2",
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "bytesize",
  "cfg-if 1.0.0",
  "chrono",
@@ -2275,13 +2062,13 @@ dependencies = [
  "easy-ext",
  "enum-map",
  "hex",
- "near-crypto 0.20.1",
- "near-fmt 0.20.1",
- "near-o11y 0.20.1",
+ "near-crypto",
+ "near-fmt",
+ "near-o11y",
  "near-parameters",
- "near-primitives-core 0.20.1",
- "near-rpc-error-macro 0.20.1",
- "near-stdx 0.20.1",
+ "near-primitives-core",
+ "near-rpc-error-macro",
+ "near-stdx",
  "near-vm-runner",
  "num-rational",
  "once_cell",
@@ -2303,57 +2090,24 @@ dependencies = [
 
 [[package]]
 name = "near-primitives-core"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "775fec19ef51a341abdbf792a9dda5b4cb89f488f681b2fd689b9321d24db47b"
-dependencies = [
- "arbitrary",
- "base64 0.21.2",
- "borsh 0.10.3",
- "bs58 0.4.0",
- "derive_more",
- "enum-map",
- "near-account-id 0.17.0",
- "num-rational",
- "serde",
- "serde_repr",
- "serde_with",
- "sha2 0.10.7",
- "strum 0.24.1",
- "thiserror",
-]
-
-[[package]]
-name = "near-primitives-core"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8443eb718606f572c438be6321a097a8ebd69f8e48d953885b4f16601af88225"
 dependencies = [
  "arbitrary",
  "base64 0.21.2",
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "bs58 0.4.0",
  "derive_more",
  "enum-map",
- "near-account-id 1.0.0",
+ "near-account-id",
  "num-rational",
  "serde",
  "serde_repr",
  "serde_with",
- "sha2 0.10.7",
+ "sha2",
  "strum 0.24.1",
  "thiserror",
-]
-
-[[package]]
-name = "near-rpc-error-core"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84c1eda300e2e78f4f945ae58117d49e806899f4a51ee2faa09eda5ebc2e6571"
-dependencies = [
- "quote",
- "serde",
- "syn 2.0.28",
 ]
 
 [[package]]
@@ -2369,24 +2123,12 @@ dependencies = [
 
 [[package]]
 name = "near-rpc-error-macro"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31d2dadd765101c77e664029dd6fbec090e696877d4ae903c620d02ceda4969a"
-dependencies = [
- "fs2",
- "near-rpc-error-core 0.17.0",
- "serde",
- "syn 2.0.28",
-]
-
-[[package]]
-name = "near-rpc-error-macro"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "897a445de2102f6732c8a185d922f5e3bf7fd0a41243ce40854df2197237f799"
 dependencies = [
  "fs2",
- "near-rpc-error-core 0.20.1",
+ "near-rpc-error-core",
  "serde",
  "syn 2.0.28",
 ]
@@ -2412,14 +2154,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5c2e7c9524308b1b301cca05d875de13b3b20dc8b92e71f3890b380372e4c88"
 dependencies = [
  "base64 0.21.2",
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "bs58 0.5.0",
- "near-account-id 1.0.0",
- "near-crypto 0.20.1",
+ "near-account-id",
+ "near-crypto",
  "near-gas",
  "near-parameters",
- "near-primitives 0.20.1",
- "near-primitives-core 0.20.1",
+ "near-primitives",
+ "near-primitives-core",
  "near-sdk-macros",
  "near-sys",
  "near-token",
@@ -2449,12 +2191,6 @@ dependencies = [
 
 [[package]]
 name = "near-stdx"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6540152fba5e96fe5d575b79e8cd244cf2add747bb01362426bdc069bc3a23bc"
-
-[[package]]
-name = "near-stdx"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "855fd5540e3b4ff6fedf12aba2db1ee4b371b36f465da1363a6d022b27cb43b8"
@@ -2471,22 +2207,8 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b68f3f8a2409f72b43efdbeff8e820b81e70824c49fee8572979d789d1683fb"
 dependencies = [
- "borsh 1.1.2",
+ "borsh 1.3.1",
  "serde",
-]
-
-[[package]]
-name = "near-vm-errors"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec545d1bede0579e7c15dd2dce9b998dc975c52f2165702ff40bec7ff69728bb"
-dependencies = [
- "borsh 0.10.3",
- "near-account-id 0.17.0",
- "near-rpc-error-macro 0.17.0",
- "serde",
- "strum 0.24.1",
- "thiserror",
 ]
 
 [[package]]
@@ -2496,14 +2218,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c56c80bdb1954808f59bd36a9112377197b38d424991383bf05f52d0fe2e0da5"
 dependencies = [
  "base64 0.21.2",
- "borsh 1.1.2",
- "ed25519-dalek 2.1.1",
+ "borsh 1.3.1",
+ "ed25519-dalek",
  "enum-map",
  "memoffset",
- "near-crypto 0.20.1",
+ "near-crypto",
  "near-parameters",
- "near-primitives-core 0.20.1",
- "near-stdx 0.20.1",
+ "near-primitives-core",
+ "near-stdx",
  "num-rational",
  "once_cell",
  "prefix-sum-vec",
@@ -2511,7 +2233,7 @@ dependencies = [
  "serde",
  "serde_repr",
  "serde_with",
- "sha2 0.10.7",
+ "sha2",
  "sha3",
  "strum 0.24.1",
  "thiserror",
@@ -2521,13 +2243,12 @@ dependencies = [
 
 [[package]]
 name = "near-workspaces"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a14e772e49ba9644c06dad20f635b6463f74d378fa19822bfc35fef479c72e5"
+checksum = "a3e597da87d0c1a722e23efb8c24ae42a0ad99a15f37101dad45c15defb051c1"
 dependencies = [
  "async-trait",
  "base64 0.21.2",
- "borsh 0.10.3",
  "bs58 0.5.0",
  "cargo-near",
  "cargo_metadata 0.18.1",
@@ -2535,19 +2256,19 @@ dependencies = [
  "fs2",
  "json-patch",
  "libc",
- "near-account-id 0.17.0",
- "near-crypto 0.17.0",
+ "near-account-id",
+ "near-crypto",
  "near-gas",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
- "near-primitives 0.17.0",
+ "near-primitives",
  "near-sandbox-utils",
  "near-token",
  "rand 0.8.5",
  "reqwest",
  "serde",
  "serde_json",
- "sha2 0.10.7",
+ "sha2",
  "tempfile",
  "thiserror",
  "tokio",
@@ -2807,7 +2528,7 @@ dependencies = [
  "digest 0.10.7",
  "hmac",
  "password-hash",
- "sha2 0.10.7",
+ "sha2",
 ]
 
 [[package]]
@@ -2869,7 +2590,7 @@ checksum = "b42f0394d3123e33353ca5e1e89092e533d2cc490389f2bd6131c43c634ebc5f"
 dependencies = [
  "once_cell",
  "pest",
- "sha2 0.10.7",
+ "sha2",
 ]
 
 [[package]]
@@ -2986,11 +2707,10 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "2.0.1"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97dc5fea232fc28d2f597b37c4876b348a40e33f3b02cc975c8d006d78d94b1a"
+checksum = "6d37c51ca738a55da99dc0c4a34860fd675453b8b36209178c2249bb13651284"
 dependencies = [
- "toml_datetime",
  "toml_edit",
 ]
 
@@ -3638,19 +3358,6 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.9.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
-dependencies = [
- "block-buffer 0.9.0",
- "cfg-if 1.0.0",
- "cpufeatures",
- "digest 0.9.0",
- "opaque-debug",
-]
-
-[[package]]
-name = "sha2"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "479fb9d862239e610720565ca91403019f2f00410f1864c5aa7479b950a76ed8"
@@ -3687,12 +3394,6 @@ checksum = "d8229b473baa5980ac72ef434c4415e70c4b5e71b423043adb4ba059f89c99a1"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "signature"
-version = "1.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74233d3b3b2f6d4b006dc19dee745e73e2a6bfb6f93607cd3b02bd5b00797d7c"
 
 [[package]]
 name = "signature"
@@ -4145,15 +3846,15 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.3"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cda73e2f1397b1262d6dfdcef8aafae14d1de7748d66822d3bfeeb6d03e5e4b"
+checksum = "3550f4e9685620ac18a50ed434eb3aec30db8ba93b0287467bca5826ea25baf1"
 
 [[package]]
 name = "toml_edit"
-version = "0.20.2"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "396e4d48bbb2b7554c944bde63101b5ae446cff6ec4a24227428f15eb72ef338"
+checksum = "6a8534fd7f78b5405e860340ad6575217ce99f38d4d5c8f2442cb5ecb50090e1"
 dependencies = [
  "indexmap 2.0.0",
  "toml_datetime",
@@ -4908,20 +4609,6 @@ name = "zeroize"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4756f7db3f7b5574938c3eb1c117038b8e07f95ee6718c0efad4ac21508f1efd"
-dependencies = [
- "zeroize_derive",
-]
-
-[[package]]
-name = "zeroize_derive"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.28",
-]
 
 [[package]]
 name = "zeropool-bn"
