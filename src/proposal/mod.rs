@@ -109,6 +109,12 @@ impl From<VersionedProposalBody> for ProposalBodyV0 {
     }
 }
 
+impl From<ProposalBodyV0> for VersionedProposalBody {
+    fn from(p: ProposalBodyV0) -> Self {
+        VersionedProposalBody::V0(p)
+    }
+}
+
 impl VersionedProposalBody {
     pub fn latest_version(self) -> ProposalBodyV0 {
         self.into()

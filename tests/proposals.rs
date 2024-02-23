@@ -312,7 +312,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
-    assert!(!add_proposal_incorrect_timeline_status.is_success());
+    assert!(add_proposal_incorrect_timeline_status.is_failure());
 
     let add_proposal_incorrect_payout = contract
         .call("add_proposal")
@@ -339,7 +339,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    assert!(!add_proposal_incorrect_payout.is_success());
+    assert!(add_proposal_incorrect_payout.is_failure());
 
     let edit_proposal_incorrect_timeline_status = second_account.call(contract.id(), "edit_proposal")
         .args_json(json!({
@@ -482,25 +482,10 @@ async fn test_proposal() -> anyhow::Result<()> {
     assert!(_edit_proposal_timeline_approved.is_success());
 
     let _edit_proposal_timeline_rejected = contract
-        .call("edit_proposal")
+        .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "body": {
-                "proposal_body_version": "V0",
-                "name": "another post",
-                "description": "some description",
-                "category": "Three",
-                "summary": "sum",
-                "linked_proposals": [1, 3],
-                "requested_sponsorship_amount": "1000000000",
-                "requested_sponsorship_token": "USD",
-                "receiver_account": "polyprogrammist.near",
-                "supervisor": "frol.near",
-                "requested_sponsor": "neardevdao.near",
-                "payouts": [],
-                "timeline": {"status": "REJECTED", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
-            },
-            "labels": ["test1", "test2"],
+            "timeline": {"status": "REJECTED", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -510,25 +495,10 @@ async fn test_proposal() -> anyhow::Result<()> {
     assert!(_edit_proposal_timeline_rejected.is_success());
 
     let _edit_proposal_timeline_conditionally = contract
-        .call("edit_proposal")
+        .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "body": {
-                "proposal_body_version": "V0",
-                "name": "another post",
-                "description": "some description",
-                "category": "Three",
-                "summary": "sum",
-                "linked_proposals": [1, 3],
-                "requested_sponsorship_amount": "1000000000",
-                "requested_sponsorship_token": "USD",
-                "receiver_account": "polyprogrammist.near",
-                "supervisor": "frol.near",
-                "requested_sponsor": "neardevdao.near",
-                "payouts": [],
-                "timeline": {"status": "APPROVED_CONDITIONALLY", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
-            },
-            "labels": ["test1", "test2"],
+            "timeline": {"status": "APPROVED_CONDITIONALLY", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -538,25 +508,10 @@ async fn test_proposal() -> anyhow::Result<()> {
     assert!(_edit_proposal_timeline_conditionally.is_success());
 
     let _edit_proposal_timeline_payment = contract
-        .call("edit_proposal")
+        .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "body": {
-                "proposal_body_version": "V0",
-                "name": "another post",
-                "description": "some description",
-                "category": "Three",
-                "summary": "sum",
-                "linked_proposals": [1, 3],
-                "requested_sponsorship_amount": "1000000000",
-                "requested_sponsorship_token": "USD",
-                "receiver_account": "polyprogrammist.near",
-                "supervisor": "frol.near",
-                "requested_sponsor": "neardevdao.near",
-                "payouts": [],
-                "timeline": {"status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
-            },
-            "labels": ["test1", "test2"],
+            "timeline": {"status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -566,25 +521,10 @@ async fn test_proposal() -> anyhow::Result<()> {
     assert!(_edit_proposal_timeline_payment.is_success());
 
     let _edit_proposal_timeline_funded = contract
-        .call("edit_proposal")
+        .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "body": {
-                "proposal_body_version": "V0",
-                "name": "another post",
-                "description": "some description",
-                "category": "Three",
-                "summary": "sum",
-                "linked_proposals": [1, 3],
-                "requested_sponsorship_amount": "1000000000",
-                "requested_sponsorship_token": "USD",
-                "receiver_account": "polyprogrammist.near",
-                "supervisor": "frol.near",
-                "requested_sponsor": "neardevdao.near",
-                "payouts": [],
-                "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
-            },
-            "labels": ["test1", "test2"],
+            "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -592,6 +532,65 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?;
 
     assert!(_edit_proposal_timeline_funded.is_success());
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert_eq!(get_proposal["snapshot"]["timeline"]["status"], "FUNDED");
+
+    let _add_team = contract
+        .call("add_member")
+        .args_json(json!({
+            "member": "team:moderators",
+            "metadata": {
+                "member_metadata_version": "V0",
+                "children": [],
+                "description": "moderators",
+                "parents": [],
+                "permissions": {
+                    "*": ["use-labels", "edit-post"]
+                }
+            }
+        }))
+        .max_gas()
+        .deposit(NearToken::from_near(0))
+        .transact()
+        .await?;
+
+    let _add_member = contract
+        .call("add_member")
+        .args_json(json!({
+            "member": "second.test.near",
+            "metadata": {
+                "member_metadata_version": "V0",
+                "children": [],
+                "description": "One of the moderators",
+                "parents": ["team:moderators"],
+                "permissions": {}
+            }
+        }))
+        .max_gas()
+        .deposit(NearToken::from_near(0))
+        .transact()
+        .await?;
+
+    let is_allowed_to_edit_proposal_again = contract
+        .call("is_allowed_to_edit_proposal")
+        .args_json(json!({
+            "proposal_id": 0,
+            "editor": "second.test.near"
+        }))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    assert!(is_allowed_to_edit_proposal_again.as_bool().unwrap());
 
     Ok(())
 }
