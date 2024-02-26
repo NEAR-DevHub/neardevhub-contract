@@ -2,15 +2,13 @@ use super::{Like, PostStatus};
 use crate::str_serializers::*;
 use crate::{AttestationId, CommentId, SolutionId};
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::schemars::JsonSchema;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, Timestamp};
+use near_sdk::{AccountId, NearSchema, Timestamp};
 use std::collections::HashSet;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct Attestation {
     // Common fields
     pub id: AttestationId,
@@ -34,20 +32,18 @@ pub struct Attestation {
     pub submission_id: SolutionId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub struct AttestationV1 {
     pub name: String,
     pub description: String,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, JsonSchema)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "attestation_version")]
 #[borsh(crate = "near_sdk::borsh")]
-#[schemars(crate = "near_sdk::schemars")]
 pub enum VersionedAttestation {
     V0(Attestation),
     V1(AttestationV1),

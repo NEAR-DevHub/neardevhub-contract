@@ -10,17 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v1
-      - run: rustup target add wasm32-unknown-unknown
+      - name: Install cargo-near
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
       - name: Build discussions contract
-        run: cd discussions && ./build.sh
+        run: cd discussions && cargo near build
       - name: Build community contract
-        run: cd community && ./build.sh
+        run: cd community && cargo near build
       - name: Build community factory contract
-        run: cd community-factory && ./build.sh
+        run: cd community-factory && cargo near build
       - name: Build devhub contract
-        run: ./build.sh
+        run: cargo near build
       - name: Unit tests
-        run: |
-          cargo test
+        run: cargo test
