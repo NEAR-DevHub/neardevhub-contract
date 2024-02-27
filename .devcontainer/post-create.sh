@@ -1,6 +1,6 @@
 #!/bin/bash
 
-(cd discussions && ./build.sh)
-(cd community && ./build.sh)
-(cd community-factory && ./build.sh)
-./build.sh
+(cd discussions && cargo near build)
+(cd community && cargo near build)
+(cd community-factory && cargo near build)
+cargo near build
