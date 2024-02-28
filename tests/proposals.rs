@@ -304,7 +304,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "requested_sponsor": "neardevdao.near",
                 "payouts": [],
-                "timeline": {"status": "REVIEW", "sponsor_requested_review": false, "reviewer_completed_attestation": false }
+                "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
         }))
