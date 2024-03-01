@@ -8,7 +8,7 @@ use {crate::test_env::*, serde_json::json};
 async fn test_proposal() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, worker, ..) = init_contracts_from_res().await?;
+    let (contract, worker, near_social) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(2);
 
@@ -51,6 +51,18 @@ async fn test_proposal() -> anyhow::Result<()> {
     let social_db_post_block_height: u64 =
         get_proposal["social_db_post_block_height"].as_str().unwrap().parse::<u64>()?;
     assert!(social_db_post_block_height > 0);
+
+    let first_proposal_social_post = String::from_utf8(
+        near_social
+            .call("get")
+            .args_json(json!({"keys": [format!("{}/post/main", contract.id())]}))
+            .view()
+            .await?
+            .result,
+    )
+    .unwrap();
+
+    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"There is a new proposal on DevHub from @devhub.near: “another post“\\\\n> sum\\\\n__Read the full proposal [here](/devhub.near/widget/app?page=proposal&id=0)__\\\"}\"}}}");
 
     let _edit_proposal_category = contract
         .call("edit_proposal")
@@ -168,6 +180,18 @@ async fn test_proposal() -> anyhow::Result<()> {
         .deposit(NearToken::from_near(1))
         .transact()
         .await?;
+
+    let second_proposal_social_post = String::from_utf8(
+        near_social
+            .call("get")
+            .args_json(json!({"keys": [format!("{}/post/main", contract.id())]}))
+            .view()
+            .await?
+            .result,
+    )
+    .unwrap();
+
+    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"There is a new proposal on DevHub from @second.test.near: “another author“\\\\n> sum\\\\n__Read the full proposal [here](/devhub.near/widget/app?page=proposal&id=2)__\\\"}\"}}}");
 
     let get_second_author_proposal: serde_json::Value = contract
         .call("get_proposal")
