@@ -7,7 +7,6 @@ use self::timeline::TimelineStatus;
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
-use crate::SponsorshipToken;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
@@ -83,8 +82,8 @@ pub struct ProposalBodyV0 {
         serialize_with = "u32_dec_format::serialize",
         deserialize_with = "u32_dec_format::deserialize"
     )]
-    pub requested_sponsorship_amount: u32,
-    pub requested_sponsorship_token: SponsorshipToken,
+    pub requested_sponsorship_usd_amount: u32,
+    pub requested_sponsorship_paid_in_currency: ProposalFundingCurrency,
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,
     pub supervisor: Option<AccountId>,
@@ -142,4 +141,14 @@ pub fn default_categories() -> Vec<String> {
         String::from("Tooling & Infrastructures"),
         String::from("Other"),
     ]
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
+#[serde(crate = "near_sdk::serde")]
+#[borsh(crate = "near_sdk::borsh")]
+pub enum ProposalFundingCurrency {
+    NEAR,
+    USDT,
+    USDC,
+    OTHER,
 }
