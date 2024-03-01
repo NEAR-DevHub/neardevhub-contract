@@ -246,10 +246,6 @@ impl Contract {
             ),
             "Cannot use these labels"
         );
-        require!(
-            proposal_body.payouts.is_empty(),
-            "Can't add proposal with payouts at the beginning"
-        );
 
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
@@ -596,12 +592,15 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
+        let current_timeline = proposal.snapshot.body.clone().latest_version().timeline;
+
         require!(
             self.has_moderator(editor_id.clone())
             || editor_id.clone() == env::current_account_id()
-            || (proposal.snapshot.body.clone().latest_version().timeline.is_draft())
+            || current_timeline.is_draft()
                 && (proposal_body.timeline.is_empty_review()
-                || proposal_body.timeline.is_draft()),
+                || proposal_body.timeline.is_draft())
+            || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 

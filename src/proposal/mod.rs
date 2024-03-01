@@ -10,7 +10,6 @@ use crate::str_serializers::*;
 use crate::SponsorshipToken;
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::Base58CryptoHash;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, BlockHeight, NearSchema, Timestamp};
 
@@ -89,7 +88,6 @@ pub struct ProposalBodyV0 {
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,
     pub supervisor: Option<AccountId>,
-    pub payouts: Vec<Base58CryptoHash>,
     pub timeline: TimelineStatus,
 }
 

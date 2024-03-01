@@ -13,6 +13,7 @@ pub enum TimelineStatus {
     ApprovedConditionally(ReviewStatus),
     PaymentProcessing(PaymentProcessingStatus),
     Funded(FundedStatus),
+    Cancelled(ReviewStatus),
 }
 
 impl TimelineStatus {
@@ -26,6 +27,18 @@ impl TimelineStatus {
                 !review_status.sponsor_requested_review
                     && !review_status.reviewer_completed_attestation
             }
+            _ => false,
+        }
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, TimelineStatus::Cancelled(..))
+    }
+
+    pub fn can_be_cancelled(&self) -> bool {
+        match self {
+            TimelineStatus::Draft => true,
+            TimelineStatus::Review(..) => true,
             _ => false,
         }
     }
@@ -57,4 +70,5 @@ pub struct FundedStatus {
     #[serde(flatten)]
     payment_processing_status: PaymentProcessingStatus,
     trustees_released_payment: bool,
+    payouts: Vec<String>,
 }
