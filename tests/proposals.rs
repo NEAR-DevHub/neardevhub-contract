@@ -27,7 +27,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [ ],
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
@@ -80,7 +79,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -116,7 +114,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test3"],
@@ -171,7 +168,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test2", "test3"],
@@ -327,7 +323,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "requested_sponsorship_token": "USD",
                 "receiver_account": "polyprogrammist.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -337,33 +332,6 @@ async fn test_proposal() -> anyhow::Result<()> {
         .transact()
         .await?;
     assert!(add_proposal_incorrect_timeline_status.is_failure());
-
-    let add_proposal_incorrect_payout = contract
-        .call("add_proposal")
-        .args_json(json!({
-            "body": {
-                "proposal_body_version": "V0",
-                "name": "another post",
-                "description": "some description",
-                "category": "Events",
-                "summary": "sum",
-                "linked_proposals": [1, 3],
-                "requested_sponsorship_amount": "1000000000",
-                "requested_sponsorship_token": "USD",
-                "receiver_account": "polyprogrammist.near",
-                "supervisor": "frol.near",
-                "requested_sponsor": "neardevdao.near",
-                "payouts": [ "2cXzSP1Z9AM8A7mg18voh9c4sBmiUzxzyDXiYW5fiZd6" ],
-                "timeline": {"status": "DRAFT"}
-            },
-            "labels": ["test1", "test2"],
-        }))
-        .max_gas()
-        .deposit(deposit_amount)
-        .transact()
-        .await?;
-
-    assert!(add_proposal_incorrect_payout.is_failure());
 
     let edit_proposal_incorrect_timeline_status = second_account.call(contract.id(), "edit_proposal")
         .args_json(json!({
@@ -380,7 +348,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -407,7 +374,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [ "5PHaiXRvtZTYVSEBN5prT6M1odceCPxKzgpTZDmqrZsC" ],
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": false, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -418,6 +384,32 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?;
 
     assert!(edit_proposal_to_review.is_success());
+
+    let edit_proposal_to_cancelled: near_workspaces::result::ExecutionFinalResult = second_account.call(contract.id(), "edit_proposal")
+        .args_json(json!({
+            "id": 2,
+            "body": {
+                "proposal_body_version": "V0",
+                "name": "another post",
+                "description": "some description",
+                "category": "Events",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_amount": "1000000000",
+                "requested_sponsorship_token": "USD",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "CANCELLED", "sponsor_requested_review": false, "reviewer_completed_attestation": false }
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(edit_proposal_to_cancelled.is_success());
 
     let set_categories_not_allowed = second_account
         .call(contract.id(), "set_allowed_categories")
@@ -465,7 +457,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -493,7 +484,6 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "receiver_account": "polyprogrammist.near",
                 "supervisor": "frol.near",
                 "requested_sponsor": "neardevdao.near",
-                "payouts": [],
                 "timeline": {"status": "APPROVED", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
@@ -504,6 +494,32 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?;
 
     assert!(_edit_proposal_timeline_approved.is_success());
+
+    let edit_proposal_to_cancelled_incorrect: near_workspaces::result::ExecutionFinalResult = second_account.call(contract.id(), "edit_proposal")
+        .args_json(json!({
+            "id": 2,
+            "body": {
+                "proposal_body_version": "V0",
+                "name": "another post",
+                "description": "some description",
+                "category": "Events",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_amount": "1000000000",
+                "requested_sponsorship_token": "USD",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "CANCELLED", "sponsor_requested_review": false, "reviewer_completed_attestation": false }
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(edit_proposal_to_cancelled_incorrect.is_failure());
 
     let _edit_proposal_timeline_rejected = contract
         .call("edit_proposal_timeline")
@@ -548,7 +564,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
+            "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
         }))
         .max_gas()
         .deposit(deposit_amount)
