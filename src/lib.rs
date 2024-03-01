@@ -254,8 +254,8 @@ impl Contract {
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         require!(
-            proposal_body.timeline.is_draft(),
-            "Cannot create proposal which is not in a draft state"
+            proposal_body.timeline.is_draft() || proposal_body.timeline.is_empty_review(),
+            "Cannot create proposal which is not in a draft or a review state"
         );
 
         for label in &labels {
