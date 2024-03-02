@@ -49,10 +49,11 @@ pub fn notify_accounts(accounts: Vec<String>, notify_value: serde_json::Value) {
             .with_static_gas(env::prepaid_gas().saturating_div(4))
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
-            env::predecessor_account_id() : {
-                "index": {
-                    "notify": json!(notify_values).to_string()
-                } }
+                env::current_account_id() : {
+                    "index": {
+                        "notify": json!(notify_values).to_string()
+                    } 
+                }
             }));
     }
 }
@@ -115,7 +116,7 @@ fn notify(post_author: AccountId, notify_value: serde_json::Value) -> Promise {
         .with_static_gas(env::prepaid_gas().saturating_div(4))
         .with_attached_deposit(env::attached_deposit())
         .set(json!({
-            env::predecessor_account_id() : {
+            env::current_account_id() : {
                 "index": {
                     "notify": json!({
                         "key": post_author,
@@ -153,7 +154,7 @@ mod tests {
             &receipts[0].actions[0]
         {
             assert_eq!(method_name, b"set");
-            assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"a.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}},{\\\"key\\\":\\\"bcdefg.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}}]\"}}}}");
+            assert_eq!(args, b"{\"data\":{\"alice.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"a.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}},{\\\"key\\\":\\\"bcdefg.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":2}}]\"}}}}");
         } else {
             assert!(false, "Expected a function call ...")
         }
