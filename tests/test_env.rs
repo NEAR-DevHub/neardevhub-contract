@@ -1,4 +1,4 @@
-use near_sdk::{NearToken, AccountIdRef};
+use near_sdk::{AccountIdRef, NearToken};
 use near_workspaces::network::Sandbox;
 use near_workspaces::types::{AccessKey, KeyType, SecretKey};
 use near_workspaces::{Account, Worker};
@@ -7,13 +7,15 @@ use serde_json::json;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const DEVHUB_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("devhub.near");
-const DEVHUB_COMMUNITY_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("community.devhub.near");
+const DEVHUB_COMMUNITY_CONTRACT: &AccountIdRef =
+    AccountIdRef::new_or_panic("community.devhub.near");
 const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("social.near");
 const _TEST_NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("v1.social08.testnet");
 const TEST_SEED: &str = "testificate";
 const DEVHUB_CONTRACT_PATH: &str = "./target/near/devhub.wasm";
-const COMMUNITY_FACTORY_CONTRACT_PATH: &str = "./community-factory/target/near/devhub_community_factory.wasm";
+const COMMUNITY_FACTORY_CONTRACT_PATH: &str =
+    "./community-factory/target/near/devhub_community_factory.wasm";
 
 #[allow(dead_code)]
 pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Contract> {
