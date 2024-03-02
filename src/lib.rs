@@ -596,11 +596,11 @@ impl Contract {
 
         require!(
             self.has_moderator(editor_id.clone())
-            || editor_id.clone() == env::current_account_id()
-            || current_timeline.is_draft()
-                && (proposal_body.timeline.is_empty_review()
-                || proposal_body.timeline.is_draft())
-            || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
+                || editor_id.clone() == env::current_account_id()
+                || current_timeline.is_draft()
+                    && (proposal_body.timeline.is_empty_review()
+                        || proposal_body.timeline.is_draft())
+                || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
@@ -827,7 +827,8 @@ impl Contract {
         require!(community.handle == handle, "Community handle cannot be changed");
         require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
         self.communities.insert(&handle, &community);
-        let community_page_link = format!("/devhub.near/widget/app?page=community&handle={}", community.handle);
+        let community_page_link =
+            format!("/devhub.near/widget/app?page=community&handle={}", community.handle);
         social_db_contract().with_unused_gas_weight(1).set(json!({
             get_devhub_community_account(&community.handle): {
                 "profile": {
@@ -841,7 +842,11 @@ impl Contract {
                         "telegram": community.telegram_handle,
                         "website": format!("near.social{community_page_link}"),
                     },
-                    "description": format!("{}\n\nLearn more about our community [on DevHub]({}).", community.description, community_page_link),
+                    "description": format!(
+                        "{}\n\nLearn more about our community [on DevHub]({}).",
+                        community.bio_markdown.as_ref().unwrap_or(&community.description),
+                        community_page_link
+                    ),
                     "backgroundImage": {
                         "url": community.banner_url,
                     },
