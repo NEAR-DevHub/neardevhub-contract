@@ -827,13 +827,51 @@ impl Contract {
         require!(community.handle == handle, "Community handle cannot be changed");
         require!(env::prepaid_gas() >= UPDATE_COMMUNITY_GAS, "Require at least 30 Tgas");
         self.communities.insert(&handle, &community);
+        let community_page_link = format!("/devhub.near/widget/app?page=community&handle={}", community.handle);
         social_db_contract().with_unused_gas_weight(1).set(json!({
-            get_devhub_community_account(&community.handle)
-            : {
+            get_devhub_community_account(&community.handle): {
                 "profile": {
                     "name": community.name,
                     "image": {
                         "url": community.logo_url,
+                    },
+                    "linktree": {
+                        "twitter": community.twitter_handle,
+                        "github": community.github_handle,
+                        "telegram": community.telegram_handle,
+                        "website": format!("near.social{community_page_link}"),
+                    },
+                    "description": format!("{}\n\nLearn more about our community [on DevHub]({}).", community.description, community_page_link),
+                    "backgroundImage": {
+                        "url": community.banner_url,
+                    },
+                    "tags": {
+                        "community": "",
+                        "announcements": "",
+                        &community.handle: "",
+                    }
+                }
+            },
+            get_devhub_discussions_account(&community.handle):  {
+                "profile": {
+                    "name": format!("{} (Community Discussions)", community.name),
+                    "image": {
+                        "url": community.logo_url,
+                    },
+                    "linktree": {
+                        "twitter": community.twitter_handle,
+                        "github": community.github_handle,
+                        "telegram": community.telegram_handle,
+                        "website": format!("near.social{community_page_link}"),
+                    },
+                    "description": format!("{}\n\nLearn more about our community [on DevHub]({}).", community.description, community_page_link),
+                    "backgroundImage": {
+                        "url": community.banner_url,
+                    },
+                    "tags": {
+                        "community": "",
+                        "discussions": "",
+                        &community.handle: "",
                     }
                 }
             }
