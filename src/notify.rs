@@ -34,7 +34,11 @@ pub fn get_text_mentions(text: &str) -> Vec<String> {
     mentions
 }
 
-pub fn notify_accounts(notifier: AccountId, accounts: Vec<String>, notify_value: serde_json::Value) {
+pub fn notify_accounts(
+    notifier: AccountId,
+    accounts: Vec<String>,
+    notify_value: serde_json::Value,
+) {
     if !accounts.is_empty() {
         let mut notify_values = Vec::new();
 
@@ -52,7 +56,7 @@ pub fn notify_accounts(notifier: AccountId, accounts: Vec<String>, notify_value:
                 notifier : {
                     "index": {
                         "notify": json!(notify_values).to_string()
-                    } 
+                    }
                 }
             }));
     }
@@ -85,24 +89,15 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
 }
 
 pub fn notify_like(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(
-        env::predecessor_account_id(),
-        post_author, notify_value(post_id, "like")
-    )
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "like"))
 }
 
 pub fn notify_reply(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(
-        env::predecessor_account_id(),
-        post_author, notify_value(post_id, "reply")
-    )
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "reply"))
 }
 
 pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(
-        env::predecessor_account_id(),
-        post_author, notify_value(post_id, "edit")
-    )
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "edit"))
 }
 
 pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> Promise {
