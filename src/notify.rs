@@ -34,7 +34,11 @@ pub fn get_text_mentions(text: &str) -> Vec<String> {
     mentions
 }
 
-pub fn notify_accounts(accounts: Vec<String>, notify_value: serde_json::Value) {
+pub fn notify_accounts(
+    notifier: AccountId,
+    accounts: Vec<String>,
+    notify_value: serde_json::Value,
+) {
     if !accounts.is_empty() {
         let mut notify_values = Vec::new();
 
@@ -49,10 +53,11 @@ pub fn notify_accounts(accounts: Vec<String>, notify_value: serde_json::Value) {
             .with_static_gas(env::prepaid_gas().saturating_div(4))
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
-            env::predecessor_account_id() : {
-                "index": {
-                    "notify": json!(notify_values).to_string()
-                } }
+                notifier : {
+                    "index": {
+                        "notify": json!(notify_values).to_string()
+                    }
+                }
             }));
     }
 }
@@ -61,6 +66,7 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) {
     let accounts = get_subscribers(&proposal.snapshot.body.clone().latest_version());
 
     notify_accounts(
+        env::current_account_id(),
         accounts,
         json!({
             "type": "devgovgigs/mention",
@@ -73,6 +79,7 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
     let mentions = get_text_mentions(text);
 
     notify_accounts(
+        env::predecessor_account_id(),
         mentions,
         json!({
             "type": "devgovgigs/mention",
@@ -82,19 +89,20 @@ pub fn notify_mentions(text: &str, post_id: PostId) {
 }
 
 pub fn notify_like(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_author, notify_value(post_id, "like"))
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "like"))
 }
 
 pub fn notify_reply(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_author, notify_value(post_id, "reply"))
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "reply"))
 }
 
 pub fn notify_edit(post_id: PostId, post_author: AccountId) -> Promise {
-    notify(post_author, notify_value(post_id, "edit"))
+    notify(env::predecessor_account_id(), post_author, notify_value(post_id, "edit"))
 }
 
 pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> Promise {
     notify(
+        env::current_account_id(),
         post_author,
         json!({
             "type": format!("devgovgigs/{}", "edit"),
@@ -110,12 +118,12 @@ fn notify_value(post_id: PostId, action: &str) -> serde_json::Value {
     })
 }
 
-fn notify(post_author: AccountId, notify_value: serde_json::Value) -> Promise {
+fn notify(notifier: AccountId, post_author: AccountId, notify_value: serde_json::Value) -> Promise {
     social_db_contract()
         .with_static_gas(env::prepaid_gas().saturating_div(4))
         .with_attached_deposit(env::attached_deposit())
         .set(json!({
-            env::predecessor_account_id() : {
+            notifier : {
                 "index": {
                     "notify": json!({
                         "key": post_author,
