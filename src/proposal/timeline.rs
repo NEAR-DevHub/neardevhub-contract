@@ -31,6 +31,10 @@ impl TimelineStatus {
         }
     }
 
+    pub fn is_review(&self) -> bool {
+        matches!(self, TimelineStatus::Review(..))
+    }
+
     pub fn is_cancelled(&self) -> bool {
         matches!(self, TimelineStatus::Cancelled(..))
     }

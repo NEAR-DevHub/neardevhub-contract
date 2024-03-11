@@ -604,12 +604,10 @@ impl Contract {
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
-        if self.has_moderator(editor_id.clone()) && !proposal_body.supervisor.is_some() {
-            require!(
-                current_timeline == proposal_body.timeline,
-                "As a moderator, you can't change the timeline status of the proposal without adding a supervisor"
-            );
-        }
+        require!(
+            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
+            "You can't change the timeline of the proposal to this status without adding a supervisor"
+        );
         
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
