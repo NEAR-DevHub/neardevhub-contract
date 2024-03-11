@@ -69,7 +69,7 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) {
         env::current_account_id(),
         accounts,
         json!({
-            "type": "devgovgigs/mention",
+            "type": "devhub/mention",
             "proposal": proposal.id,
         }),
     )
@@ -105,7 +105,7 @@ pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> 
         env::current_account_id(),
         post_author,
         json!({
-            "type": format!("devgovgigs/{}", "edit"),
+            "type": format!("devhub/{}", "edit"),
             "proposal": proposal_id,
         }),
     )
