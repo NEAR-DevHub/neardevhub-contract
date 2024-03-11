@@ -604,6 +604,11 @@ impl Contract {
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
+        require!(
+            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
+            "You can't change the timeline of the proposal to this status without adding a supervisor"
+        );
+        
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         let old_snapshot = proposal.snapshot.clone();
@@ -1030,7 +1035,7 @@ mod tests {
             &receipts[0].actions[0]
         {
             assert_eq!(method_name, b"set");
-            assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"proposal\\\":0}}]\"}}}}");
+            assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0}}]\"}}}}");
         } else {
             assert!(false, "Expected a function call ...")
         }
