@@ -105,7 +105,7 @@ pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> 
         env::current_account_id(),
         post_author,
         json!({
-            "type": format!("devhub/{}", "edit"),
+            "type": "devhub/edit",
             "proposal": proposal_id,
         }),
     )
