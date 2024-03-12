@@ -71,6 +71,7 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) {
         json!({
             "type": "devhub/mention",
             "proposal": proposal.id,
+            "notifier": env::predecessor_account_id(),
         }),
     )
 }
@@ -107,6 +108,7 @@ pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> 
         json!({
             "type": "devhub/edit",
             "proposal": proposal_id,
+            "notifier": env::predecessor_account_id(),
         }),
     )
 }
