@@ -187,8 +187,6 @@ dependencies = [
 [[package]]
 name = "near-sdk"
 version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5c2e7c9524308b1b301cca05d875de13b3b20dc8b92e71f3890b380372e4c88"
 dependencies = [
  "base64",
  "borsh",
@@ -207,8 +205,6 @@ dependencies = [
 [[package]]
 name = "near-sdk-macros"
 version = "5.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1e9b23d9d7757ade258921c9cbc7923542e64d9d3b52a6cd91f746c77cb0a0f"
 dependencies = [
  "Inflector",
  "darling",
@@ -224,8 +220,6 @@ dependencies = [
 [[package]]
 name = "near-sys"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "397688591acf8d3ebf2c2485ba32d4b24fc10aad5334e3ad8ec0b7179bfdf06b"
 
 [[package]]
 name = "near-token"

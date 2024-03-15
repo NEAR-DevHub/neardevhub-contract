@@ -1,0 +1,86 @@
+ • Checking the host environment...done
+ • Collecting cargo project metadata...done
+ • Generating ABI
+ │     Updating crates.io index
+ │    Compiling devhub v0.2.0 (/Users/polyprogrammist/work/near/contr/neardevhub-contract)
+ │     Finished dev [unoptimized] target(s) in 9.67s
+ • Extracting ABI...done
+ • Compressing ABI to be embedded..done
+ • Building contract
+ │    Compiling near-sdk-macros v5.0.0
+ │    Compiling near-sdk-macros v5.0.0 (/Users/polyprogrammist/work/near/contr/near-sdk-rs/near-sdk-macros)
+ │    Compiling near-sys v0.2.1 (/Users/polyprogrammist/work/near/contr/near-sdk-rs/near-sys)
+ │    Compiling near-sdk v5.0.0
+ │    Compiling near-sdk v5.0.0 (/Users/polyprogrammist/work/near/contr/near-sdk-rs/near-sdk)
+ │    Compiling near-contract-standards v5.0.0
+ │    Compiling devhub v0.2.0 (/Users/polyprogrammist/work/near/contr/neardevhub-contract)
+ │ warning: unused imports: `BorshDeserialize`, `BorshSerialize`
+ │  --> src/access_control/mod.rs:4:23
+ │   |
+ │ 4 | use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+ │   |                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+ │   |
+ │   = note: `#[warn(unused_imports)]` on by default
+ │ 
+ │ warning: unused imports: `Deserialize`, `Serialize`
+ │  --> src/access_control/mod.rs:5:23
+ │   |
+ │ 5 | use near_sdk::serde::{Deserialize, Serialize};
+ │   |                       ^^^^^^^^^^^  ^^^^^^^^^
+ │ 
+ │ warning: unused import: `NearSchema`
+ │  --> src/access_control/mod.rs:6:22
+ │   |
+ │ 6 | use near_sdk::{near, NearSchema};
+ │   |                      ^^^^^^^^^^
+ │ 
+ │ warning: unused imports: `BorshDeserialize`, `BorshSerialize`
+ │  --> src/access_control/members.rs:2:23
+ │   |
+ │ 2 | use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+ │   |                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+ │ 
+ │ warning: unused imports: `Deserialize`, `Serialize`
+ │  --> src/access_control/members.rs:3:23
+ │   |
+ │ 3 | use near_sdk::serde::{Deserialize, Serialize};
+ │   |                       ^^^^^^^^^^^  ^^^^^^^^^
+ │ 
+ │ warning: unused imports: `BorshDeserialize`, `BorshSerialize`
+ │  --> src/access_control/rules.rs:1:23
+ │   |
+ │ 1 | use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+ │   |                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+ │ 
+ │ warning: unused imports: `Deserialize`, `Serialize`
+ │  --> src/access_control/rules.rs:2:23
+ │   |
+ │ 2 | use near_sdk::serde::{Deserialize, Serialize};
+ │   |                       ^^^^^^^^^^^  ^^^^^^^^^
+ │ 
+ │ warning: unused imports: `BorshDeserialize`, `BorshSerialize`
+ │  --> src/community/mod.rs:1:23
+ │   |
+ │ 1 | use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+ │   |                       ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+ │ 
+ │ warning: unused imports: `Deserialize`, `Serialize`
+ │  --> src/community/mod.rs:2:23
+ │   |
+ │ 2 | use near_sdk::serde::{Deserialize, Serialize};
+ │   |                       ^^^^^^^^^^^  ^^^^^^^^^
+ │ 
+ │ warning: unused import: `BorshSerialize`
+ │   --> src/lib.rs:22:41
+ │    |
+ │ 22 | use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+ │    |                                         ^^^^^^^^^^^^^^
+ │ 
+ │ warning: `devhub` (lib) generated 10 warnings (run `cargo fix --lib -p devhub` to apply 10 suggestions)
+ │     Finished release [optimized] target(s) in 38.50s
+ ✓ Contract successfully built!
+     -       Binary: /Users/polyprogrammist/work/near/contr/neardevhub-contract/target/near/devhub.wasm
+     -          ABI: /Users/polyprogrammist/work/near/contr/neardevhub-contract/target/near/devhub_abi.json
+     - Embedded ABI: /Users/polyprogrammist/work/near/contr/neardevhub-contract/target/near/devhub_abi.zst
+Here is the console command if you ever need to re-run it again:
+cargo near build

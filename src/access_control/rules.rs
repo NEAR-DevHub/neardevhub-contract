@@ -1,58 +1,22 @@
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::NearSchema;
+use near_sdk::near;
 use std::collections::{HashMap, HashSet};
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    Default,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct RulesList {
     #[serde(flatten)]
     pub rules: HashMap<Rule, VersionedRuleMetadata>,
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuleMetadata {
     pub description: String,
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[serde(tag = "rule_metadata_version")]
-#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedRuleMetadata {
     V0(RuleMetadata),
 }
@@ -63,23 +27,9 @@ impl From<RuleMetadata> for VersionedRuleMetadata {
     }
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    PartialOrd,
-    PartialEq,
-    Ord,
-    Eq,
-    Hash,
-    Debug,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Hash, Debug)]
 #[serde(from = "String", into = "String")]
-#[borsh(crate = "near_sdk::borsh")]
 pub enum Rule {
     /// Labels can be any string, but rules are created by the NEAR account owner of this contract,
     /// or small circle of moderators. So this code cannot be abused. Likely creating a label that

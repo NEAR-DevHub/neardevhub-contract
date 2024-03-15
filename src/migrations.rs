@@ -48,8 +48,8 @@ impl Contract {
 //     }
 // }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV2 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -95,8 +95,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV3 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -130,8 +130,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV4 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -168,8 +168,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV1 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -190,8 +190,8 @@ pub struct CommunityV1 {
     pub wiki2: Option<WikiPage>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV5 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -266,8 +266,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV2 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -288,8 +288,8 @@ pub struct CommunityV2 {
     pub wiki2: Option<WikiPage>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV6 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -371,8 +371,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV3 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -395,8 +395,8 @@ pub struct CommunityV3 {
     pub features: CommunityFeatureFlags,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV7 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -474,8 +474,7 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
 pub struct CommunityV4 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -499,8 +498,8 @@ pub struct CommunityV4 {
     pub addons: Vec<CommunityAddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV8 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -574,8 +573,7 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
 pub struct CommunityV5 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -592,8 +590,8 @@ pub struct CommunityV5 {
     pub addons: Vec<CommunityAddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV9 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -640,8 +638,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV10 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -658,8 +656,8 @@ pub struct ContractV10 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Debug)]
 pub(crate) enum StateVersion {
     V1,
     V2,

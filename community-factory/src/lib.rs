@@ -1,5 +1,4 @@
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::{env, require, AccountId, Gas, NearToken, Promise};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../community/target/near/devhub_community.wasm");
 const INITIAL_BALANCE: NearToken = NearToken::from_near(4);

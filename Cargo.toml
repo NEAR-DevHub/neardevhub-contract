@@ -8,12 +8,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = { git = "https://github.com/near/near-sdk-rs", branch = "master", features = ["legacy", "unit-testing"] }
+near-sdk = { path = "../near-sdk-rs/near-sdk", features = ["legacy", "unit-testing"] }
 near-contract-standards = "5.0.0"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 
 [dev-dependencies]
-near-sdk = { git = "https://github.com/near/near-sdk-rs", branch = "master", features = ["legacy", "unit-testing"] }
+near-sdk = { path = "../near-sdk-rs/near-sdk",features = ["legacy", "unit-testing"] }
 insta = { version = "1.31.0", features = ["json", "redactions"] }
 regex = "1"
 near-workspaces = { version = "0.10.0", features = ["unstable"], default-features = false  }
