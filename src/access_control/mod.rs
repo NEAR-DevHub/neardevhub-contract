@@ -3,7 +3,7 @@ use crate::access_control::rules::{Rule, RulesList};
 use crate::*;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{near_bindgen, NearSchema};
+use near_sdk::{near, NearSchema};
 use std::collections::{HashMap, HashSet};
 
 pub mod members;
@@ -17,7 +17,7 @@ pub struct AccessControl {
     pub members_list: MembersList,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn get_access_control_info(&self) -> &AccessControl {
         &self.access_control

@@ -3,17 +3,16 @@ use crate::social_db::social_db_contract;
 use near_sdk;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::Gas;
-use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
+use near_sdk::{env, require, AccountId, NearToken, Promise};
 
 const CODE: &[u8] = include_bytes!("../../discussions/target/near/devhub_discussions.wasm");
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Default)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(contract_state)]
+#[derive(Default)]
 pub struct Contract {}
 
-#[near_bindgen]
+#[near]
 impl Contract {
     #[payable]
     pub fn new(&mut self) -> Promise {
