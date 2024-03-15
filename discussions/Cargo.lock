@@ -187,6 +187,7 @@ dependencies = [
 [[package]]
 name = "near-sdk"
 version = "5.0.0"
+source = "git+https://github.com/PolyProgrammist/near-sdk-rs?branch=add-nearschema#7f94d65e534a029ad9eb4f90189516caf7fd046a"
 dependencies = [
  "base64",
  "borsh",
@@ -205,6 +206,7 @@ dependencies = [
 [[package]]
 name = "near-sdk-macros"
 version = "5.0.0"
+source = "git+https://github.com/PolyProgrammist/near-sdk-rs?branch=add-nearschema#7f94d65e534a029ad9eb4f90189516caf7fd046a"
 dependencies = [
  "Inflector",
  "darling",
@@ -220,6 +222,7 @@ dependencies = [
 [[package]]
 name = "near-sys"
 version = "0.2.1"
+source = "git+https://github.com/PolyProgrammist/near-sdk-rs?branch=add-nearschema#7f94d65e534a029ad9eb4f90189516caf7fd046a"
 
 [[package]]
 name = "near-token"

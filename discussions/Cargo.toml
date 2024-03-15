@@ -8,7 +8,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = { path = "../../near-sdk-rs/near-sdk" }
+near-sdk = { git = "https://github.com/PolyProgrammist/near-sdk-rs", branch = "add-nearschema" }
 
 [profile.release]
 codegen-units = 1
