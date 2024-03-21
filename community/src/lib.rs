@@ -23,18 +23,17 @@ impl Contract {
                 Some(Contract::get_devhub_account()),
                 None,
                 vec![env::current_account_id().to_string()],
-            );
-
-        self.create_discussions_account()
+            )
+            .then(self.create_discussions_account())
     }
 
-    pub fn destroy(&mut self) {
+    pub fn destroy(&mut self) -> Promise {
         let devhub_account = Contract::get_devhub_account();
         require!(
             env::predecessor_account_id() == devhub_account,
             "Can only destroy community account from DevHub contract"
         );
-        Promise::new(env::current_account_id()).delete_account(devhub_account);
+        Promise::new(env::current_account_id()).delete_account(devhub_account)
     }
 
     fn get_devhub_account() -> AccountId {
