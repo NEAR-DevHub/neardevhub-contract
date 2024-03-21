@@ -608,7 +608,7 @@ impl Contract {
             proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
             "You can't change the timeline of the proposal to this status without adding a supervisor"
         );
-        
+
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         let old_snapshot = proposal.snapshot.clone();

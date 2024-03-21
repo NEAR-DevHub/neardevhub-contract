@@ -61,8 +61,7 @@ async fn test_proposal() -> anyhow::Result<()> {
     )
     .unwrap();
 
-    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Marketing* proposal.\\\\n\\\\n        ———\\\\n        \\\\n        **By**: devhub.near\\\\n        \\\\n        **Title**: “another post“\\\\n         \\\\n        **Summary**:\\\\n        \\\\n        sum\\\\n        \\\\n        ———\\\\n        Read the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=0)\\\"}\"}}}");
-
+    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Marketing* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @devhub.near\\\\n\\\\n**Title**: “another post“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=0)\\\"}\"}}}");
     let _edit_proposal_category = contract
         .call("edit_proposal")
         .args_json(json!({
@@ -187,7 +186,7 @@ async fn test_proposal() -> anyhow::Result<()> {
     )
     .unwrap();
 
-    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Events* proposal.\\\\n\\\\n        ———\\\\n        \\\\n        **By**: second.test.near\\\\n        \\\\n        **Title**: “another author“\\\\n         \\\\n        **Summary**:\\\\n        \\\\n        sum\\\\n        \\\\n        ———\\\\n        Read the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=2)\\\"}\"}}}");
+    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Events* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @second.test.near\\\\n\\\\n**Title**: “another author“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=2)\\\"}\"}}}");
 
     let get_second_author_proposal: serde_json::Value = contract
         .call("get_proposal")

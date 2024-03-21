@@ -11,20 +11,7 @@ fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk:
     let category = proposal.snapshot.body.clone().latest_version().category;
 
     let text = format!(
-        "We have just received a new *{category}* proposal.
-
-        ———
-        
-        **By**: {author}
-        
-        **Title**: “{title}“
-         
-        **Summary**:
-        
-        {summary}
-        
-        ———
-        Read the full proposal and share your feedback on [DevHub]({proposal_link})",
+        "We have just received a new *{category}* proposal.\n\n———\n\n**By**: @{author}\n\n**Title**: “{title}“\n\n**Summary**:\n\n{summary}\n\n———\n\nRead the full proposal and share your feedback on [DevHub]({proposal_link})",
         author = proposal.author_id,
         proposal_link = proposal_link,
         title = title,
