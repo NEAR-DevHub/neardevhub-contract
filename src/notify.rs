@@ -177,6 +177,7 @@ mod tests {
         testing_env!(context);
         let text = "Not mentioning anyone";
         notify_mentions(text, 2);
-        assert_eq!(0, get_created_receipts().len());
+        assert_eq!(1, get_created_receipts().len());
+        assert_eq!(0, get_created_receipts()[0].actions.len());
     }
 }
