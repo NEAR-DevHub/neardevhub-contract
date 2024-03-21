@@ -1,15 +1,10 @@
 [package]
-name = "devhub-community"
+name = "devhub_common"
 version = "0.1.0"
-authors = ["NEAR DevHub <neardevhub.org>"]
 edition = "2021"
-
-[lib]
-crate-type = ["cdylib"]
 
 [dependencies]
 near-sdk = "5.0.0"
-devhub_common = { path = "../devhub_common" }
 
 [profile.release]
 codegen-units = 1

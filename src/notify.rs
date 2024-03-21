@@ -1,5 +1,5 @@
-use crate::social_db::social_db_contract;
 use crate::{get_subscribers, PostId, Proposal, ProposalId};
+use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 

@@ -1,5 +1,8 @@
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
+use near_sdk::serde_json::json;
+
+use devhub_common::social_db_contract;
 
 const CODE: &[u8] = include_bytes!("../../community/target/near/devhub_community.wasm");
 const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
@@ -31,7 +34,7 @@ impl Contract {
             format!("{}.{}", community, env::current_account_id()).parse().unwrap();
 
         let pubkey = PUBKEY_STR.parse().unwrap();
-        Promise::new(community_account_id)
+        Promise::new(community_account_id.clone())
             .create_account()
             .add_full_access_key(pubkey)
             .transfer(INITIAL_BALANCE)
@@ -42,5 +45,46 @@ impl Contract {
                 NearToken::from_near(0),
                 Gas::from_tgas(50),
             )
+            .then(
+                self.subscribe_to_community_accounts(community_account_id)
+            )
+    }
+
+    pub fn subscribe_to_community_accounts(&mut self, community_account_id: AccountId) -> Promise {
+        let community_factory_account = env::current_account_id();
+        let discussions_account_id: AccountId =
+            format!("discussions.{}", community_account_id.clone()).parse().unwrap();
+
+        social_db_contract()
+            .with_static_gas(env::prepaid_gas().saturating_div(3))
+            .with_attached_deposit(env::attached_deposit())
+            .set(json!({
+                community_factory_account: {
+                    "graph": {
+                        "follow": {
+                            community_account_id.clone(): "",
+                            discussions_account_id.clone(): "",
+                        }
+                    },
+                    "index": {
+                        "graph": json!([
+                            {
+                                "key": "follow",
+                                "value": {
+                                    "type": "follow",
+                                    "accountId": community_account_id
+                                }
+                            },
+                            {
+                                "key": "follow",
+                                "value": {
+                                    "type": "follow",
+                                    "accountId": discussions_account_id
+                                }
+                            }
+                        ]).to_string()
+                    }                  
+                },
+            }))
     }
 }

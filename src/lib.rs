@@ -6,18 +6,18 @@ mod notify;
 pub mod post;
 pub mod proposal;
 mod repost;
-mod social_db;
 pub mod stats;
 pub mod str_serializers;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use crate::social_db::{social_db_contract, SetReturnType};
 use community::*;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
+
+use devhub_common::{social_db_contract, SetReturnType};
 
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
@@ -608,7 +608,7 @@ impl Contract {
             proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
             "You can't change the timeline of the proposal to this status without adding a supervisor"
         );
-        
+
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         let old_snapshot = proposal.snapshot.clone();
