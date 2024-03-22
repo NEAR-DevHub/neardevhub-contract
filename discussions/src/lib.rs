@@ -1,6 +1,4 @@
-mod social_db;
-
-use crate::social_db::social_db_contract;
+use devhub_common::social_db_contract;
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen, require, AccountId, NearToken, Promise};
 
