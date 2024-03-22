@@ -284,7 +284,7 @@ impl Contract {
 
         proposal::repost::publish_to_socialdb_feed(
             Self::ext(env::current_account_id())
-                .with_static_gas(env::prepaid_gas().saturating_div(3))
+                .with_static_gas(env::prepaid_gas().saturating_div(4))
                 .set_block_height_callback(proposal.clone()),
             proposal.clone(),
         )
@@ -1038,7 +1038,7 @@ mod tests {
         assert_eq!(3, receipts.len());
 
         if let near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } =
-            &receipts[0].actions[0]
+            &receipts[2].actions[0]
         {
             assert_eq!(method_name, b"set");
             assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}}]\"}}}}");
