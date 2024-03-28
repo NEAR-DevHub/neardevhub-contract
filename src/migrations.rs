@@ -3,12 +3,12 @@
 //! latter is not asserted.
 
 use crate::*;
-use near_sdk::{borsh::to_vec, env, near_bindgen, NearToken, Promise};
+use near_sdk::{borsh::to_vec, env, near, NearToken, Promise};
 use std::cmp::min;
 use std::collections::HashSet;
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV1 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -17,7 +17,7 @@ pub struct ContractV1 {
 }
 
 // From ContractV1 to ContractV2
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_acl() {
         let ContractV1 { posts, post_to_parent, post_to_children, label_to_posts } =
@@ -48,8 +48,8 @@ impl Contract {
 //     }
 // }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV2 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -59,7 +59,7 @@ pub struct ContractV2 {
 }
 
 // From ContractV2 to ContractV3
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_post_authors() {
         let ContractV2 { posts, post_to_parent, post_to_children, label_to_posts, access_control } =
@@ -95,8 +95,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV3 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -107,7 +107,7 @@ pub struct ContractV3 {
 }
 
 // From ContractV3 to ContractV4
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_communities() {
         let ContractV3 {
@@ -130,8 +130,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV4 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -143,7 +143,7 @@ pub struct ContractV4 {
 }
 
 // From ContractV4 to ContractV5
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_featured_communities() {
         let ContractV4 {
@@ -168,8 +168,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV1 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -190,8 +190,8 @@ pub struct CommunityV1 {
     pub wiki2: Option<WikiPage>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV5 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -204,7 +204,7 @@ pub struct ContractV5 {
 }
 
 // From ContractV5 to ContractV6
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_multiple_telegrams() {
         let ContractV5 {
@@ -266,8 +266,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV2 {
     pub handle: CommunityHandle,
     pub admins: Vec<AccountId>,
@@ -288,8 +288,8 @@ pub struct CommunityV2 {
     pub wiki2: Option<WikiPage>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV6 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -302,7 +302,7 @@ pub struct ContractV6 {
 }
 
 // From ContractV6 to ContractV7
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_board_and_feature_flags() {
         let ContractV6 {
@@ -371,8 +371,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Clone)]
 pub struct CommunityV3 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -395,8 +395,8 @@ pub struct CommunityV3 {
     pub features: CommunityFeatureFlags,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV7 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -409,7 +409,7 @@ pub struct ContractV7 {
 }
 
 // From ContractV7 to ContractV8
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_community_addons() {
         let ContractV7 {
@@ -474,8 +474,7 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
 pub struct CommunityV4 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -499,8 +498,8 @@ pub struct CommunityV4 {
     pub addons: Vec<CommunityAddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV8 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -514,7 +513,7 @@ pub struct ContractV8 {
 }
 
 // From ContractV8 to ContractV9
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_clean_up_community() {
         let ContractV8 {
@@ -574,8 +573,7 @@ impl Contract {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
 pub struct CommunityV5 {
     pub admins: Vec<AccountId>,
     pub handle: CommunityHandle,
@@ -592,8 +590,8 @@ pub struct CommunityV5 {
     pub addons: Vec<CommunityAddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV9 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -607,7 +605,7 @@ pub struct ContractV9 {
 }
 
 // From ContractV9 to ContractV10
-#[near_bindgen]
+#[near]
 impl Contract {
     fn unsafe_add_proposals() {
         let ContractV9 {
@@ -640,8 +638,8 @@ impl Contract {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(PanicOnDefault)]
 pub struct ContractV10 {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -658,8 +656,8 @@ pub struct ContractV10 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near]
+#[derive(Debug)]
 pub(crate) enum StateVersion {
     V1,
     V2,
@@ -689,7 +687,7 @@ pub(crate) fn state_version_write(version: &StateVersion) {
     near_sdk::log!("Migrated to version: {:?}", version);
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn unsafe_self_upgrade() {
         near_sdk::assert_self();

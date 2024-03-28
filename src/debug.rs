@@ -1,5 +1,5 @@
 use crate::*;
-use near_sdk::near_bindgen;
+use near_sdk::near;
 use near_sdk::serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -8,7 +8,7 @@ pub struct Stats {
     pub num_posts: u64,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn get_post_to_parent(&self) -> Vec<(PostId, PostId)> {
         let mut res = vec![];

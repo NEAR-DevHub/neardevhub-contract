@@ -1,5 +1,5 @@
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{near_bindgen, NearSchema};
+use near_sdk::{near, NearSchema};
 
 use crate::*;
 
@@ -9,7 +9,7 @@ pub struct Stats {
     pub num_posts: u64,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn get_stats(&self) -> Stats {
         Stats { num_posts: self.posts.len() }

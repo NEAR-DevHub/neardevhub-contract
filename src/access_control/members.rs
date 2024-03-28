@@ -1,28 +1,12 @@
 use crate::access_control::rules::Rule;
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, NearSchema};
+use near_sdk::{near, AccountId};
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    PartialOrd,
-    PartialEq,
-    Ord,
-    Eq,
-    Hash,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, PartialOrd, PartialEq, Ord, Eq, Hash)]
 #[serde(from = "String")]
 #[serde(into = "String")]
-#[borsh(crate = "near_sdk::borsh")]
 pub enum Member {
     /// NEAR account names do not allow `:` character so this structure cannot be abused.
     Account(AccountId),
@@ -51,20 +35,8 @@ impl Into<String> for Member {
     }
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Default,
-    Debug,
-    Eq,
-    PartialEq,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Default, Debug, Eq, PartialEq)]
 pub struct MemberMetadata {
     pub description: String,
     pub permissions: HashMap<Rule, HashSet<ActionType>>,
@@ -72,23 +44,9 @@ pub struct MemberMetadata {
     pub parents: HashSet<Member>,
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    PartialOrd,
-    PartialEq,
-    Ord,
-    Eq,
-    Hash,
-    Debug,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, PartialOrd, PartialEq, Ord, Eq, Hash, Debug)]
 #[serde(rename_all = "kebab-case")]
-#[borsh(crate = "near_sdk::borsh")]
 pub enum ActionType {
     /// Can edit posts that have these labels.
     EditPost,
@@ -96,20 +54,9 @@ pub enum ActionType {
     UseLabels,
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[serde(tag = "member_metadata_version")]
-#[borsh(crate = "near_sdk::borsh")]
 pub enum VersionedMemberMetadata {
     V0(MemberMetadata),
 }
@@ -128,20 +75,8 @@ impl From<MemberMetadata> for VersionedMemberMetadata {
     }
 }
 
-#[derive(
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    Default,
-    NearSchema,
-)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct MembersList {
     #[serde(flatten)]
     pub members: HashMap<Member, VersionedMemberMetadata>,

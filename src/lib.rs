@@ -19,11 +19,11 @@ use proposal::*;
 
 use devhub_common::{social_db_contract, SetReturnType};
 
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::BorshDeserialize;
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{json, Number, Value};
-use near_sdk::{env, near_bindgen, require, AccountId, NearSchema, PanicOnDefault, Promise};
+use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
 
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -38,9 +38,8 @@ type CommentId = u64;
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(contract_state)]
+#[derive(PanicOnDefault)]
 pub struct Contract {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -57,7 +56,7 @@ pub struct Contract {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     #[init]
     pub fn new() -> Self {
