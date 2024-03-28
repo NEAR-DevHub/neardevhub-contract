@@ -1,23 +1,20 @@
 use crate::access_control::members::{Member, MembersList, VersionedMemberMetadata};
 use crate::access_control::rules::{Rule, RulesList};
 use crate::*;
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{near_bindgen, NearSchema};
+use near_sdk::near;
 use std::collections::{HashMap, HashSet};
 
 pub mod members;
 pub mod rules;
 
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone, Default, NearSchema)]
-#[serde(crate = "near_sdk::serde")]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(serializers=[borsh, json])]
+#[derive(Clone, Default)]
 pub struct AccessControl {
     pub rules_list: RulesList,
     pub members_list: MembersList,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn get_access_control_info(&self) -> &AccessControl {
         &self.access_control

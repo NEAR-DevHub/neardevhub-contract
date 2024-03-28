@@ -1,5 +1,4 @@
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::{env, near_bindgen, require, AccountId, Gas, NearToken, Promise};
+use near_sdk::{env, near, require, AccountId, Gas, NearToken, Promise};
 use near_sdk::serde_json::json;
 
 use devhub_common::social_db_contract;
@@ -8,12 +7,11 @@ const CODE: &[u8] = include_bytes!("../../community/target/near/devhub_community
 const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Default)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(contract_state)]
+#[derive(Default)]
 pub struct Contract {}
 
-#[near_bindgen]
+#[near]
 impl Contract {
     #[payable]
     pub fn create_community_account(&mut self, community: String) -> Promise {
