@@ -927,6 +927,7 @@ name = "devhub"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "devhub_common",
  "insta",
  "near-contract-standards",
  "near-sdk 5.0.0 (git+https://github.com/PolyProgrammist/near-sdk-rs?branch=add-nearschema)",
@@ -934,6 +935,13 @@ dependencies = [
  "regex",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "devhub_common"
+version = "0.1.0"
+dependencies = [
+ "near-sdk 5.0.0 (git+https://github.com/PolyProgrammist/near-sdk-rs?branch=add-nearschema)",
 ]
 
 [[package]]

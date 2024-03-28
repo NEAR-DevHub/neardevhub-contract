@@ -97,6 +97,14 @@ dependencies = [
 name = "devhub-community-factory"
 version = "0.1.0"
 dependencies = [
+ "devhub_common",
+ "near-sdk",
+]
+
+[[package]]
+name = "devhub_common"
+version = "0.1.0"
+dependencies = [
  "near-sdk",
 ]
 

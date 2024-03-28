@@ -1,7 +1,9 @@
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
-use crate::{social_db::social_db_contract, Proposal};
+use devhub_common::social_db_contract;
+
+use crate::Proposal;
 
 fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk::serde_json::Value {
     let proposal_link = format!("/devhub.near/widget/app?page=proposal&id={}", proposal.id);

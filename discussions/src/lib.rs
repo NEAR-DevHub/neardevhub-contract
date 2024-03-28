@@ -1,6 +1,4 @@
-mod social_db;
-
-use crate::social_db::social_db_contract;
+use devhub_common::social_db_contract;
 use near_sdk::{env, require, near, AccountId, NearToken, Promise};
 
 #[near(contract_state)]

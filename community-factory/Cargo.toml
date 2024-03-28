@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 near-sdk = { git = "https://github.com/PolyProgrammist/near-sdk-rs", branch = "add-nearschema" }
+devhub_common = { path = "../devhub_common" }
 
 [profile.release]
 codegen-units = 1
