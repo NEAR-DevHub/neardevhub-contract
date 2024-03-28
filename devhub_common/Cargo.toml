@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-near-sdk = { git = "https://github.com/PolyProgrammist/near-sdk-rs", branch = "add-nearschema" }
+near-sdk = "5.1.0"
 
 [profile.release]
 codegen-units = 1

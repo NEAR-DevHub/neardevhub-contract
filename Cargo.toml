@@ -8,13 +8,13 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = { git = "https://github.com/PolyProgrammist/near-sdk-rs", branch = "add-nearschema", features = ["legacy", "unit-testing"] }
-near-contract-standards = "5.0.0"
+near-sdk = "5.1.0"
+near-contract-standards = "5.1.0"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 devhub_common = { path = "./devhub_common" }
 
 [dev-dependencies]
-near-sdk = { git = "https://github.com/PolyProgrammist/near-sdk-rs", branch = "add-nearschema", features = ["legacy", "unit-testing"] }
+near-sdk = "5.1.0"
 insta = { version = "1.31.0", features = ["json", "redactions"] }
 regex = "1"
 near-workspaces = { version = "0.10.0", features = ["unstable"], default-features = false  }
