@@ -17,5 +17,11 @@ expression: get_community
   "telegram_handle": null,
   "twitter_handle": null,
   "website_url": null,
-  "addons": []
+  "addons": [],
+  "enabled_default_tabs": [
+    "Announcements",
+    "Discussions",
+    "Activity",
+    "Teams"
+  ]
 }

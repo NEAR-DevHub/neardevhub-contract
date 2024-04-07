@@ -60,7 +60,7 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new() -> Self {
-        migrations::state_version_write(&migrations::StateVersion::V10);
+        migrations::state_version_write(&migrations::StateVersion::V11);
 
         let mut contract = Self {
             posts: Vector::new(StorageKey::Posts),
@@ -537,6 +537,12 @@ impl Contract {
             twitter_handle: None,
             website_url: None,
             addons: vec![],
+            enabled_default_tabs: vec![
+                "Announcements".to_string(),
+                "Discussions".to_string(),
+                "Activity".to_string(),
+                "Teams".to_string(),
+            ],
         };
 
         new_community.validate();

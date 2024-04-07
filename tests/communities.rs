@@ -115,7 +115,8 @@ async fn test_update_community() -> anyhow::Result<()> {
                 "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
                 "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
                 "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
-                "addons": []
+                "addons": [],
+                "enabled_default_tabs": ["Announcements"]
             }
         }))
         .max_gas()
@@ -131,6 +132,7 @@ async fn test_update_community() -> anyhow::Result<()> {
         .await?
         .json()?;
 
+    assert_eq!(get_community["enabled_default_tabs"].as_array().unwrap().len(), 1);
     assert_eq!(get_community["tag"].as_str(), Some("other"));
     assert_eq!(get_community["name"].as_str(), Some("Gotham2"));
 
@@ -217,7 +219,8 @@ async fn test_announcement() -> anyhow::Result<()> {
             "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
             "logo_url": "https://example.com/image.png",
             "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
-            "addons": []
+            "addons": [],
+            "enabled_default_tabs": []
         }
     }))
     .max_gas()

@@ -656,6 +656,118 @@ pub struct ContractV10 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
+// From ContractV10 to ContractV11
+#[near]
+impl Contract {
+    fn unsafe_add_tab_settings() {
+        let ContractV10 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            proposals,
+            label_to_proposals,
+            author_proposals,
+            proposal_categories,
+            mut communities,
+            featured_communities,
+            available_addons,
+        } = env::state_read().unwrap();
+
+        let migrated_communities: Vec<(String, CommunityV6)> = communities
+            .iter()
+            .map(|(community_handle, community)| {
+                (
+                    community_handle,
+                    CommunityV6 {
+                        admins: community.admins,
+                        handle: community.handle,
+                        name: community.name,
+                        tag: community.tag,
+                        description: community.description,
+                        logo_url: community.logo_url,
+                        banner_url: community.banner_url,
+                        bio_markdown: community.bio_markdown,
+                        github_handle: community.github_handle,
+                        telegram_handle: community.telegram_handle,
+                        twitter_handle: community.twitter_handle,
+                        website_url: community.website_url,
+                        addons: community.addons,
+                        enabled_default_tabs: vec![
+                            "Announcements".to_string(),
+                            "Discussions".to_string(),
+                            "Activity".to_string(),
+                            "Teams".to_string(),
+                        ],
+                    },
+                )
+            })
+            .collect();
+
+        communities.clear();
+
+        let mut communities_new = UnorderedMap::new(StorageKey::Communities);
+
+        for (k, v) in migrated_communities {
+            communities_new.insert(&k, &v);
+        }
+
+        env::state_write(&ContractV11 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            proposals,
+            label_to_proposals,
+            author_proposals,
+            proposal_categories,
+            communities: communities_new,
+            featured_communities,
+            available_addons,
+        });
+    }
+}
+
+#[near]
+pub struct CommunityV6 {
+    pub admins: Vec<AccountId>,
+    pub handle: CommunityHandle,
+    pub name: String,
+    pub tag: String,
+    pub description: String,
+    pub logo_url: String,
+    pub banner_url: String,
+    pub bio_markdown: Option<String>,
+    pub github_handle: Option<String>,
+    pub telegram_handle: Option<String>,
+    pub twitter_handle: Option<String>,
+    pub website_url: Option<String>,
+    pub addons: Vec<CommunityAddOn>,
+    pub enabled_default_tabs: Vec<String>,
+}
+
+#[near]
+#[derive(PanicOnDefault)]
+pub struct ContractV11 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub proposals: Vector<VersionedProposal>,
+    pub label_to_proposals: UnorderedMap<String, HashSet<ProposalId>>,
+    pub author_proposals: UnorderedMap<AccountId, HashSet<ProposalId>>,
+    pub proposal_categories: Vec<String>,
+    pub communities: UnorderedMap<CommunityHandle, CommunityV6>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+    pub available_addons: UnorderedMap<AddOnId, AddOn>,
+}
+
 #[near]
 #[derive(Debug)]
 pub(crate) enum StateVersion {
@@ -669,6 +781,7 @@ pub(crate) enum StateVersion {
     V8,
     V9,
     V10,
+    V11,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -758,6 +871,10 @@ impl Contract {
             StateVersion::V9 => {
                 Contract::unsafe_add_proposals();
                 state_version_write(&StateVersion::V10);
+            }
+            StateVersion::V10 => {
+                Contract::unsafe_add_tab_settings();
+                state_version_write(&StateVersion::V11);
             }
             _ => {
                 return Contract::migration_done();
