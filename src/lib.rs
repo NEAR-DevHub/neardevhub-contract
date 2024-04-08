@@ -537,12 +537,12 @@ impl Contract {
             twitter_handle: None,
             website_url: None,
             addons: vec![],
-            enabled_default_tabs: vec![
+            enabled_default_tabs: Some(vec![
                 "Announcements".to_string(),
                 "Discussions".to_string(),
                 "Activity".to_string(),
                 "Teams".to_string(),
-            ],
+            ]),
         };
 
         new_community.validate();

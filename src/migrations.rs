@@ -695,12 +695,12 @@ impl Contract {
                         twitter_handle: community.twitter_handle,
                         website_url: community.website_url,
                         addons: community.addons,
-                        enabled_default_tabs: vec![
+                        enabled_default_tabs: Some(vec![
                             "Announcements".to_string(),
                             "Discussions".to_string(),
                             "Activity".to_string(),
                             "Teams".to_string(),
-                        ],
+                        ]),
                     },
                 )
             })
@@ -747,7 +747,7 @@ pub struct CommunityV6 {
     pub twitter_handle: Option<String>,
     pub website_url: Option<String>,
     pub addons: Vec<CommunityAddOn>,
-    pub enabled_default_tabs: Vec<String>,
+    pub enabled_default_tabs: Option<Vec<String>>,
 }
 
 #[near]

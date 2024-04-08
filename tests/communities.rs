@@ -140,6 +140,69 @@ async fn test_update_community() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
+async fn test_update_community_without_enabled_default_tabs() -> anyhow::Result<()> {
+    // Initialize the devhub and near social contract on chain,
+    // contract is devhub contract instance.
+    let (contract, _, _) = init_contracts_from_res().await?;
+
+    let deposit_amount = NearToken::from_near(4);
+
+    // Add a community
+    let _create_community = contract
+        .call("create_community")
+        .args_json(json!({
+            "inputs": {
+                "handle": "gotham",
+                "name": "Gotham",
+                "tag": "some",
+                "description": "This is a test community.",
+                "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+                "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+                "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4"
+            }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    // Update community without enabled_default_tabs
+    let _update_community = contract
+        .call("update_community")
+        .args_json(json!({
+            "handle": "gotham",
+            "community": {
+                "admins": [],
+                "handle": "gotham",
+                "name": "Gotham2",
+                "tag": "other",
+                "description": "This is a test community.",
+                "bio_markdown": "This is a sample text about your community.\nYou can change it on the community configuration page.",
+                "logo_url": "https://ipfs.near.social/ipfs/bafkreibysr2mkwhb4j36h2t7mqwhynqdy4vzjfygfkfg65kuspd2bawauu",
+                "banner_url": "https://ipfs.near.social/ipfs/bafkreic4xgorjt6ha5z4s5e3hscjqrowe5ahd7hlfc5p4hb6kdfp6prgy4",
+                "addons": []
+            }
+        }))
+        .max_gas()
+        .transact()
+        .await?;
+
+    let get_community: serde_json::Value = contract
+        .call("get_community")
+        .args_json(json!({
+            "handle" : "gotham"
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert_eq!(get_community["name"].as_str(), Some("Gotham2"));
+    assert_eq!(get_community["tag"].as_str(), Some("other"));
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn test_announcement() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.

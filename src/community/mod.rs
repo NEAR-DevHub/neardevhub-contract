@@ -108,7 +108,7 @@ pub struct Community {
     pub twitter_handle: Option<String>,
     pub website_url: Option<String>,
     pub addons: Vec<CommunityAddOn>,
-    pub enabled_default_tabs: Vec<String>,
+    pub enabled_default_tabs: Option<Vec<String>>,
 }
 
 #[near(serializers=[borsh, json])]
