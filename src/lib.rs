@@ -254,7 +254,8 @@ impl Contract {
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         require!(
-            proposal_body.timeline.clone().latest_version().is_draft() || proposal_body.timeline.clone().latest_version().is_empty_review(),
+            proposal_body.timeline.clone().latest_version().is_draft()
+                || proposal_body.timeline.clone().latest_version().is_empty_review(),
             "Cannot create proposal which is not in a draft or a review state"
         );
 
@@ -575,7 +576,11 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_versioned_timeline(&mut self, id: ProposalId, timeline: VersionedTimelineStatus) -> Promise {
+    pub fn edit_proposal_versioned_timeline(
+        &mut self,
+        id: ProposalId,
+        timeline: VersionedTimelineStatus,
+    ) -> Promise {
         near_sdk::log!("edit_proposal_versioned_timeline");
         let proposal: Proposal = self
             .proposals
@@ -607,15 +612,15 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        let current_timeline = proposal.snapshot.body.clone().latest_version().timeline.latest_version();
+        let current_timeline =
+            proposal.snapshot.body.clone().latest_version().timeline.latest_version();
         let new_timeline = proposal_body.timeline.latest_version();
 
         require!(
             self.has_moderator(editor_id.clone())
                 || editor_id.clone() == env::current_account_id()
                 || current_timeline.is_draft()
-                    && (new_timeline.is_empty_review()
-                        || new_timeline.is_draft())
+                    && (new_timeline.is_empty_review() || new_timeline.is_draft())
                 || current_timeline.can_be_cancelled() && new_timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );

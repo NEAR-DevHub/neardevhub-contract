@@ -148,13 +148,11 @@ impl From<ProposalBodyV0> for VersionedProposalBody {
     }
 }
 
-
 impl From<ProposalBodyV1> for VersionedProposalBody {
     fn from(p: ProposalBodyV1) -> Self {
         VersionedProposalBody::V1(p)
     }
 }
-
 
 impl VersionedProposalBody {
     pub fn latest_version(self) -> ProposalBodyV1 {
