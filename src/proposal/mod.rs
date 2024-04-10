@@ -3,7 +3,7 @@ pub mod timeline;
 
 use std::collections::HashSet;
 
-use self::timeline::TimelineStatus;
+use self::timeline::{TimelineStatus, TimelineStatusV1};
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
@@ -86,15 +86,58 @@ pub struct ProposalBodyV0 {
 
 #[near(serializers=[borsh, json])]
 #[derive(Clone)]
+pub struct ProposalBodyV1 {
+    pub name: String,
+    pub category: String,
+    pub summary: String,
+    pub description: String,
+    pub linked_proposals: Vec<ProposalId>,
+    #[serde(
+        serialize_with = "u32_dec_format::serialize",
+        deserialize_with = "u32_dec_format::deserialize"
+    )]
+    pub requested_sponsorship_usd_amount: u32,
+    pub requested_sponsorship_paid_in_currency: ProposalFundingCurrency,
+    pub receiver_account: AccountId,
+    pub requested_sponsor: AccountId,
+    pub supervisor: Option<AccountId>,
+    pub timeline: TimelineStatusV1,
+}
+
+#[near(serializers=[borsh, json])]
+#[derive(Clone)]
 #[serde(tag = "proposal_body_version")]
 pub enum VersionedProposalBody {
     V0(ProposalBodyV0),
+    V1(ProposalBodyV1),
 }
 
 impl From<VersionedProposalBody> for ProposalBodyV0 {
-    fn from(solution: VersionedProposalBody) -> Self {
-        match solution {
+    fn from(proposal_body: VersionedProposalBody) -> Self {
+        match proposal_body {
             VersionedProposalBody::V0(v0) => v0,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedProposalBody> for ProposalBodyV1 {
+    fn from(proposal_body: VersionedProposalBody) -> Self {
+        match proposal_body {
+            VersionedProposalBody::V1(v1) => v1,
+            VersionedProposalBody::V0(v0) => ProposalBodyV1 {
+                name: v0.name,
+                category: v0.category,
+                summary: v0.summary,
+                description: v0.description,
+                linked_proposals: v0.linked_proposals,
+                requested_sponsorship_usd_amount: v0.requested_sponsorship_usd_amount,
+                requested_sponsorship_paid_in_currency: v0.requested_sponsorship_paid_in_currency,
+                receiver_account: v0.receiver_account,
+                requested_sponsor: v0.requested_sponsor,
+                supervisor: v0.supervisor,
+                timeline: v0.timeline.into(),
+            },
         }
     }
 }
@@ -105,13 +148,21 @@ impl From<ProposalBodyV0> for VersionedProposalBody {
     }
 }
 
+
+impl From<ProposalBodyV1> for VersionedProposalBody {
+    fn from(p: ProposalBodyV1) -> Self {
+        VersionedProposalBody::V1(p)
+    }
+}
+
+
 impl VersionedProposalBody {
-    pub fn latest_version(self) -> ProposalBodyV0 {
+    pub fn latest_version(self) -> ProposalBodyV1 {
         self.into()
     }
 }
 
-pub fn get_subscribers(proposal_body: &ProposalBodyV0) -> Vec<String> {
+pub fn get_subscribers(proposal_body: &ProposalBodyV1) -> Vec<String> {
     let mut result = [
         get_text_mentions(proposal_body.description.as_str()),
         get_text_mentions(proposal_body.summary.as_str()),

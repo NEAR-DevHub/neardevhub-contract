@@ -14,7 +14,7 @@ use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
 use post::*;
-use proposal::timeline::TimelineStatus;
+use proposal::timeline::{TimelineStatus, TimelineStatusV1};
 use proposal::*;
 
 use devhub_common::{social_db_contract, SetReturnType};
@@ -569,10 +569,24 @@ impl Contract {
             .unwrap_or_else(|| panic!("Proposal id {} not found", id))
             .into();
         let mut body = proposal.snapshot.body.latest_version();
-        body.timeline = timeline;
+        body.timeline = timeline.into();
 
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
+
+    // #[payable]
+    // pub fn edit_proposal_versioned_timeline(&mut self, id: ProposalId, timeline: VersionedTimeline) -> Promise {
+    //     near_sdk::log!("edit_proposal_timeline");
+    //     let proposal: Proposal = self
+    //         .proposals
+    //         .get(id.into())
+    //         .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+    //         .into();
+    //     let mut body = proposal.snapshot.body.latest_version();
+    //     body.timeline = timeline.into();
+
+    //     self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
+    // }
 
     fn edit_proposal_internal(
         &mut self,
