@@ -3,7 +3,7 @@ pub mod timeline;
 
 use std::collections::HashSet;
 
-use self::timeline::{TimelineStatus, TimelineStatusV1};
+use self::timeline::{TimelineStatus, VersionedTimelineStatus};
 
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
@@ -101,7 +101,7 @@ pub struct ProposalBodyV1 {
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,
     pub supervisor: Option<AccountId>,
-    pub timeline: TimelineStatusV1,
+    pub timeline: VersionedTimelineStatus,
 }
 
 #[near(serializers=[borsh, json])]

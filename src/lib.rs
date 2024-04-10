@@ -14,7 +14,7 @@ use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
 use post::*;
-use proposal::timeline::{TimelineStatus, TimelineStatusV1};
+use proposal::timeline::{TimelineStatus, VersionedTimelineStatus};
 use proposal::*;
 
 use devhub_common::{social_db_contract, SetReturnType};
@@ -254,7 +254,7 @@ impl Contract {
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
         require!(
-            proposal_body.timeline.is_draft() || proposal_body.timeline.is_empty_review(),
+            proposal_body.timeline.clone().latest_version().is_draft() || proposal_body.timeline.clone().latest_version().is_empty_review(),
             "Cannot create proposal which is not in a draft or a review state"
         );
 
@@ -574,19 +574,19 @@ impl Contract {
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
-    // #[payable]
-    // pub fn edit_proposal_versioned_timeline(&mut self, id: ProposalId, timeline: VersionedTimeline) -> Promise {
-    //     near_sdk::log!("edit_proposal_timeline");
-    //     let proposal: Proposal = self
-    //         .proposals
-    //         .get(id.into())
-    //         .unwrap_or_else(|| panic!("Proposal id {} not found", id))
-    //         .into();
-    //     let mut body = proposal.snapshot.body.latest_version();
-    //     body.timeline = timeline.into();
+    #[payable]
+    pub fn edit_proposal_versioned_timeline(&mut self, id: ProposalId, timeline: VersionedTimelineStatus) -> Promise {
+        near_sdk::log!("edit_proposal_versioned_timeline");
+        let proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+        let mut body = proposal.snapshot.body.latest_version();
+        body.timeline = timeline.into();
 
-    //     self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
-    // }
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
+    }
 
     fn edit_proposal_internal(
         &mut self,
@@ -607,20 +607,21 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        let current_timeline = proposal.snapshot.body.clone().latest_version().timeline;
+        let current_timeline = proposal.snapshot.body.clone().latest_version().timeline.latest_version();
+        let new_timeline = proposal_body.timeline.latest_version();
 
         require!(
             self.has_moderator(editor_id.clone())
                 || editor_id.clone() == env::current_account_id()
                 || current_timeline.is_draft()
-                    && (proposal_body.timeline.is_empty_review()
-                        || proposal_body.timeline.is_draft())
-                || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
+                    && (new_timeline.is_empty_review()
+                        || new_timeline.is_draft())
+                || current_timeline.can_be_cancelled() && new_timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
         require!(
-            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
+            new_timeline.is_draft() ||  new_timeline.is_review() || new_timeline.is_cancelled() || proposal_body.supervisor.is_some(),
             "You can't change the timeline of the proposal to this status without adding a supervisor"
         );
 

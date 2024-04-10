@@ -547,10 +547,10 @@ async fn test_proposal() -> anyhow::Result<()> {
     assert!(_edit_proposal_timeline_conditionally.is_success());
 
     let _edit_proposal_timeline_payment = contract
-        .call("edit_proposal_timeline")
+        .call("edit_proposal_versioned_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
+            "timeline": {"timeline_version": "V1", "status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "approved_conditionally": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -558,6 +558,17 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?;
 
     assert!(_edit_proposal_timeline_payment.is_success());
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert_eq!(get_proposal["snapshot"]["timeline"]["approved_conditionally"], false);
 
     let _edit_proposal_timeline_funded = contract
         .call("edit_proposal_timeline")

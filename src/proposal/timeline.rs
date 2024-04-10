@@ -16,6 +16,13 @@ pub enum TimelineStatus {
 
 #[near(serializers=[borsh, json])]
 #[derive(Clone)]
+#[serde(tag = "timeline_version")]
+pub enum VersionedTimelineStatus {
+    V1(TimelineStatusV1),
+}
+
+#[near(serializers=[borsh, json])]
+#[derive(Clone)]
 #[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TimelineStatusV1 {
     Draft,
@@ -44,6 +51,32 @@ impl From<TimelineStatus> for TimelineStatusV1 {
             TimelineStatus::Funded(funded_status) => TimelineStatusV1::Funded(funded_status),
             TimelineStatus::Cancelled(review_status) => TimelineStatusV1::Cancelled(review_status),
         }
+    }
+}
+
+impl VersionedTimelineStatus {
+    pub fn latest_version(self) -> TimelineStatusV1 {
+        self.into()
+    }
+}
+
+impl From<VersionedTimelineStatus> for TimelineStatusV1 {
+    fn from(value: VersionedTimelineStatus) -> Self {
+        match value {
+            VersionedTimelineStatus::V1(v1) => v1,
+        }
+    }
+}
+
+impl From<TimelineStatusV1> for VersionedTimelineStatus {
+    fn from(value: TimelineStatusV1) -> Self {
+        VersionedTimelineStatus::V1(value)
+    }
+}
+
+impl From<TimelineStatus> for VersionedTimelineStatus {
+    fn from(value: TimelineStatus) -> Self {
+        VersionedTimelineStatus::V1(value.into())
     }
 }
 
