@@ -97,6 +97,14 @@ dependencies = [
 name = "devhub-community-factory"
 version = "0.1.0"
 dependencies = [
+ "devhub_common",
+ "near-sdk",
+]
+
+[[package]]
+name = "devhub_common"
+version = "0.1.0"
+dependencies = [
  "near-sdk",
 ]
 
@@ -186,9 +194,9 @@ dependencies = [
 
 [[package]]
 name = "near-sdk"
-version = "5.0.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5c2e7c9524308b1b301cca05d875de13b3b20dc8b92e71f3890b380372e4c88"
+checksum = "520234cfdf04a805ac2f04715889d096eb83fdd5b99ca7d0f8027ae473f891a8"
 dependencies = [
  "base64",
  "borsh",
@@ -206,9 +214,9 @@ dependencies = [
 
 [[package]]
 name = "near-sdk-macros"
-version = "5.0.0"
+version = "5.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1e9b23d9d7757ade258921c9cbc7923542e64d9d3b52a6cd91f746c77cb0a0f"
+checksum = "ee2fe3fc30068c5f20e89b0985d6104c5cc1c6742dbc6efbf352be4189b9bbf7"
 dependencies = [
  "Inflector",
  "darling",

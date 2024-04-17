@@ -1,20 +1,24 @@
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
-use crate::{social_db::social_db_contract, Proposal};
+use devhub_common::social_db_contract;
+
+use crate::Proposal;
 
 fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk::serde_json::Value {
     let proposal_link = format!("/devhub.near/widget/app?page=proposal&id={}", proposal.id);
-    let title = proposal.snapshot.body.clone().latest_version().name;
 
+    let title = proposal.snapshot.body.clone().latest_version().name;
     let summary = proposal.snapshot.body.clone().latest_version().summary;
+    let category = proposal.snapshot.body.clone().latest_version().category;
 
     let text = format!(
-        "There is a new proposal on DevHub from @{author}: “{title}“\n> {summary}\n__Read the full proposal [here]({proposal_link})__",
+        "We have just received a new *{category}* proposal.\n\n———\n\n**By**: @{author}\n\n**Title**: “{title}“\n\n**Summary**:\n\n{summary}\n\n———\n\nRead the full proposal and share your feedback on [DevHub]({proposal_link})",
         author = proposal.author_id,
         proposal_link = proposal_link,
         title = title,
-        summary = summary
+        summary = summary,
+        category = category
     );
 
     let main_value = json!({

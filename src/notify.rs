@@ -1,5 +1,5 @@
-use crate::social_db::social_db_contract;
 use crate::{get_subscribers, PostId, Proposal, ProposalId};
+use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
 
@@ -38,7 +38,7 @@ pub fn notify_accounts(
     notifier: AccountId,
     accounts: Vec<String>,
     notify_value: serde_json::Value,
-) {
+) -> Promise {
     if !accounts.is_empty() {
         let mut notify_values = Vec::new();
 
@@ -58,11 +58,13 @@ pub fn notify_accounts(
                         "notify": json!(notify_values).to_string()
                     }
                 }
-            }));
+            }))
+    } else {
+        Promise::new(env::current_account_id())
     }
 }
 
-pub fn notify_proposal_subscribers(proposal: &Proposal) {
+pub fn notify_proposal_subscribers(proposal: &Proposal) -> Promise {
     let accounts = get_subscribers(&proposal.snapshot.body.clone().latest_version());
 
     notify_accounts(
@@ -76,7 +78,7 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) {
     )
 }
 
-pub fn notify_mentions(text: &str, post_id: PostId) {
+pub fn notify_mentions(text: &str, post_id: PostId) -> Promise {
     let mentions = get_text_mentions(text);
 
     notify_accounts(
@@ -175,6 +177,7 @@ mod tests {
         testing_env!(context);
         let text = "Not mentioning anyone";
         notify_mentions(text, 2);
-        assert_eq!(0, get_created_receipts().len());
+        assert_eq!(1, get_created_receipts().len());
+        assert_eq!(0, get_created_receipts()[0].actions.len());
     }
 }

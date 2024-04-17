@@ -6,24 +6,24 @@ mod notify;
 pub mod post;
 pub mod proposal;
 mod repost;
-mod social_db;
 pub mod stats;
 pub mod str_serializers;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
-use crate::social_db::{social_db_contract, SetReturnType};
 use community::*;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
 
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
+use devhub_common::{social_db_contract, SetReturnType};
+
+use near_sdk::borsh::BorshDeserialize;
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{json, Number, Value};
-use near_sdk::{env, near_bindgen, require, AccountId, NearSchema, PanicOnDefault, Promise};
+use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
 
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -38,9 +38,8 @@ type CommentId = u64;
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-#[borsh(crate = "near_sdk::borsh")]
+#[near(contract_state)]
+#[derive(PanicOnDefault)]
 pub struct Contract {
     pub posts: Vector<VersionedPost>,
     pub post_to_parent: LookupMap<PostId, PostId>,
@@ -57,7 +56,7 @@ pub struct Contract {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     #[init]
     pub fn new() -> Self {
@@ -151,7 +150,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_like(&mut self, post_id: PostId) {
+    pub fn add_like(&mut self, post_id: PostId) -> Promise {
         near_sdk::log!("add_like");
         let mut post: Post = self
             .posts
@@ -163,11 +162,16 @@ impl Contract {
             Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
         post.likes.insert(like);
         self.posts.replace(post_id, &post.into());
-        notify::notify_like(post_id, post_author);
+        notify::notify_like(post_id, post_author)
     }
 
     #[payable]
-    pub fn add_post(&mut self, parent_id: Option<PostId>, body: PostBody, labels: HashSet<String>) {
+    pub fn add_post(
+        &mut self,
+        parent_id: Option<PostId>,
+        body: PostBody,
+        labels: HashSet<String>,
+    ) -> Promise {
         near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let id = self.posts.len();
@@ -223,7 +227,7 @@ impl Contract {
         } else {
             repost::repost(post);
         }
-        notify::notify_mentions(desc.as_str(), id);
+        notify::notify_mentions(desc.as_str(), id)
     }
 
     #[payable]
@@ -277,16 +281,13 @@ impl Contract {
             snapshot_history: vec![],
         };
 
-        let socialdb_promise = proposal::repost::publish_to_socialdb_feed(
+        proposal::repost::publish_to_socialdb_feed(
             Self::ext(env::current_account_id())
-                .with_static_gas(env::prepaid_gas().saturating_div(3))
+                .with_static_gas(env::prepaid_gas().saturating_div(4))
                 .set_block_height_callback(proposal.clone()),
             proposal.clone(),
-        );
-
-        notify::notify_proposal_subscribers(&proposal);
-
-        socialdb_promise
+        )
+        .then(notify::notify_proposal_subscribers(&proposal))
     }
 
     #[private]
@@ -447,7 +448,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) {
+    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("edit_post");
         require!(
             self.is_allowed_to_edit(id, Option::None),
@@ -502,7 +503,7 @@ impl Contract {
             self.label_to_posts.insert(&label_to_add, &posts);
         }
 
-        notify::notify_edit(id, post_author);
+        notify::notify_edit(id, post_author)
     }
 
     #[payable]
@@ -569,13 +570,13 @@ impl Contract {
         id: ProposalId,
         body: VersionedProposalBody,
         labels: HashSet<String>,
-    ) {
+    ) -> Promise {
         near_sdk::log!("edit_proposal");
-        self.edit_proposal_internal(id, body.clone(), labels);
+        self.edit_proposal_internal(id, body.clone(), labels)
     }
 
     #[payable]
-    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) {
+    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> Promise {
         near_sdk::log!("edit_proposal_timeline");
         let proposal: Proposal = self
             .proposals
@@ -585,7 +586,7 @@ impl Contract {
         let mut body = proposal.snapshot.body.latest_version();
         body.timeline = timeline;
 
-        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels);
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
     fn edit_proposal_internal(
@@ -593,7 +594,7 @@ impl Contract {
         id: ProposalId,
         body: VersionedProposalBody,
         labels: HashSet<String>,
-    ) {
+    ) -> Promise {
         require!(
             self.is_allowed_to_edit_proposal(id, Option::None),
             "The account is not allowed to edit this proposal"
@@ -671,7 +672,7 @@ impl Contract {
             self.label_to_proposals.insert(&label_to_add, &proposals);
         }
 
-        notify::notify_edit_proposal(id, proposal_author);
+        notify::notify_edit_proposal(id, proposal_author)
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
@@ -794,12 +795,16 @@ impl Contract {
         return community.addons;
     }
 
-    pub fn set_community_addons(&mut self, handle: CommunityHandle, addons: Vec<CommunityAddOn>) {
+    pub fn set_community_addons(
+        &mut self,
+        handle: CommunityHandle,
+        addons: Vec<CommunityAddOn>,
+    ) -> Promise {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
         community.addons = addons;
-        self.update_community(handle, community);
+        self.update_community(handle, community)
     }
 
     // To add or update parameters set by the configurator widget
@@ -807,7 +812,7 @@ impl Contract {
         &mut self,
         handle: CommunityHandle,
         community_addon: CommunityAddOn,
-    ) {
+    ) -> Promise {
         let mut community = self
             .get_community(handle.clone())
             .expect(format!("Community not found with handle `{}`", handle).as_str());
@@ -818,7 +823,7 @@ impl Contract {
         } else {
             community.addons.push(community_addon);
         }
-        self.update_community(handle, community);
+        self.update_community(handle, community)
     }
 
     fn get_editable_community(&self, handle: &CommunityHandle) -> Option<Community> {
@@ -836,7 +841,7 @@ impl Contract {
         &mut self,
         handle: CommunityHandle,
         #[allow(unused_mut)] mut community: Community,
-    ) {
+    ) -> Promise {
         let _ = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can configure communities");
@@ -900,10 +905,10 @@ impl Contract {
                     }
                 }
             }
-        }));
+        }))
     }
 
-    pub fn set_community_socialdb(&mut self, handle: CommunityHandle, data: Value) {
+    pub fn set_community_socialdb(&mut self, handle: CommunityHandle, data: Value) -> Promise {
         let _ = self
             .get_editable_community(&handle)
             .expect("Only community admins and hub moderators can set community Social DB");
@@ -911,7 +916,7 @@ impl Contract {
         require!(env::prepaid_gas() >= SET_COMMUNITY_SOCIALDB_GAS, "Require at least 30 Tgas");
         social_db_contract()
             .with_unused_gas_weight(1)
-            .set(json!({ get_devhub_community_account(&handle): data }));
+            .set(json!({ get_devhub_community_account(&handle): data }))
     }
 
     pub fn create_discussion(&mut self, handle: CommunityHandle, block_height: Number) -> Promise {
@@ -930,7 +935,7 @@ impl Contract {
         )
     }
 
-    pub fn delete_community(&mut self, handle: CommunityHandle) {
+    pub fn delete_community(&mut self, handle: CommunityHandle) -> Promise {
         require!(
             self.has_moderator(env::predecessor_account_id()),
             "Only moderators can delete community"
@@ -945,7 +950,7 @@ impl Contract {
         require!(env::prepaid_gas() >= DELETE_COMMUNITY_GAS, "Require at least 30 Tgas");
         ext_devhub_community::ext(get_devhub_community_account(&community.handle).parse().unwrap())
             .with_unused_gas_weight(1)
-            .destroy();
+            .destroy()
     }
 
     pub fn set_featured_communities(&mut self, handles: Vec<CommunityHandle>) {
@@ -1047,7 +1052,7 @@ mod tests {
         assert_eq!(3, receipts.len());
 
         if let near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } =
-            &receipts[0].actions[0]
+            &receipts[2].actions[0]
         {
             assert_eq!(method_name, b"set");
             assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devhub/mention\\\",\\\"proposal\\\":0,\\\"notifier\\\":\\\"bob.near\\\"}}]\"}}}}");
