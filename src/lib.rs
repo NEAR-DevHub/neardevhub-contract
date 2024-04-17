@@ -536,7 +536,22 @@ impl Contract {
             telegram_handle: None,
             twitter_handle: None,
             website_url: None,
-            addons: vec![],
+            addons: vec![
+                CommunityAddOn {
+                    id: "announcements".to_string(),
+                    addon_id: "announcements".to_string(),
+                    display_name: "Announcements".to_string(),
+                    enabled: true,
+                    parameters: "".to_string(),
+                },
+                CommunityAddOn {
+                    id: "discussions".to_string(),
+                    addon_id: "discussions".to_string(),
+                    display_name: "Discussions".to_string(),
+                    enabled: true,
+                    parameters: "".to_string(),
+                },
+            ],
         };
 
         new_community.validate();
