@@ -320,6 +320,8 @@ impl Contract {
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
 
+        let rfp_body = body.clone().latest_version();
+
         require!(
             self.is_allowed_to_write_rfps(editor_id.clone()),
             "The account is not allowed to create RFPs"
@@ -332,6 +334,8 @@ impl Contract {
             ),
             "Cannot use these labels"
         );
+
+        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
 
         for label in &labels {
             let mut other_rfps = self.label_to_rfps.get(label).unwrap_or_default();
@@ -477,10 +481,10 @@ impl Contract {
 
     pub fn is_allowed_to_write_rfps(
         &self,
-        editor_id: AccountId,
+        editor: AccountId,
     ) -> bool {
         near_sdk::log!("is_allowed_to_write_rfps");
-        editor_id == env::current_account_id() || self.has_moderator(editor_id)
+        editor == env::current_account_id() || self.has_moderator(editor)
     }
 
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
@@ -787,6 +791,7 @@ impl Contract {
         self.edit_rfp_internal(id, body.clone(), labels)
     }
 
+    #[payable]
     pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) {
         near_sdk::log!("edit_rfp_timeline");
         let rfp: RFP = self
@@ -816,6 +821,8 @@ impl Contract {
             .get(id.into())
             .unwrap_or_else(|| panic!("RFP id {} not found", id))
             .into();
+
+        let rfp_body = body.clone().latest_version();
 
         let old_snapshot = rfp.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();
@@ -847,6 +854,8 @@ impl Contract {
             ),
             "Not allowed to add these labels"
         );
+
+        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
 
         for label_to_remove in labels_to_remove {
             let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();

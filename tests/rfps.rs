@@ -12,6 +12,14 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
+    let _set_categories = contract
+        .call("set_allowed_categories")
+        .args_json(json!({"new_categories": ["Marketing", "Events"]}))
+        .max_gas()
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
+
     let _add_rfp = contract
         .call("add_rfp")
         .args_json(json!({
@@ -182,6 +190,111 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     let expected_labels: Vec<&str> = ["test1", "test2", "test3"].to_vec();
     assert_eq!(rfp_labels, expected_labels);
+
+    let is_allowed_to_edit_rfp_false = contract
+        .call("is_allowed_to_write_rfps")
+        .args_json(json!({
+            "rfp_id": 0,
+            "editor": "second.test.near"
+        }))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    assert!(!is_allowed_to_edit_rfp_false.as_bool().unwrap());
+
+    let is_allowed_to_edit_rfp_true = contract
+        .call("is_allowed_to_write_rfps")
+        .args_json(json!({
+            "rfp_id": 0,
+            "editor": "devhub.near"
+        }))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    assert!(is_allowed_to_edit_rfp_true.as_bool().unwrap());
+
+    let get_all_allowed_rfp_labels = contract
+        .call("get_all_allowed_rfp_labels")
+        .args_json(json!({
+            "editor": "devhub.near"
+        }))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    let allowed_rfp_labels = get_all_allowed_rfp_labels
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_labels: Vec<&str> = ["test1", "test2", "test3"].to_vec();
+    assert_eq!(allowed_rfp_labels, expected_labels);
+
+    let _edit_rfp_timeline_evaluation = contract
+        .call("edit_rfp_timeline")
+        .args_json(json!({
+            "id": 0,
+            "timeline": {"status": "EVALUATION" }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    println!("{:?}", _edit_rfp_timeline_evaluation);
+
+    assert!(_edit_rfp_timeline_evaluation.is_success());
+
+    let _edit_rfp_timeline_proposal_selected = contract
+        .call("edit_rfp_timeline")
+        .args_json(json!({
+            "id": 0,
+            "timeline": {"status": "PROPOSAL_SELECTED" }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(_edit_rfp_timeline_proposal_selected.is_success());
+
+    let _edit_rfp_timeline_cancelled = contract
+        .call("edit_rfp_timeline")
+        .args_json(json!({
+            "id": 0,
+            "timeline": {"status": "CANCELLED" }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(_edit_rfp_timeline_cancelled.is_success());
+
+    let _add_rfp_incorrect_category = contract
+        .call("add_rfp")
+        .args_json(json!({
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Some RFP",
+                "description": "some description",
+                "category": "NotExistingCategory",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(_edit_rfp_timeline_cancelled.is_success());
 
     Ok(())
 }
