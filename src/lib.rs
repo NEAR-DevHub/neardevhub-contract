@@ -321,6 +321,11 @@ impl Contract {
         let editor_id = author_id.clone();
 
         require!(
+            self.is_allowed_to_write_rfps(editor_id.clone()),
+            "The account is not allowed to create RFPs"
+        );
+
+        require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
                 labels.iter().cloned().collect()
@@ -468,6 +473,14 @@ impl Contract {
             .members_list
             .check_permissions(editor, proposal.snapshot.labels.into_iter().collect::<Vec<_>>())
             .contains(&ActionType::EditPost)
+    }
+
+    pub fn is_allowed_to_write_rfps(
+        &self,
+        editor_id: AccountId,
+    ) -> bool {
+        near_sdk::log!("is_allowed_to_write_rfps");
+        editor_id == env::current_account_id() || self.has_moderator(editor_id)
     }
 
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
@@ -793,11 +806,11 @@ impl Contract {
         body: VersionedRFPBody,
         labels: HashSet<String>,
     ) {
+        let editor_id: AccountId = env::predecessor_account_id();
         require!(
-            self.is_allowed_to_edit_proposal(id, Option::None),
-            "The account is not allowed to edit this RFP"
+            self.is_allowed_to_write_rfps(editor_id.clone()),
+            "The account is not allowed to edit RFPs"
         );
-        let editor_id = env::predecessor_account_id();
         let mut rfp: RFP = self
             .rfps
             .get(id.into())

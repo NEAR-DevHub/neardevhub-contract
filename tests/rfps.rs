@@ -31,8 +31,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    println!("add rfp: {:?}", _add_rfp);
-
     let get_rfp: serde_json::Value = contract
         .call("get_rfp")
         .args_json(json!({
@@ -42,14 +40,45 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    println!("get rfp: {:?}", get_rfp);
-
-
     assert_eq!(get_rfp["snapshot"]["category"], "Marketing");
 
     let social_db_post_block_height: u64 =
         get_rfp["social_db_post_block_height"].as_str().unwrap().parse::<u64>()?;
     assert!(social_db_post_block_height > 0);
+
+    let _edit_rfp_category = contract
+        .call("edit_rfp")
+        .args_json(json!({
+            "id": 0,
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Some RFP",
+                "description": "some description",
+                "category": "Events",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    println!("edit rfp category: {:?}", _edit_rfp_category);
+
+    let get_rfp_with_new_category: serde_json::Value = contract
+        .call("get_rfp")
+        .args_json(json!({
+            "rfp_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert_eq!(get_rfp_with_new_category["snapshot"]["category"], "Events");
+
 
     Ok(())
 }
