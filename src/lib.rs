@@ -334,9 +334,9 @@ impl Contract {
         );
 
         for label in &labels {
-            let mut other_rfps = self.label_to_proposals.get(label).unwrap_or_default();
+            let mut other_rfps = self.label_to_rfps.get(label).unwrap_or_default();
             other_rfps.insert(id);
-            self.label_to_proposals.insert(label, &other_rfps);
+            self.label_to_rfps.insert(label, &other_rfps);
         }
 
         let rfp = RFP {

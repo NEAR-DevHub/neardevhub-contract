@@ -66,8 +66,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    println!("edit rfp category: {:?}", _edit_rfp_category);
-
     let get_rfp_with_new_category: serde_json::Value = contract
         .call("get_rfp")
         .args_json(json!({
@@ -79,6 +77,111 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert_eq!(get_rfp_with_new_category["snapshot"]["category"], "Events");
 
+    let _add_second_rfp = contract
+        .call("add_rfp")
+        .args_json(json!({
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Another RFP",
+                "description": "another description",
+                "category": "Events",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test3"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let get_rfps =
+        contract.call("get_rfps").args_json(json!({})).view().await?.json::<Value>()?;
+
+    let rfps_array = get_rfps.as_array().unwrap();
+
+    assert_eq!(rfps_array.len(), 2);
+    assert_eq!(rfps_array.get(1).unwrap()["snapshot"]["name"], "Another RFP");
+
+    let get_rfp_ids =
+        contract.call("get_all_rfp_ids").args_json(json!({})).view().await?.json::<Value>()?;
+
+    let rfp_ids = get_rfp_ids
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.clone().as_u64().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_ids: Vec<u64> = [0u64, 1u64].to_vec();
+
+    assert_eq!(rfp_ids, expected_ids);
+
+    let second_account = worker
+        .root_account()?
+        .create_subaccount("second")
+        .initial_balance(NearToken::from_near(20))
+        .transact()
+        .await?
+        .into_result()?;
+
+    let _second_author_add_rfp = second_account
+        .call(contract.id(), "add_rfp")
+        .args_json(json!({
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Another Author",
+                "description": "another description",
+                "category": "Events",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test2", "test3"],
+        }))
+        .max_gas()
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;    
+
+    assert!(_second_author_add_rfp.is_failure());
+
+    let get_rfps_by_label = contract
+        .call("get_rfps_by_label")
+        .args_json(json!({
+            "label": "test2"
+        }))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    let rfp_ids_by_label = get_rfps_by_label
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_u64().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_ids: Vec<u64> = [0u64].to_vec();
+    assert_eq!(rfp_ids_by_label, expected_ids);
+
+    let get_all_rfp_labels = contract
+        .call("get_all_rfp_labels")
+        .args_json(json!({}))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    let rfp_labels = get_all_rfp_labels
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_labels: Vec<&str> = ["test1", "test2", "test3"].to_vec();
+    assert_eq!(rfp_labels, expected_labels);
 
     Ok(())
 }
