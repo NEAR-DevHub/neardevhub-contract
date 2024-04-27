@@ -5,6 +5,7 @@ pub mod migrations;
 mod notify;
 pub mod post;
 pub mod proposal;
+pub mod rfp;
 mod repost;
 pub mod stats;
 pub mod str_serializers;
@@ -16,6 +17,7 @@ use community::*;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
+use rfp::{VersionedRFP, RFPId, VersionedRFPBody, RFPSnapshot, RFP, TimelineStatus as RFPTimelineStatus};
 
 use devhub_common::{social_db_contract, SetReturnType};
 
@@ -51,6 +53,8 @@ pub struct Contract {
     pub label_to_proposals: UnorderedMap<String, HashSet<ProposalId>>,
     pub author_proposals: UnorderedMap<AccountId, HashSet<ProposalId>>,
     pub proposal_categories: Vec<String>,
+    pub rfps: Vector<VersionedRFP>,
+    pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
@@ -72,7 +76,9 @@ impl Contract {
             proposals: Vector::new(StorageKey::Proposals),
             label_to_proposals: UnorderedMap::new(StorageKey::LabelToProposals),
             author_proposals: UnorderedMap::new(StorageKey::AuthorProposals),
-            proposal_categories: default_categories(),
+            proposal_categories: vec![],
+            rfps: Vector::new(StorageKey::RFPs),
+            label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
@@ -147,6 +153,23 @@ impl Contract {
     pub fn get_all_proposal_ids(&self) -> Vec<ProposalId> {
         near_sdk::log!("get_all_proposal_ids");
         (0..self.proposals.len().try_into().unwrap()).collect()
+    }
+
+    pub fn get_rfps(&self) -> Vec<VersionedRFP> {
+        near_sdk::log!("get_rfps");
+        self.rfps.to_vec()
+    }
+
+    pub fn get_rfp(&self, rfp_id: RFPId) -> VersionedRFP {
+        near_sdk::log!("get_rfp");
+        self.rfps
+            .get(rfp_id.into())
+            .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+    }
+
+    pub fn get_all_rfp_ids(&self) -> Vec<RFPId> {
+        near_sdk::log!("get_all_rfp_ids");
+        (0..self.rfps.len().try_into().unwrap()).collect()
     }
 
     #[payable]
@@ -290,6 +313,41 @@ impl Contract {
         .then(notify::notify_proposal_subscribers(&proposal))
     }
 
+    #[payable]
+    pub fn add_rfp(&mut self, body: VersionedRFPBody, labels: HashSet<String>) {
+        near_sdk::log!("add_rfp");
+        let id: RFPId = self.rfps.len().try_into().unwrap();
+        let author_id = env::predecessor_account_id();
+        let editor_id = author_id.clone();
+
+        require!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels.iter().cloned().collect()
+            ),
+            "Cannot use these labels"
+        );
+
+        for label in &labels {
+            let mut other_rfps = self.label_to_proposals.get(label).unwrap_or_default();
+            other_rfps.insert(id);
+            self.label_to_proposals.insert(label, &other_rfps);
+        }
+
+        let rfp = RFP {
+            id: id,
+            social_db_post_block_height: 0u64,
+            snapshot: RFPSnapshot {
+                timestamp: env::block_timestamp(),
+                labels,
+                body: body.clone(),
+            },
+            snapshot_history: vec![],
+        };
+
+        self.rfps.push(&rfp.clone().into());
+    }
+
     #[private]
     pub fn set_block_height_callback(
         &mut self,
@@ -299,6 +357,16 @@ impl Contract {
         proposal.social_db_post_block_height = set_result.block_height.into();
         self.proposals.push(&proposal.clone().into());
         BlockHeightCallbackRetValue { proposal_id: proposal.id }
+    }
+
+    pub fn set_rfp_block_height_callback(
+        &mut self,
+        #[allow(unused_mut)] mut rfp: RFP,
+        #[callback_unwrap] set_result: SetReturnType,
+    ) -> BlockHeightCallbackRetValue {
+        rfp.social_db_post_block_height = set_result.block_height.into();
+        self.rfps.push(&rfp.clone().into());
+        BlockHeightCallbackRetValue { proposal_id: rfp.id }
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -330,6 +398,13 @@ impl Contract {
         res
     }
 
+    pub fn get_rfps_by_label(&self, label: String) -> Vec<RFPId> {
+        near_sdk::log!("get_rfps_by_label");
+        let mut res: Vec<_> = self.label_to_rfps.get(&label).unwrap_or_default().into_iter().collect();
+        res.sort();
+        res
+    }
+
     pub fn get_all_labels(&self) -> Vec<String> {
         near_sdk::log!("get_all_labels");
         let mut res: Vec<_> = self.label_to_posts.keys().collect();
@@ -340,6 +415,13 @@ impl Contract {
     pub fn get_all_proposal_labels(&self) -> Vec<String> {
         near_sdk::log!("get_all_proposal_labels");
         let mut res: Vec<_> = self.label_to_proposals.keys().collect();
+        res.sort();
+        res
+    }
+
+    pub fn get_all_rfp_labels(&self) -> Vec<String> {
+        near_sdk::log!("get_all_rfp_labels");
+        let mut res: Vec<_> = self.label_to_rfps.keys().collect();
         res.sort();
         res
     }
@@ -445,6 +527,11 @@ impl Contract {
     pub fn get_all_allowed_proposal_labels(&self, editor: AccountId) -> Vec<String> {
         near_sdk::log!("get_all_allowed_proposal_labels");
         self.filtered_labels(&self.label_to_proposals, &editor)
+    }
+
+    pub fn get_all_allowed_rfp_labels(&self, editor: AccountId) -> Vec<String> {
+        near_sdk::log!("get_all_allowed_rfp_labels");
+        self.filtered_labels(&self.label_to_rfps, &editor)
     }
 
     #[payable]
@@ -673,6 +760,88 @@ impl Contract {
         }
 
         notify::notify_edit_proposal(id, proposal_author)
+    }
+
+    #[payable]
+    pub fn edit_rfp(&mut self, id: RFPId, body: VersionedRFPBody, labels: HashSet<String>) {
+        near_sdk::log!("edit_rfp");
+        self.edit_rfp_internal(id, body.clone(), labels)
+    }
+
+    pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) {
+        near_sdk::log!("edit_rfp_timeline");
+        let rfp: RFP = self
+            .rfps
+            .get(id.into())
+            .unwrap_or_else(|| panic!("RFP id {} not found", id))
+            .into();
+        let mut body = rfp.snapshot.body.latest_version();
+        body.timeline = timeline;
+
+        self.edit_rfp_internal(id, body.into(), rfp.snapshot.labels)
+    }
+
+    fn edit_rfp_internal(
+        &mut self,
+        id: RFPId,
+        body: VersionedRFPBody,
+        labels: HashSet<String>,
+    ) {
+        require!(
+            self.is_allowed_to_edit_proposal(id, Option::None),
+            "The account is not allowed to edit this RFP"
+        );
+        let editor_id = env::predecessor_account_id();
+        let mut rfp: RFP = self
+            .rfps
+            .get(id.into())
+            .unwrap_or_else(|| panic!("RFP id {} not found", id))
+            .into();
+
+        let old_snapshot = rfp.snapshot.clone();
+        let old_labels_set = old_snapshot.labels.clone();
+        let new_labels = labels;
+        let new_snapshot = RFPSnapshot {
+            timestamp: env::block_timestamp(),
+            labels: new_labels.clone(),
+            body: body,
+        };
+        rfp.snapshot = new_snapshot;
+        rfp.snapshot_history.push(old_snapshot);
+        self.rfps.replace(id.try_into().unwrap(), &rfp.into());
+
+        // Update labels index.
+        let new_labels_set = new_labels;
+        let labels_to_remove = &old_labels_set - &new_labels_set;
+        let labels_to_add = &new_labels_set - &old_labels_set;
+        require!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_remove.iter().cloned().collect()
+            ),
+            "Not allowed to remove these labels"
+        );
+        require!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_add.iter().cloned().collect()
+            ),
+            "Not allowed to add these labels"
+        );
+
+        for label_to_remove in labels_to_remove {
+            let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();
+            rfps.remove(&id);
+            self.label_to_rfps.insert(&label_to_remove, &rfps);
+        }
+
+        for label_to_add in labels_to_add {
+            let mut rfps = self.label_to_rfps.get(&label_to_add).unwrap_or_default();
+            rfps.insert(id);
+            self.label_to_rfps.insert(&label_to_add, &rfps);
+        }
+
+        // notify::notify_edit_rfp(id, rfp_author)
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
