@@ -328,6 +328,11 @@ impl Contract {
         );
 
         require!(
+            rfp_body.timeline.is_accepting_submissions(),
+            "Cannot create proposal which is not in a Accepting Submissions state"
+        );
+
+        require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
                 labels.iter().cloned().collect()
@@ -816,6 +821,7 @@ impl Contract {
             self.is_allowed_to_write_rfps(editor_id.clone()),
             "The account is not allowed to edit RFPs"
         );
+        
         let mut rfp: RFP = self
             .rfps
             .get(id.into())
@@ -823,6 +829,8 @@ impl Contract {
             .into();
 
         let rfp_body = body.clone().latest_version();
+
+        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
 
         let old_snapshot = rfp.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();
@@ -854,8 +862,6 @@ impl Contract {
             ),
             "Not allowed to add these labels"
         );
-
-        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
 
         for label_to_remove in labels_to_remove {
             let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();

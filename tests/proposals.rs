@@ -12,6 +12,14 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
+    let _set_categories = contract
+        .call("set_allowed_categories")
+        .args_json(json!({"new_categories": ["Marketing", "Events"]}))
+        .max_gas()
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
+
     let _add_proposal = contract
         .call("add_proposal")
         .args_json(json!({
