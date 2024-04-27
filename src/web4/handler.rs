@@ -18,10 +18,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let gateway = "https://near.social";
 
     let page = path_parts[1];
-    let mut title: String = String::from("Title");
-    let mut description: String = String::from("Description");
-    let mut image: String = String::from("");
-    let mut redirect_url: String = gateway.to_string();
+    let mut title: String = String::from("near/dev/hub");
+    let mut description: String = String::from("The decentralized home base for NEAR builders");
+    let mut image: String = String::from(
+        "https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near",
+    );
+    let mut redirect_url: String = String::from("https://near.social/devhub.near/widget/app");
 
     match page {
         "community" => {
@@ -40,14 +42,13 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         r#"<!DOCTYPE html>
 <html>
 <head>
-    <title>Your Website Title</title>
+    <title>{title}</title>
     <meta property="og:url" content="{url}" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="{title}" />
     <meta property="og:description" content="{description}" />
     <meta property="og:image" content="{image}" />
 
-    <!-- Additional tags for Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{title}">
     <meta name="twitter:description" content="{description}">
@@ -79,22 +80,15 @@ mod tests {
         base64::Engine, test_utils::VMContextBuilder, testing_env, NearToken, VMContext,
     };
 
-    fn get_context_with_signer(is_view: bool, signer: String) -> VMContext {
-        VMContextBuilder::new()
-            .signer_account_id(signer.clone().try_into().unwrap())
-            .current_account_id(signer.try_into().unwrap())
-            .is_view(is_view)
-            .attached_deposit(NearToken::from_near(4))
-            .build()
-    }
-
-    fn get_context(is_view: bool) -> VMContext {
-        get_context_with_signer(is_view, "bob.near".to_string())
-    }
-
     #[test]
     pub fn test_web4() {
-        let context = get_context(false);
+        let signer = "bob.near".to_string();
+        let context = VMContextBuilder::new()
+            .signer_account_id(signer.clone().try_into().unwrap())
+            .current_account_id(signer.try_into().unwrap())
+            .attached_deposit(NearToken::from_near(4))
+            .build();
+
         testing_env!(context);
         let mut contract = Contract::new();
 
@@ -125,11 +119,36 @@ mod tests {
                     .contains("<meta name=\"twitter:title\" content=\"WebAssembly Music\">"));
                 assert!(body_string.contains("https://near.social/devhub.near/widget/app?page=community&handle=webassemblymusic"));
             }
-            Web4Response::BodyUrl { body_url } => {
-                panic!("Should not return BodyUrl");
+            _ => {
+                panic!("Should return Web4Response::Body");
             }
-            Web4Response::PreloadUrls { preload_urls } => {
-                panic!("Should not be preload urls");
+        }
+    }
+
+    #[test]
+    pub fn test_web4_unknown_path() {
+        let contract = Contract::new();
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/unknown/path"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+                println!("Body: {:?}", body_string);
+                assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
+                assert!(
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                );
+                assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
             }
         }
     }
