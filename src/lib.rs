@@ -3,12 +3,12 @@ pub mod community;
 pub mod debug;
 pub mod migrations;
 mod notify;
-pub mod web4;
 pub mod post;
 pub mod proposal;
 mod repost;
 pub mod stats;
 pub mod str_serializers;
+pub mod web4;
 
 use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
@@ -25,7 +25,7 @@ use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{json, Number, Value};
 use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
-use web4::types::{Web4Request,Web4Response};
+use web4::types::{Web4Request, Web4Response};
 
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -984,7 +984,7 @@ impl Contract {
     }
 
     pub fn web4_get(&self, request: Web4Request) -> Web4Response {
-        web4::handler::web4_get(request)
+        web4::handler::web4_get(self, request)
     }
 }
 
@@ -1163,5 +1163,4 @@ mod tests {
 
         assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
     }
-
 }
