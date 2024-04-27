@@ -3,6 +3,7 @@ pub mod community;
 pub mod debug;
 pub mod migrations;
 mod notify;
+pub mod web4;
 pub mod post;
 pub mod proposal;
 mod repost;
@@ -24,6 +25,7 @@ use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{json, Number, Value};
 use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
+use web4::types::{Web4Request,Web4Response};
 
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -980,6 +982,10 @@ impl Contract {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
+
+    pub fn web4_get(&self, request: Web4Request) -> Web4Response {
+        web4::handler::web4_get(request)
+    }
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize, NearSchema)]
@@ -991,7 +997,9 @@ pub struct BlockHeightCallbackRetValue {
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use crate::community::AddOn;
+
     use crate::{PostBody, ProposalBodyV0, VersionedProposalBody};
+
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, VMContext};
     use serde_json::json;
@@ -1155,4 +1163,5 @@ mod tests {
 
         assert_eq!(addons[0].title, "Telegram AddOn".to_owned());
     }
+
 }
