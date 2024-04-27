@@ -308,13 +308,13 @@ impl Contract {
             Self::ext(env::current_account_id())
                 .with_static_gas(env::prepaid_gas().saturating_div(4))
                 .set_block_height_callback(proposal.clone()),
-            proposal.clone(),
+            proposal::repost::proposal_repost_text(proposal.clone()),
         )
         .then(notify::notify_proposal_subscribers(&proposal))
     }
 
     #[payable]
-    pub fn add_rfp(&mut self, body: VersionedRFPBody, labels: HashSet<String>) {
+    pub fn add_rfp(&mut self, body: VersionedRFPBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("add_rfp");
         let id: RFPId = self.rfps.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
@@ -345,7 +345,13 @@ impl Contract {
             snapshot_history: vec![],
         };
 
-        self.rfps.push(&rfp.clone().into());
+        proposal::repost::publish_to_socialdb_feed(
+            Self::ext(env::current_account_id())
+                .with_static_gas(env::prepaid_gas().saturating_div(4))
+                .set_rfp_block_height_callback(rfp.clone()),
+            rfp::repost::rfp_repost_text(rfp.clone()),
+        )
+        // .then(notify::notify_proposal_subscribers(&rfp));
     }
 
     #[private]

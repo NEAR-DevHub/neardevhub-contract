@@ -1,3 +1,4 @@
+pub mod repost;
 pub mod timeline;
 
 use std::collections::HashSet;
@@ -69,6 +70,10 @@ pub struct RFPBodyV0 {
     pub summary: String,
     pub description: String,
     pub timeline: TimelineStatus,
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
     pub submission_deadline: Timestamp,
 }
 
