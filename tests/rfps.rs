@@ -8,7 +8,7 @@ use {crate::test_env::*, serde_json::json};
 async fn test_rfp() -> anyhow::Result<()> {
     // Initialize the devhub and near social contract on chain,
     // contract is devhub contract instance.
-    let (contract, worker, near_social) = init_contracts_from_res().await?;
+    let (contract, worker, _) = init_contracts_from_res().await?;
 
     let deposit_amount = NearToken::from_near(2);
 
@@ -295,6 +295,52 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?;
 
     assert!(_edit_rfp_timeline_cancelled.is_success());
+
+    let _add_rfp_proposal = contract
+        .call("add_proposal")
+        .args_json(json!({
+            "body": {
+                "proposal_body_version": "V0",
+                "name": "RFP-proposal",
+                "description": "some description",
+                "category": "Marketing",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_usd_amount": "1000000000",
+                "requested_sponsorship_paid_in_currency": "USDT",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "DRAFT"},
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let _edit_proposal_linked_rfp = contract
+        .call("edit_proposal_linked_rfp")
+        .args_json(json!({
+            "id": 0,
+            "rfp_id": 0,
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    assert_eq!(get_proposal["snapshot"]["linked_rfp"], 0);
 
     Ok(())
 }

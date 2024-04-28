@@ -704,6 +704,20 @@ impl Contract {
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
+    #[payable]
+    pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: RFPId) -> Promise {
+        near_sdk::log!("edit_proposal_linked_rfp");
+        let proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+        let mut body = proposal.snapshot.body.latest_version();
+        body.linked_rfp = Some(rfp_id);
+
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
+    }
+
     fn edit_proposal_internal(
         &mut self,
         id: ProposalId,
