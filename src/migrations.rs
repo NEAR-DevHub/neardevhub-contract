@@ -656,6 +656,66 @@ pub struct ContractV10 {
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
 }
 
+// From ContractV10 to ContractV11
+#[near]
+impl Contract {
+    fn unsafe_add_rfp() {
+        let ContractV10 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            proposals,
+            label_to_proposals,
+            author_proposals,
+            proposal_categories,
+            communities,
+            featured_communities,
+            available_addons,
+        } = env::state_read().unwrap();
+
+        env::state_write(&ContractV11 {
+            posts,
+            post_to_parent,
+            post_to_children,
+            label_to_posts,
+            access_control,
+            authors,
+            proposals,
+            label_to_proposals,
+            author_proposals,
+            proposal_categories,
+            rfps: Vector::new(StorageKey::RFPs),
+            label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
+            communities,
+            featured_communities,
+            available_addons,
+        });
+    }
+}
+
+#[near]
+#[derive(PanicOnDefault)]
+pub struct ContractV11 {
+    pub posts: Vector<VersionedPost>,
+    pub post_to_parent: LookupMap<PostId, PostId>,
+    pub post_to_children: LookupMap<PostId, Vec<PostId>>,
+    pub label_to_posts: UnorderedMap<String, HashSet<PostId>>,
+    pub access_control: AccessControl,
+    pub authors: UnorderedMap<AccountId, HashSet<PostId>>,
+    pub proposals: Vector<VersionedProposal>,
+    pub label_to_proposals: UnorderedMap<String, HashSet<ProposalId>>,
+    pub author_proposals: UnorderedMap<AccountId, HashSet<ProposalId>>,
+    pub proposal_categories: Vec<String>,
+    pub rfps: Vector<VersionedRFP>,
+    pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
+    pub communities: UnorderedMap<CommunityHandle, CommunityV5>,
+    pub featured_communities: Vec<FeaturedCommunity>,
+    pub available_addons: UnorderedMap<AddOnId, AddOn>,
+}
+
 #[near]
 #[derive(Debug)]
 pub(crate) enum StateVersion {
@@ -669,6 +729,7 @@ pub(crate) enum StateVersion {
     V8,
     V9,
     V10,
+    V11,
 }
 
 const VERSION_KEY: &[u8] = b"VERSION";
@@ -758,6 +819,10 @@ impl Contract {
             StateVersion::V9 => {
                 Contract::unsafe_add_proposals();
                 state_version_write(&StateVersion::V10);
+            }
+            StateVersion::V10 => {
+                Contract::unsafe_add_rfp();
+                state_version_write(&StateVersion::V11);
             }
             _ => {
                 return Contract::migration_done();
