@@ -630,7 +630,7 @@ impl Contract {
             proposals: Vector::new(StorageKey::Proposals),
             label_to_proposals: UnorderedMap::new(StorageKey::LabelToProposals),
             author_proposals: UnorderedMap::new(StorageKey::AuthorProposals),
-            proposal_categories: vec![],
+            proposal_categories: default_categories(),
             communities,
             featured_communities,
             available_addons,

@@ -76,7 +76,7 @@ impl Contract {
             proposals: Vector::new(StorageKey::Proposals),
             label_to_proposals: UnorderedMap::new(StorageKey::LabelToProposals),
             author_proposals: UnorderedMap::new(StorageKey::AuthorProposals),
-            proposal_categories: vec![],
+            proposal_categories: default_categories(),
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
             communities: UnorderedMap::new(StorageKey::Communities),
