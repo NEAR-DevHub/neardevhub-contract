@@ -320,6 +320,19 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
+    let _edit_proposal_linked_rfp_incorrect = contract
+        .call("edit_proposal_linked_rfp")
+        .args_json(json!({
+            "id": 0,
+            "rfp_id": 2,
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!( _edit_proposal_linked_rfp_incorrect.is_failure() );
+
     let _edit_proposal_linked_rfp = contract
         .call("edit_proposal_linked_rfp")
         .args_json(json!({

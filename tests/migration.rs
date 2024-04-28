@@ -210,8 +210,6 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    eprintln!("{:?} ", _add_proposal);
-
     let _edit_proposal_timeline_payment = contract
         .call("edit_proposal_timeline")
         .args_json(json!({
@@ -333,6 +331,52 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
 
     insta::assert_json_snapshot!(get_proposal, {".snapshot.timestamp" => "[timestamp]", ".social_db_post_block_height" => "91", ".snapshot_history[0].timestamp" => "[timestamp]"});
+
+    let _add_rfp = contract
+        .call("add_rfp")
+        .args_json(json!({
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Some RFP",
+                "description": "some description",
+                "category": "Marketing",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let _add_proposal = contract
+        .call("add_proposal")
+        .args_json(json!({
+            "body": {
+                "proposal_body_version": "V0",
+                "name": "another post",
+                "description": "some description",
+                "category": "Marketing",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_usd_amount": "1000000000",
+                "requested_sponsorship_paid_in_currency": "USDT",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "DRAFT"}
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    assert!(_add_rfp.is_success());
+    assert!(_add_proposal.is_success());
 
     Ok(())
 }

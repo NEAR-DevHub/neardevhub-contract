@@ -266,6 +266,8 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
+        self.assert_proposal_correct(proposal_body.clone());
+
         require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
@@ -718,6 +720,15 @@ impl Contract {
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
+    fn assert_proposal_correct(&self, body: ProposalBodyV1) {
+        if let Some(rfp_id) = body.linked_rfp {
+            require!(
+                self.rfps.get(rfp_id.into()).is_some(),
+                "The linked RFP does not exist"
+            );
+        }
+    }
+
     fn edit_proposal_internal(
         &mut self,
         id: ProposalId,
@@ -736,6 +747,8 @@ impl Contract {
             .into();
 
         let proposal_body = body.clone().latest_version();
+
+        self.assert_proposal_correct(proposal_body.clone());
 
         let current_timeline = proposal.snapshot.body.clone().latest_version().timeline;
 
