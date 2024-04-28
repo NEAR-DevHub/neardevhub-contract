@@ -44,6 +44,10 @@ impl TimelineStatus {
             _ => false,
         }
     }
+
+    pub fn is_approved(&self) -> bool {
+        matches!(self, TimelineStatus::Approved(..))
+    }
 }
 
 #[near(serializers=[borsh, json])]

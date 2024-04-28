@@ -55,6 +55,7 @@ pub struct Contract {
     pub proposal_categories: Vec<String>,
     pub rfps: Vector<VersionedRFP>,
     pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
+    pub rfp_linked_proposals: UnorderedMap<RFPId, HashSet<ProposalId>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
@@ -79,6 +80,7 @@ impl Contract {
             proposal_categories: default_categories(),
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
+            rfp_linked_proposals: UnorderedMap::new(StorageKey::RFPLinkedProposals),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
@@ -266,7 +268,7 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        self.assert_proposal_correct(body.clone(), None);
+        self.update_and_check_rfp_link(body.clone(), None);
 
         require!(
             self.is_allowed_to_use_labels(
@@ -707,7 +709,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: RFPId) -> Promise {
+    pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: Option<RFPId>) -> Promise {
         near_sdk::log!("edit_proposal_linked_rfp");
         let proposal: Proposal = self
             .proposals
@@ -715,7 +717,7 @@ impl Contract {
             .unwrap_or_else(|| panic!("Proposal id {} not found", id))
             .into();
         let mut body = proposal.snapshot.body.latest_version();
-        body.linked_rfp = Some(rfp_id);
+        body.linked_rfp = rfp_id;
 
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
@@ -734,12 +736,22 @@ impl Contract {
         }
     }
 
-    fn assert_proposal_correct(&self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>) {
+    fn update_and_check_rfp_link(&mut self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>) {
         let new_body = new_proposal_body.clone().latest_version();
         let old_rfp_id = old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
         if new_body.linked_rfp != old_rfp_id {
             self.assert_can_link_unlink_rfp(new_body.linked_rfp);
             self.assert_can_link_unlink_rfp(old_rfp_id);
+            if let Some(old_rfp_id) = old_rfp_id {
+                let mut linked_proposals: HashSet<u32> = self.rfp_linked_proposals.get(&old_rfp_id).unwrap();
+                linked_proposals.remove(&new_proposal_body.clone().latest_version().linked_rfp.unwrap());
+                self.rfp_linked_proposals.insert(&old_rfp_id, &linked_proposals);
+            }
+            if let Some(new_rfp_id) = new_body.linked_rfp {
+                let mut linked_proposals = self.rfp_linked_proposals.get(&new_rfp_id).unwrap_or_default();
+                linked_proposals.insert(new_proposal_body.clone().latest_version().linked_rfp.unwrap());
+                self.rfp_linked_proposals.insert(&new_rfp_id, &linked_proposals);
+            }
         }
     }
 
@@ -763,7 +775,7 @@ impl Contract {
         let proposal_body = body.clone().latest_version();
 
         let old_body = proposal.snapshot.body.clone();
-        self.assert_proposal_correct(body.clone(), Some(old_body.clone()));
+        self.update_and_check_rfp_link(body.clone(), Some(old_body.clone()));
 
         let current_timeline = old_body.latest_version().timeline;
 
@@ -873,6 +885,28 @@ impl Contract {
         let rfp_body = body.clone().latest_version();
 
         require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
+
+
+        if rfp_body.timeline.is_proposal_selected() {
+            let mut has_approved_proposal = false;
+            for proposal_id in self.rfp_linked_proposals.get(&id).unwrap() {
+                let proposal: Proposal = self
+                    .proposals
+                    .get(proposal_id.into())
+                    .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
+                    .into();
+                if proposal.snapshot.body.latest_version().timeline.is_approved() {
+                    has_approved_proposal = true;
+                    break;
+                }
+            }
+            require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
+        }
+
+        if rfp_body.timeline.is_cancelled() {
+            panic!("{:?}", dbg!(&self.rfp_linked_proposals));
+            require!(self.rfp_linked_proposals.get(&id).unwrap_or_default().len() == 0, "Cannot change RFP status to Cancelled if it has linked proposals");
+        }
 
         let old_snapshot = rfp.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();

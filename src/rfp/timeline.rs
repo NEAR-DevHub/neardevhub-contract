@@ -18,4 +18,8 @@ impl TimelineStatus {
     pub fn is_cancelled(&self) -> bool {
         matches!(self, TimelineStatus::Cancelled)
     }
+
+    pub fn is_proposal_selected(&self) -> bool {
+        matches!(self, TimelineStatus::ProposalSelected)
+    }
 }
