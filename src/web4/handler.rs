@@ -7,7 +7,7 @@ use serde_json::json;
 
 use crate::{
     web4::types::{Web4Request, Web4Response},
-    Contract,
+    Contract, Proposal,
 };
 
 pub const BASE64_ENGINE: engine::GeneralPurpose =
@@ -26,23 +26,44 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     );
     let mut redirect_url: String = String::from("https://near.social/devhub.near/widget/app");
 
-    let mut initial_props_json = String::from("{}");
+    let mut initial_props_json = json!({"page": page}).to_string();
 
-    match page {
-        "community" => {
-            let handle = path_parts[2];
-            let community_option = contract.get_community(handle.to_string());
-            if community_option.is_some() {
-                let community = community_option.unwrap();
+    if path_parts.len() > 1 {
+        match page {
+            "community" => {
+                let handle = path_parts[2];
+                let community_option = contract.get_community(handle.to_string());
+                if community_option.is_some() {
+                    let community = community_option.unwrap();
+                    title = html_escape::encode_text(community.name.as_str()).to_string();
+                    description =
+                        html_escape::encode_text(community.description.as_str()).to_string();
+                    image = community.logo_url;
+                }
                 redirect_url =
                     format!("{}/devhub.near/widget/app?page={}&handle={}", gateway, page, handle);
-                title = community.name;
-                description = community.description;
-                image = community.logo_url;
+                initial_props_json = json!({"page": page, "handle": handle}).to_string();
             }
-            initial_props_json = json!({"page": page, "handle": handle}).to_string();
+            "proposal" => {
+                let id_string = path_parts[2];
+                let id_option = id_string.parse::<u32>();
+                if id_option.is_ok() {
+                    let id = id_option.unwrap();
+                    let proposal_option = contract.proposals.get(id.into());
+                    if proposal_option.is_some() {
+                        let proposal: Proposal = Proposal::from(proposal_option.unwrap());
+                        let proposal_body = proposal.snapshot.body.latest_version();
+                        title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
+                        description =
+                            html_escape::encode_text(proposal_body.summary.as_str()).to_string();
+                    }
+                }
+                redirect_url =
+                    format!("{}/devhub.near/widget/app?page={}&id={}", gateway, page, id_string);
+                initial_props_json = json!({"page": page, "id": id_string}).to_string();
+            }
+            _ => {}
         }
-        _ => {}
     }
 
     let body = format!(
@@ -80,17 +101,23 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
+    use std::collections::HashSet;
+
     use super::web4_get;
     use crate::{
         web4::{handler::BASE64_ENGINE, types::Web4Response},
-        CommunityInputs, Contract,
+        CommunityInputs, Contract, Proposal, ProposalBodyV0, ProposalSnapshot,
+        VersionedProposalBody,
     };
     use near_sdk::{
-        base64::Engine, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
+        base64::Engine,
+        serde_json::json,
+        test_utils::VMContextBuilder,
+        testing_env, NearToken,
     };
 
     #[test]
-    pub fn test_web4() {
+    pub fn test_community_path() {
         let signer = "bob.near".to_string();
         let context = VMContextBuilder::new()
             .signer_account_id(signer.clone().try_into().unwrap())
@@ -164,6 +191,7 @@ mod tests {
             }
         }
     }
+
     #[test]
     pub fn test_web4_unknown_community() {
         let contract = Contract::new();
@@ -187,6 +215,107 @@ mod tests {
                 assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
                 let expected_initial_props_string =
                     json!({"page": "community", "handle": "blablablablabla"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_proposal_path() {
+        let signer = "bob.near".to_string();
+        let context = VMContextBuilder::new()
+            .signer_account_id(signer.clone().try_into().unwrap())
+            .current_account_id(signer.try_into().unwrap())
+            .build();
+
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        let proposal_body: ProposalBodyV0 = near_sdk::serde_json::from_value(json!({
+            "proposal_body_version": "V0",
+            "name": "The best proposal ever",
+            "description": "You should just understand why this is the best proposal",
+            "category": "Marketing",
+            "summary": "It is obvious why this proposal is so great",
+            "linked_proposals": [1, 3],
+            "requested_sponsorship_usd_amount": "1000000000",
+            "requested_sponsorship_paid_in_currency": "USDT",
+            "receiver_account": "polyprogrammist.near",
+            "supervisor": "frol.near",
+            "requested_sponsor": "neardevdao.near",
+            "payouts": [],
+            "timeline": {"status": "DRAFT"}
+        }))
+        .unwrap();
+        let proposal = Proposal {
+            id: 0,
+            author_id: "bob.near".parse().unwrap(),
+            social_db_post_block_height: 0u64,
+            snapshot: ProposalSnapshot {
+                editor_id: "bob.near".parse().unwrap(),
+                timestamp: 0,
+                labels: HashSet::new(),
+                body: VersionedProposalBody::V0(proposal_body),
+            },
+            snapshot_history: vec![],
+        };
+
+        contract.proposals.push(&proposal.clone().into());
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/proposal/0"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this proposal is so great\" />"));
+                assert!(body_string
+                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                assert!(body_string
+                    .contains("https://near.social/devhub.near/widget/app?page=proposal&id=0"));
+                let expected_initial_props_string =
+                    json!({"page": "proposal", "id": "0"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_proposal_path_unknown() {
+        let contract = Contract::new();
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/proposal/1"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
+                assert!(
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                );
+                assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
+                let expected_initial_props_string =
+                    json!({"page": "proposal", "id": "1"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
             }
             _ => {
