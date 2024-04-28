@@ -266,7 +266,7 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        self.assert_proposal_correct(proposal_body.clone());
+        self.assert_proposal_correct(body.clone(), None);
 
         require!(
             self.is_allowed_to_use_labels(
@@ -720,12 +720,26 @@ impl Contract {
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
-    fn assert_proposal_correct(&self, body: ProposalBodyV1) {
-        if let Some(rfp_id) = body.linked_rfp {
+    fn assert_can_link_unlink_rfp(&self, rfp_id: Option<RFPId>) {
+        if let Some(rfp_id) = rfp_id {
+            let rfp: RFP = self
+                .rfps
+                .get(rfp_id.into())
+                .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+                .into();
             require!(
-                self.rfps.get(rfp_id.into()).is_some(),
-                "The linked RFP does not exist"
+                rfp.snapshot.body.latest_version().timeline.is_accepting_submissions() || self.is_allowed_to_write_rfps(env::predecessor_account_id()),
+                format!("The RFP {} is not in the Accepting Submissions state, so you can't link or unlink to this RFP", rfp_id)
             );
+        }
+    }
+
+    fn assert_proposal_correct(&self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>) {
+        let new_body = new_proposal_body.clone().latest_version();
+        let old_rfp_id = old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
+        if new_body.linked_rfp != old_rfp_id {
+            self.assert_can_link_unlink_rfp(new_body.linked_rfp);
+            self.assert_can_link_unlink_rfp(old_rfp_id);
         }
     }
 
@@ -748,9 +762,10 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        self.assert_proposal_correct(proposal_body.clone());
+        let old_body = proposal.snapshot.body.clone();
+        self.assert_proposal_correct(body.clone(), Some(old_body.clone()));
 
-        let current_timeline = proposal.snapshot.body.clone().latest_version().timeline;
+        let current_timeline = old_body.latest_version().timeline;
 
         require!(
             self.has_moderator(editor_id.clone())
