@@ -186,6 +186,43 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     assert!(dbg!(create_community).is_success());
 
+    let _add_proposal = contract
+        .call("add_proposal")
+        .args_json(json!({
+            "body": {
+                "proposal_body_version": "V0",
+                "name": "another post",
+                "description": "some description",
+                "category": "Marketing",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_usd_amount": "1000000000",
+                "requested_sponsorship_paid_in_currency": "USDT",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "DRAFT"}
+            },
+            "labels": ["test1", "test2"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    eprintln!("{:?} ", _add_proposal);
+
+    let _edit_proposal_timeline_payment = contract
+        .call("edit_proposal_timeline")
+        .args_json(json!({
+            "id": 0,
+            "timeline": {"status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
     // Call self upgrade with current branch code
     // compile the current code
     let wasm = near_workspaces::compile_project("./").await?;
@@ -285,6 +322,17 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .json()?;
 
     insta::assert_json_snapshot!(get_community);
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    insta::assert_json_snapshot!(get_proposal, {".snapshot.timestamp" => "[timestamp]", ".social_db_post_block_height" => "91", ".snapshot_history[0].timestamp" => "[timestamp]"});
 
     Ok(())
 }

@@ -17,5 +17,20 @@ expression: get_community
   "telegram_handle": null,
   "twitter_handle": null,
   "website_url": null,
-  "addons": []
+  "addons": [
+    {
+      "id": "announcements",
+      "addon_id": "announcements",
+      "display_name": "Announcements",
+      "enabled": true,
+      "parameters": ""
+    },
+    {
+      "id": "discussions",
+      "addon_id": "discussions",
+      "display_name": "Discussions",
+      "enabled": true,
+      "parameters": ""
+    }
+  ]
 }
