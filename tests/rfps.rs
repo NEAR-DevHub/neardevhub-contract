@@ -364,17 +364,6 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert!(_edit_rfp_timeline_proposal_selected.is_success());
 
-    let _edit_rfp_timeline_proposal_selected = contract
-        .call("edit_rfp_timeline")
-        .args_json(json!({
-            "id": 0,
-            "timeline": {"status": "PROPOSAL_SELECTED" }
-        }))
-        .max_gas()
-        .deposit(deposit_amount)
-        .transact()
-        .await?;
-
     let _edit_rfp_timeline_accepting_submissions = contract
         .call("edit_rfp_timeline")
         .args_json(json!({
@@ -412,8 +401,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    println!("_edit_proposal_unlink_rfp: {:?}", _edit_proposal_unlink_rfp);
-
     let _edit_rfp_timeline_cancelled = contract
         .call("edit_rfp_timeline")
         .args_json(json!({
@@ -424,8 +411,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
-
-    println!("_edit_rfp_timeline_cancelled: {:?}", _edit_rfp_timeline_cancelled);
 
     assert!(_edit_rfp_timeline_cancelled.is_success());
 

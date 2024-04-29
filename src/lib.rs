@@ -744,12 +744,12 @@ impl Contract {
             self.assert_can_link_unlink_rfp(old_rfp_id);
             if let Some(old_rfp_id) = old_rfp_id {
                 let mut linked_proposals: HashSet<u32> = self.rfp_linked_proposals.get(&old_rfp_id).unwrap();
-                linked_proposals.remove(&new_proposal_body.clone().latest_version().linked_rfp.unwrap());
+                linked_proposals.remove(&old_rfp_id);
                 self.rfp_linked_proposals.insert(&old_rfp_id, &linked_proposals);
             }
             if let Some(new_rfp_id) = new_body.linked_rfp {
                 let mut linked_proposals = self.rfp_linked_proposals.get(&new_rfp_id).unwrap_or_default();
-                linked_proposals.insert(new_proposal_body.clone().latest_version().linked_rfp.unwrap());
+                linked_proposals.insert(new_rfp_id);
                 self.rfp_linked_proposals.insert(&new_rfp_id, &linked_proposals);
             }
         }
@@ -904,7 +904,6 @@ impl Contract {
         }
 
         if rfp_body.timeline.is_cancelled() {
-            panic!("{:?}", dbg!(&self.rfp_linked_proposals));
             require!(self.rfp_linked_proposals.get(&id).unwrap_or_default().len() == 0, "Cannot change RFP status to Cancelled if it has linked proposals");
         }
 
