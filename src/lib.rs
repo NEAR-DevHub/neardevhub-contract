@@ -369,7 +369,7 @@ impl Contract {
                 .set_rfp_block_height_callback(rfp.clone()),
             rfp::repost::rfp_repost_text(rfp.clone()),
         )
-        // .then(notify::notify_proposal_subscribers(&rfp));
+        .then(notify::notify_rfp_subscribers(&rfp))
     }
 
     #[private]
@@ -949,8 +949,6 @@ impl Contract {
             rfps.insert(id);
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
-
-        // notify::notify_edit_rfp(id, rfp_author)
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {

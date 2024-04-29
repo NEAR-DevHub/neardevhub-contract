@@ -1,4 +1,5 @@
-use crate::{get_subscribers, PostId, Proposal, ProposalId};
+use crate::rfp::RFPId;
+use crate::{get_subscribers, PostId, Proposal, ProposalId, RFP, rfp::get_subscribers as get_rfp_subscribers};
 use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
@@ -74,6 +75,20 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) -> Promise {
             "type": "devhub/mention",
             "proposal": proposal.id,
             "notifier": env::predecessor_account_id(),
+        }),
+    )
+}
+
+pub fn notify_rfp_subscribers(rfp: &RFP) -> Promise {
+    let accounts = get_rfp_subscribers(&rfp.snapshot.body.clone().latest_version());
+
+    notify_accounts(
+        env::current_account_id(),
+        accounts,
+        json!({
+            "type": "devhub/mention",
+            "rfp": rfp.id,
+            "notifier": env::current_account_id(),
         }),
     )
 }
