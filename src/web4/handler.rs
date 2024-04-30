@@ -43,13 +43,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             }
             "proposal" => {
                 let id_string = path_parts[2];
-                let id_option = id_string.parse::<u32>();
-                if id_option.is_ok() {
-                    let id = id_option.unwrap();
-                    let proposal_option = contract.proposals.get(id.into());
-                    if proposal_option.is_some() {
-                        let proposal: Proposal = Proposal::from(proposal_option.unwrap());
-                        let proposal_body = proposal.snapshot.body.latest_version();
+                if let Ok(id) = id_string.parse::<u32>() {
+                    if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
+                        let proposal_body =
+                            Proposal::from(versioned_proposal).snapshot.body.latest_version();
                         title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
                         description =
                             html_escape::encode_text(proposal_body.summary.as_str()).to_string();
