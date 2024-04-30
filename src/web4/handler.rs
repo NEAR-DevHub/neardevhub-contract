@@ -299,6 +299,78 @@ mod tests {
     }
 
     #[test]
+    pub fn test_proposal_with_html_tag_in_summary() {
+        let signer = "bob.near".to_string();
+        let context = VMContextBuilder::new()
+            .signer_account_id(signer.clone().try_into().unwrap())
+            .current_account_id(signer.try_into().unwrap())
+            .build();
+
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        let proposal_body: ProposalBodyV0 = near_sdk::serde_json::from_value(json!({
+            "proposal_body_version": "V0",
+            "name": "The best proposal ever",
+            "description": "You should just understand why this is the best proposal",
+            "category": "Marketing",
+            "summary": "It is obvious why this <script>alert('hello');</script> proposal is so great",
+            "linked_proposals": [1, 3],
+            "requested_sponsorship_usd_amount": "1000000000",
+            "requested_sponsorship_paid_in_currency": "USDT",
+            "receiver_account": "polyprogrammist.near",
+            "supervisor": "frol.near",
+            "requested_sponsor": "neardevdao.near",
+            "payouts": [],
+            "timeline": {"status": "DRAFT"}
+        }))
+        .unwrap();
+        let proposal = Proposal {
+            id: 0,
+            author_id: "bob.near".parse().unwrap(),
+            social_db_post_block_height: 0u64,
+            snapshot: ProposalSnapshot {
+                editor_id: "bob.near".parse().unwrap(),
+                timestamp: 0,
+                labels: HashSet::new(),
+                body: VersionedProposalBody::V0(proposal_body),
+            },
+            snapshot_history: vec![],
+        };
+
+        contract.proposals.push(&proposal.clone().into());
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/proposal/0"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this &lt;script&gt;alert('hello');&lt;/script&gt; proposal is so great\" />"));
+                assert!(body_string
+                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                assert!(body_string
+                    .contains("https://near.social/devhub.near/widget/app?page=proposal&id=0"));
+                assert!(body_string
+                    .contains("https://near.org/devhub.near/widget/app?page=proposal&id=0"));
+                let expected_initial_props_string =
+                    json!({"page": "proposal", "id": "0"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
     pub fn test_proposal_path_unknown() {
         let contract = Contract::new();
         let response = web4_get(
