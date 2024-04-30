@@ -29,17 +29,17 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     if path_parts.len() > 1 {
         match page {
             "community" => {
-                let handle = path_parts[2];
-                let community_option = contract.get_community(handle.to_string());
-                if community_option.is_some() {
-                    let community = community_option.unwrap();
-                    title = html_escape::encode_text(community.name.as_str()).to_string();
-                    description =
-                        html_escape::encode_text(community.description.as_str()).to_string();
-                    image = community.logo_url;
+                if let Some(handle) = path_parts.get(2) {
+                    if let Some(community) = contract.get_community(handle.to_string()) {
+                        title = html_escape::encode_text(community.name.as_str()).to_string();
+                        description =
+                            html_escape::encode_text(community.description.as_str()).to_string();
+                        image = community.logo_url;
+                    }
+                    redirect_path =
+                        format!("devhub.near/widget/app?page={}&handle={}", page, handle);
+                    initial_props_json = json!({"page": page, "handle": handle}).to_string();
                 }
-                redirect_path = format!("devhub.near/widget/app?page={}&handle={}", page, handle);
-                initial_props_json = json!({"page": page, "handle": handle}).to_string();
             }
             "proposal" => {
                 if let Some(id_string) = path_parts.get(2) {
@@ -218,6 +218,37 @@ mod tests {
                 assert!(body_string.contains("https://near.org/devhub.near/widget/app"));
                 let expected_initial_props_string =
                     json!({"page": "community", "handle": "blablablablabla"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_web4_community_missing_handle() {
+        let contract = Contract::new();
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/community"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
+                assert!(
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                );
+                assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
+                assert!(body_string.contains("https://near.org/devhub.near/widget/app"));
+                let expected_initial_props_string = json!({"page": "community"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
             }
             _ => {
