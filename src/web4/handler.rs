@@ -42,8 +42,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
                 initial_props_json = json!({"page": page, "handle": handle}).to_string();
             }
             "proposal" => {
-                if path_parts.len() > 2 {
-                    let id_string = path_parts[2];
+                if let Some(id_string) = path_parts.get(2) {
                     if let Ok(id) = id_string.parse::<u32>() {
                         if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
                             let proposal_body =
