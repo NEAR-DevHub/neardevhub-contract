@@ -43,9 +43,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             }
             "proposal" => {
                 let id_string = path_parts[2];
-                let id_option = id_string.parse::<u32>();
-                if id_option.is_ok() {
-                    let id = id_option.unwrap();
+                if let Ok(id) = id_string.parse::<u32>() {
                     let proposal_option = contract.proposals.get(id.into());
                     if proposal_option.is_some() {
                         let proposal: Proposal = Proposal::from(proposal_option.unwrap());
