@@ -44,9 +44,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             "proposal" => {
                 let id_string = path_parts[2];
                 if let Ok(id) = id_string.parse::<u32>() {
-                    let proposal_option = contract.proposals.get(id.into());
-                    if proposal_option.is_some() {
-                        let proposal: Proposal = Proposal::from(proposal_option.unwrap());
+                    if let Some(proposal) = contract.proposals.get(id.into()) {
                         let proposal_body = proposal.snapshot.body.latest_version();
                         title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
                         description =
