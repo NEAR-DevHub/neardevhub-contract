@@ -83,15 +83,19 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/runtime.25b143da327a5371509f.bundle.js"></script>
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="navbar-brand"><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near" style="width: 64px" /></div>
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a href="https://near.org/{redirect_path}" class="nav-link">near.org</a></li>
-                <li class="nav-item"><a href="https://near.social/{redirect_path}" class="nav-link">near.social</a></li>
-            </ul>
-        </nav>
+<nav class="navbar navbar-expand-sm navbar-light bg-light" style="display: flex; flex-wrap: nowrap; padding-left: 5px; padding-right: 5px;">
+    <a class="navbar-brand" href="/""><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near" style="width: 64px" /></a>
+    <p class="nav-text" style="flex-grow: 1"></p>
+    <p class="nav-text">Choose your gateway</p>
+    <div class="navbar-nav">
+        <a href="https://near.org/{redirect_path}" class="btn btn-light btn-sm">
+            <img src="https://near.org/_next/static/media/near-logo.1416a213.svg" />
+        </a>
+        <a href="https://near.social/{redirect_path}" class="btn btn-dark btn-sm">
+            <img src="https://ipfs.web4.near.page/ipfs/bafybeieugu57nj5c6jhgtozvbyj6am3lh5baeb4uvjh3re26ihp7sjmnra/nearsocial.svg" />
+        </a>
     </div>
+</nav>
     <near-social-viewer src="devhub.near/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
 </body>
 </html>"#,
