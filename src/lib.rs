@@ -356,6 +356,7 @@ impl Contract {
             id: id,
             social_db_post_block_height: 0u64,
             snapshot: RFPSnapshot {
+                editor_id: env::predecessor_account_id(),
                 timestamp: env::block_timestamp(),
                 labels,
                 body: body.clone(),
@@ -911,6 +912,7 @@ impl Contract {
         let old_labels_set = old_snapshot.labels.clone();
         let new_labels = labels;
         let new_snapshot = RFPSnapshot {
+            editor_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
             labels: new_labels.clone(),
             body: body,

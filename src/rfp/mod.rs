@@ -8,7 +8,7 @@ pub use self::timeline::TimelineStatus;
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
 
-use near_sdk::{near, BlockHeight, Timestamp};
+use near_sdk::{near, BlockHeight, Timestamp, AccountId};
 
 pub type RFPId = u32;
 
@@ -16,7 +16,7 @@ type PostTag = String;
 
 #[near(serializers=[borsh, json])]
 #[derive(Clone)]
-#[serde(tag = "proposal_version")]
+#[serde(tag = "rfp_version")]
 pub enum VersionedRFP {
     V0(RFP),
 }
@@ -52,6 +52,7 @@ impl From<RFP> for VersionedRFP {
 #[near(serializers=[borsh, json])]
 #[derive(Clone)]
 pub struct RFPSnapshot {
+    pub editor_id: AccountId,
     #[serde(
         serialize_with = "u64_dec_format::serialize",
         deserialize_with = "u64_dec_format::deserialize"
