@@ -19,7 +19,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Marketing",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -45,7 +45,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    assert_eq!(get_proposal["snapshot"]["category"], "Marketing");
+    assert_eq!(get_proposal["snapshot"]["category"], "Bounty");
 
     let social_db_post_block_height: u64 =
         get_proposal["social_db_post_block_height"].as_str().unwrap().parse::<u64>()?;
@@ -61,7 +61,7 @@ async fn test_proposal() -> anyhow::Result<()> {
     )
     .unwrap();
 
-    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Marketing* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @devhub.near\\\\n\\\\n**Title**: “another post“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=0)\\\"}\"}}}");
+    assert_eq!(first_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Bounty* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @devhub.near\\\\n\\\\n**Title**: “another post“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/events-committee.near/widget/app?page=proposal&id=0)\\\"}\"}}}");
     let _edit_proposal_category = contract
         .call("edit_proposal")
         .args_json(json!({
@@ -70,7 +70,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -96,7 +96,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    assert_eq!(get_proposal_with_new_category["snapshot"]["category"], "Events");
+    assert_eq!(get_proposal_with_new_category["snapshot"]["category"], "Bounty");
 
     let _add_second_proposal = contract
         .call("add_proposal")
@@ -105,7 +105,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "One more",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [],
                 "requested_sponsorship_usd_amount": "200",
@@ -159,7 +159,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another author",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -186,7 +186,7 @@ async fn test_proposal() -> anyhow::Result<()> {
     )
     .unwrap();
 
-    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Events* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @second.test.near\\\\n\\\\n**Title**: “another author“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/devhub.near/widget/app?page=proposal&id=2)\\\"}\"}}}");
+    assert_eq!(second_proposal_social_post, "{\"devhub.near\":{\"post\":{\"main\":\"{\\\"type\\\":\\\"md\\\",\\\"text\\\":\\\"We have just received a new *Bounty* proposal.\\\\n\\\\n———\\\\n\\\\n**By**: @second.test.near\\\\n\\\\n**Title**: “another author“\\\\n\\\\n**Summary**:\\\\n\\\\nsum\\\\n\\\\n———\\\\n\\\\nRead the full proposal and share your feedback on [DevHub](/events-committee.near/widget/app?page=proposal&id=2)\\\"}\"}}}");
 
     let get_second_author_proposal: serde_json::Value = contract
         .call("get_proposal")
@@ -315,7 +315,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -339,7 +339,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -365,7 +365,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -391,7 +391,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",
@@ -501,7 +501,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "proposal_body_version": "V0",
                 "name": "another post",
                 "description": "some description",
-                "category": "Events",
+                "category": "Bounty",
                 "summary": "sum",
                 "linked_proposals": [1, 3],
                 "requested_sponsorship_usd_amount": "1000000000",

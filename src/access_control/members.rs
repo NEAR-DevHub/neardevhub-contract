@@ -245,7 +245,7 @@ mod tests {
 
     fn root_member() -> (Member, VersionedMemberMetadata) {
         (
-            Member::Account("devgovgigs.near".parse().unwrap()),
+            Member::Account("events-committee.near".parse().unwrap()),
             MemberMetadata {
                 description: "Main account can do anything".to_string(),
                 permissions: HashMap::from([
@@ -327,7 +327,7 @@ mod tests {
             root_members,
             HashSet::from([
                 Member::Team("moderators".to_string()),
-                Member::Account("devgovgigs.near".parse().unwrap())
+                Member::Account("events-committee.near".parse().unwrap())
             ])
         );
     }

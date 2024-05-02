@@ -1036,7 +1036,8 @@ mod tests {
         let body: ProposalBodyV0 = near_sdk::serde_json::from_value(json!({
             "proposal_body_version": "V0",
             "name": "another post",
-            "description": "Hello to @petersalomonsen.near and @psalomo.near. This is an idea with mentions.",            "category": "Marketing",
+            "description": "Hello to @petersalomonsen.near and @psalomo.near. This is an idea with mentions.",
+            "category": "Bounty",
             "summary": "sum",
             "linked_proposals": [1, 3],
             "requested_sponsorship_usd_amount": "1000000000",

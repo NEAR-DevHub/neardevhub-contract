@@ -126,13 +126,14 @@ pub fn get_subscribers(proposal_body: &ProposalBodyV0) -> Vec<String> {
 
 pub fn default_categories() -> Vec<String> {
     vec![
-        String::from("DevDAO Operations"),
-        String::from("Decentralized DevRel"),
-        String::from("NEAR Campus"),
-        String::from("Marketing"),
-        String::from("Events"),
-        String::from("Tooling & Infrastructures"),
-        String::from("Other"),
+        String::from("Bounty"),
+        String::from("Bounty booster"),
+        String::from("Event sponsorship"),
+        String::from("Events team"),
+        String::from("Hackathon"),
+        String::from("Hackbox"),
+        String::from("Meetup"),
+        String::from("Travel expenses"),
     ]
 }
 

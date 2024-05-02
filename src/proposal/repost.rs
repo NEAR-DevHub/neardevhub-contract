@@ -6,7 +6,8 @@ use devhub_common::social_db_contract;
 use crate::Proposal;
 
 fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk::serde_json::Value {
-    let proposal_link = format!("/devhub.near/widget/app?page=proposal&id={}", proposal.id);
+    let proposal_link =
+        format!("/events-committee.near/widget/app?page=proposal&id={}", proposal.id);
 
     let title = proposal.snapshot.body.clone().latest_version().name;
     let summary = proposal.snapshot.body.clone().latest_version().summary;
