@@ -427,5 +427,42 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_linked_rfp_incorrect_unlink.is_failure());
 
+    let _set_labels_extended_info = contract
+        .call("set_labels_extended_info")
+        .args_json(json!({
+            "labels": [
+                {
+                    "label": "test1",
+                    "description": "test1 description",
+                    "color": [255, 0, 0]
+                },
+                {
+                    "label": "test2",
+                    "description": "test2 description",
+                    "color": [0, 255, 0]
+                },
+                {
+                    "label": "test3",
+                    "description": "test3 description",
+                    "color": [0, 0, 255]
+                }
+            ]
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    let get_labels_extended_info = contract
+        .call("get_labels_extended_info")
+        .args_json(json!({}))
+        .view()
+        .await?
+        .json::<Value>()?;
+
+    let labels_array = get_labels_extended_info.as_array().unwrap();
+
+    assert_eq!(labels_array.len(), 3);
+
     Ok(())
 }

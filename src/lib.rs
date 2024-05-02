@@ -56,6 +56,7 @@ pub struct Contract {
     pub rfps: Vector<VersionedRFP>,
     pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
     pub rfp_linked_proposals: UnorderedMap<RFPId, HashSet<ProposalId>>,
+    pub labels_info: UnorderedMap<String, LabelInfo>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
@@ -81,6 +82,7 @@ impl Contract {
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
             rfp_linked_proposals: UnorderedMap::new(StorageKey::RFPLinkedProposals),
+            labels_info: UnorderedMap::new(StorageKey::LabelInfo),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
@@ -959,6 +961,33 @@ impl Contract {
         self.proposal_categories.clone()
     }
 
+    pub fn get_labels_extended_info(&self) -> Vec<LabelInfoExtended> {
+        near_sdk::log!("get_global_labels");
+
+        self.labels_info.iter().map(|(label, label_info)| LabelInfoExtended {
+            label: label.clone(),
+            description: label_info.description.clone(),
+            color: label_info.color.clone(),        
+        }).collect()
+    }
+
+    #[payable]
+    pub fn set_labels_extended_info(&mut self, labels: Vec<LabelInfoExtended>) {
+        let editor_id = env::predecessor_account_id();
+        require!(
+            self.has_moderator(editor_id.clone()) || editor_id.clone() == env::current_account_id(),
+            "Only the admin and moderators can set labels"
+        );
+
+        for label in labels {
+            let label_info = LabelInfo {
+                description: label.description,
+                color: label.color,
+            };
+            self.labels_info.insert(&label.label, &label_info);
+        }
+    }
+
     #[payable]
     pub fn set_allowed_categories(&mut self, new_categories: Vec<String>) {
         let editor_id = env::predecessor_account_id();
@@ -1259,6 +1288,19 @@ impl Contract {
         let moderators = self.access_control.members_list.get_moderators();
         moderators.contains(&Member::Account(account_id))
     }
+}
+
+#[near]
+pub struct LabelInfo {
+    description: Option<String>,
+    color: Option<(u8, u8, u8)>,
+}
+
+#[near(serializers=[borsh, json])]
+pub struct LabelInfoExtended {
+    label: String,
+    description: Option<String>,
+    color: Option<(u8, u8, u8)>,
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize, NearSchema)]
