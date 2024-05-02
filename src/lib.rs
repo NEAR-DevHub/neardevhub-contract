@@ -5,8 +5,8 @@ pub mod migrations;
 mod notify;
 pub mod post;
 pub mod proposal;
-pub mod rfp;
 mod repost;
+pub mod rfp;
 pub mod stats;
 pub mod str_serializers;
 
@@ -17,7 +17,9 @@ use community::*;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
-use rfp::{VersionedRFP, RFPId, VersionedRFPBody, RFPSnapshot, RFP, TimelineStatus as RFPTimelineStatus};
+use rfp::{
+    RFPId, RFPSnapshot, TimelineStatus as RFPTimelineStatus, VersionedRFP, VersionedRFPBody, RFP,
+};
 
 use devhub_common::{social_db_contract, SetReturnType};
 
@@ -166,9 +168,7 @@ impl Contract {
 
     pub fn get_rfp(&self, rfp_id: RFPId) -> VersionedRFP {
         near_sdk::log!("get_rfp");
-        self.rfps
-            .get(rfp_id.into())
-            .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+        self.rfps.get(rfp_id.into()).unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
     }
 
     pub fn get_all_rfp_ids(&self) -> Vec<RFPId> {
@@ -435,7 +435,8 @@ impl Contract {
 
     pub fn get_rfps_by_label(&self, label: String) -> Vec<RFPId> {
         near_sdk::log!("get_rfps_by_label");
-        let mut res: Vec<_> = self.label_to_rfps.get(&label).unwrap_or_default().into_iter().collect();
+        let mut res: Vec<_> =
+            self.label_to_rfps.get(&label).unwrap_or_default().into_iter().collect();
         res.sort();
         res
     }
@@ -499,10 +500,7 @@ impl Contract {
             .contains(&ActionType::EditPost)
     }
 
-    pub fn is_allowed_to_write_rfps(
-        &self,
-        editor: AccountId,
-    ) -> bool {
+    pub fn is_allowed_to_write_rfps(&self, editor: AccountId) -> bool {
         near_sdk::log!("is_allowed_to_write_rfps");
         editor == env::current_account_id() || self.has_moderator(editor)
     }
@@ -770,20 +768,28 @@ impl Contract {
         self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels);
     }
 
-    fn update_and_check_rfp_link(&mut self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>, labels: HashSet<String>) -> HashSet<String> {
+    fn update_and_check_rfp_link(
+        &mut self,
+        new_proposal_body: VersionedProposalBody,
+        old_proposal_body: Option<VersionedProposalBody>,
+        labels: HashSet<String>,
+    ) -> HashSet<String> {
         let mut labels = labels;
         let new_body = new_proposal_body.clone().latest_version();
-        let old_rfp_id = old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
+        let old_rfp_id =
+            old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
         if new_body.linked_rfp != old_rfp_id {
             self.assert_can_link_unlink_rfp(new_body.linked_rfp);
             self.assert_can_link_unlink_rfp(old_rfp_id);
             if let Some(old_rfp_id) = old_rfp_id {
-                let mut linked_proposals: HashSet<u32> = self.rfp_linked_proposals.get(&old_rfp_id).unwrap();
+                let mut linked_proposals: HashSet<u32> =
+                    self.rfp_linked_proposals.get(&old_rfp_id).unwrap();
                 linked_proposals.remove(&old_rfp_id);
                 self.rfp_linked_proposals.insert(&old_rfp_id, &linked_proposals);
             }
             if let Some(new_rfp_id) = new_body.linked_rfp {
-                let mut linked_proposals = self.rfp_linked_proposals.get(&new_rfp_id).unwrap_or_default();
+                let mut linked_proposals =
+                    self.rfp_linked_proposals.get(&new_rfp_id).unwrap_or_default();
                 linked_proposals.insert(new_rfp_id);
                 self.rfp_linked_proposals.insert(&new_rfp_id, &linked_proposals);
                 labels = self.get_rfp_labels(new_rfp_id);
@@ -884,7 +890,12 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_rfp(&mut self, id: RFPId, body: VersionedRFPBody, labels: HashSet<String>) -> Promise {
+    pub fn edit_rfp(
+        &mut self,
+        id: RFPId,
+        body: VersionedRFPBody,
+        labels: HashSet<String>,
+    ) -> Promise {
         near_sdk::log!("edit_rfp");
         self.edit_rfp_internal(id, body.clone(), labels)
     }
@@ -892,11 +903,8 @@ impl Contract {
     #[payable]
     pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
         near_sdk::log!("edit_rfp_timeline");
-        let rfp: RFP = self
-            .rfps
-            .get(id.into())
-            .unwrap_or_else(|| panic!("RFP id {} not found", id))
-            .into();
+        let rfp: RFP =
+            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
         let mut body = rfp.snapshot.body.latest_version();
         body.timeline = timeline;
 
@@ -914,12 +922,9 @@ impl Contract {
             self.is_allowed_to_write_rfps(editor_id.clone()),
             "The account is not allowed to edit RFPs"
         );
-        
-        let mut rfp: RFP = self
-            .rfps
-            .get(id.into())
-            .unwrap_or_else(|| panic!("RFP id {} not found", id))
-            .into();
+
+        let mut rfp: RFP =
+            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
 
         let rfp_body = body.clone().latest_version();
 
@@ -940,7 +945,10 @@ impl Contract {
         }
 
         if rfp_body.timeline.is_cancelled() {
-            require!(self.rfp_linked_proposals.get(&id).unwrap_or_default().len() == 0, "Cannot change RFP status to Cancelled if it has linked proposals");
+            require!(
+                self.rfp_linked_proposals.get(&id).unwrap_or_default().len() == 0,
+                "Cannot change RFP status to Cancelled if it has linked proposals"
+            );
         }
 
         let old_snapshot = rfp.snapshot.clone();
@@ -964,7 +972,7 @@ impl Contract {
                 self.update_proposal_labels(proposal_id, new_labels_set.clone());
             }
         }
-        
+
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
         require!(
@@ -1005,11 +1013,14 @@ impl Contract {
     pub fn get_global_labels(&self) -> Vec<LabelInfoExtended> {
         near_sdk::log!("get_global_labels");
 
-        self.global_labels_info.iter().map(|(label, label_info)| LabelInfoExtended {
-            label: label.clone(),
-            description: label_info.description.clone(),
-            color: label_info.color.clone(),        
-        }).collect()
+        self.global_labels_info
+            .iter()
+            .map(|(label, label_info)| LabelInfoExtended {
+                label: label.clone(),
+                description: label_info.description.clone(),
+                color: label_info.color.clone(),
+            })
+            .collect()
     }
 
     #[payable]
@@ -1022,10 +1033,7 @@ impl Contract {
         );
 
         for label in labels {
-            let label_info = LabelInfo {
-                description: label.description,
-                color: label.color,
-            };
+            let label_info = LabelInfo { description: label.description, color: label.color };
             self.global_labels_info.insert(&label.label, &label_info);
         }
     }

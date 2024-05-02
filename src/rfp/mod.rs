@@ -8,7 +8,7 @@ pub use self::timeline::TimelineStatus;
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
 
-use near_sdk::{near, BlockHeight, Timestamp, AccountId};
+use near_sdk::{near, AccountId, BlockHeight, Timestamp};
 
 pub type RFPId = u32;
 

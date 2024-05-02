@@ -5,8 +5,8 @@ use std::collections::HashSet;
 
 use self::timeline::TimelineStatus;
 
-use crate::{notify::get_text_mentions, rfp::RFPId};
 use crate::str_serializers::*;
+use crate::{notify::get_text_mentions, rfp::RFPId};
 
 use near_sdk::{near, AccountId, BlockHeight, Timestamp};
 

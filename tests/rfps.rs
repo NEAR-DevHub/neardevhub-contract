@@ -38,7 +38,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-
     let _add_rfp = contract
         .call("add_rfp")
         .args_json(json!({
@@ -122,8 +121,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    let get_rfps =
-        contract.call("get_rfps").args_json(json!({})).view().await?.json::<Value>()?;
+    let get_rfps = contract.call("get_rfps").args_json(json!({})).view().await?.json::<Value>()?;
 
     let rfps_array = get_rfps.as_array().unwrap();
 
@@ -169,7 +167,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .max_gas()
         .deposit(NearToken::from_near(1))
         .transact()
-        .await?;    
+        .await?;
 
     assert!(_second_author_add_rfp.is_failure());
 
@@ -192,12 +190,8 @@ async fn test_rfp() -> anyhow::Result<()> {
     let expected_ids: Vec<u64> = [0u64].to_vec();
     assert_eq!(rfp_ids_by_label, expected_ids);
 
-    let get_all_rfp_labels = contract
-        .call("get_all_rfp_labels")
-        .args_json(json!({}))
-        .view()
-        .await?
-        .json::<Value>()?;
+    let get_all_rfp_labels =
+        contract.call("get_all_rfp_labels").args_json(json!({})).view().await?.json::<Value>()?;
 
     let rfp_labels = get_all_rfp_labels
         .as_array()
@@ -251,7 +245,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    assert!( _add_rfp_incorrect_label.is_failure() );
+    assert!(_add_rfp_incorrect_label.is_failure());
 
     let _add_rfp_proposal = second_account
         .call(contract.id(), "add_proposal")
@@ -288,7 +282,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    assert!( _edit_proposal_linked_rfp_incorrect.is_failure() );
+    assert!(_edit_proposal_linked_rfp_incorrect.is_failure());
 
     let _edit_proposal_linked_rfp = second_account
         .call(contract.id(), "edit_proposal_linked_rfp")
@@ -471,12 +465,8 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_linked_rfp_incorrect_unlink.is_failure());
 
-    let get_global_labels = contract
-        .call("get_global_labels")
-        .args_json(json!({}))
-        .view()
-        .await?
-        .json::<Value>()?;
+    let get_global_labels =
+        contract.call("get_global_labels").args_json(json!({})).view().await?.json::<Value>()?;
 
     let labels_array = get_global_labels.as_array().unwrap();
 

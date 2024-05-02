@@ -65,7 +65,7 @@ pub enum StorageKey {
     RFPs,
     LabelToRFPs,
     RFPLinkedProposals,
-    LabelInfo
+    LabelInfo,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
