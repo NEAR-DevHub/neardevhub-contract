@@ -12,8 +12,8 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
-    let _set_labels_extended_info = contract
-        .call("set_labels_extended_info")
+    let _set_global_labels = contract
+        .call("set_global_labels")
         .args_json(json!({
             "labels": [
                 {
@@ -471,14 +471,14 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_linked_rfp_incorrect_unlink.is_failure());
 
-    let get_labels_extended_info = contract
-        .call("get_labels_extended_info")
+    let get_global_labels = contract
+        .call("get_global_labels")
         .args_json(json!({}))
         .view()
         .await?
         .json::<Value>()?;
 
-    let labels_array = get_labels_extended_info.as_array().unwrap();
+    let labels_array = get_global_labels.as_array().unwrap();
 
     assert_eq!(labels_array.len(), 3);
 

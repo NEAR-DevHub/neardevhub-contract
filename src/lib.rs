@@ -959,7 +959,7 @@ impl Contract {
         // Update labels index.
         let new_labels_set = new_labels;
 
-        if old_labels_set.eq(&new_labels_set.clone()) {
+        if !old_labels_set.eq(&new_labels_set.clone()) {
             for proposal_id in self.rfp_linked_proposals.get(&id).unwrap_or_default() {
                 self.update_proposal_labels(proposal_id, new_labels_set.clone());
             }

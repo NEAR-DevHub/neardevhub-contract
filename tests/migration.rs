@@ -332,8 +332,8 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     insta::assert_json_snapshot!(get_proposal, {".snapshot.timestamp" => "[timestamp]", ".social_db_post_block_height" => "91", ".snapshot_history[0].timestamp" => "[timestamp]"});
 
-    let _set_labels_extended_info = contract
-        .call("set_labels_extended_info")
+    let _set_global_labels = contract
+        .call("set_global_labels")
         .args_json(json!({
             "labels": [
                 {
