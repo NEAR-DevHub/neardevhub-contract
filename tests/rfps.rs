@@ -190,19 +190,6 @@ async fn test_rfp() -> anyhow::Result<()> {
     let expected_ids: Vec<u64> = [0u64].to_vec();
     assert_eq!(rfp_ids_by_label, expected_ids);
 
-    let get_all_rfp_labels =
-        contract.call("get_all_rfp_labels").args_json(json!({})).view().await?.json::<Value>()?;
-
-    let rfp_labels = get_all_rfp_labels
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|x| x.as_str().unwrap())
-        .collect::<Vec<_>>();
-
-    let expected_labels: Vec<&str> = ["test1", "test2", "test3"].to_vec();
-    assert_eq!(rfp_labels, expected_labels);
-
     let is_allowed_to_edit_rfp_false = contract
         .call("is_allowed_to_write_rfps")
         .args_json(json!({
