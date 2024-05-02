@@ -454,14 +454,7 @@ impl Contract {
         res.sort();
         res
     }
-
-    pub fn get_all_rfp_labels(&self) -> Vec<String> {
-        near_sdk::log!("get_all_rfp_labels");
-        let mut res: Vec<_> = self.label_to_rfps.keys().collect();
-        res.sort();
-        res
-    }
-
+    
     pub fn get_all_authors(&self) -> Vec<AccountId> {
         near_sdk::log!("get_all_authors");
         let mut res: Vec<_> = self.authors.keys().collect();
@@ -568,11 +561,6 @@ impl Contract {
     pub fn get_all_allowed_proposal_labels(&self, editor: AccountId) -> Vec<String> {
         near_sdk::log!("get_all_allowed_proposal_labels");
         self.filtered_labels(&self.label_to_proposals, &editor)
-    }
-
-    pub fn get_all_allowed_rfp_labels(&self, editor: AccountId) -> Vec<String> {
-        near_sdk::log!("get_all_allowed_rfp_labels");
-        self.filtered_labels(&self.label_to_rfps, &editor)
     }
 
     #[payable]
@@ -758,14 +746,14 @@ impl Contract {
         rfp.snapshot.labels
     }
 
-    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) {
+    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> Promise {
         let proposal: Proposal = self
             .proposals
             .get(proposal_id.into())
             .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
             .into();
 
-        self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels);
+        self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels)
     }
 
     fn update_and_check_rfp_link(
@@ -967,9 +955,11 @@ impl Contract {
         // Update labels index.
         let new_labels_set = new_labels;
 
+        let mut edit_proposal_promise: Option<Promise> = None;
+
         if !old_labels_set.eq(&new_labels_set.clone()) {
             for proposal_id in self.rfp_linked_proposals.get(&id).unwrap_or_default() {
-                self.update_proposal_labels(proposal_id, new_labels_set.clone());
+                edit_proposal_promise = Some(self.update_proposal_labels(proposal_id, new_labels_set.clone()));
             }
         }
 
@@ -1002,7 +992,13 @@ impl Contract {
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
 
-        notify::notify_rfp_subscribers(&rfp, self.get_moderators())
+        let notify_promise = notify::notify_rfp_subscribers(&rfp, self.get_moderators());
+
+        if let Some(edit_proposal_promise) = edit_proposal_promise {
+            edit_proposal_promise.then(notify_promise)
+        } else {
+            notify_promise
+        }
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
