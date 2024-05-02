@@ -1002,7 +1002,7 @@ impl Contract {
         self.proposal_categories.clone()
     }
 
-    pub fn get_labels_extended_info(&self) -> Vec<LabelInfoExtended> {
+    pub fn get_global_labels(&self) -> Vec<LabelInfoExtended> {
         near_sdk::log!("get_global_labels");
 
         self.global_labels_info.iter().map(|(label, label_info)| LabelInfoExtended {
@@ -1013,7 +1013,8 @@ impl Contract {
     }
 
     #[payable]
-    pub fn set_labels_extended_info(&mut self, labels: Vec<LabelInfoExtended>) {
+    pub fn set_global_labels(&mut self, labels: Vec<LabelInfoExtended>) {
+        near_sdk::log!("set_global_labels");
         let editor_id = env::predecessor_account_id();
         require!(
             self.has_moderator(editor_id.clone()) || editor_id.clone() == env::current_account_id(),
@@ -1031,6 +1032,7 @@ impl Contract {
 
     #[payable]
     pub fn set_allowed_categories(&mut self, new_categories: Vec<String>) {
+        near_sdk::log!("set_allowed_categories");
         let editor_id = env::predecessor_account_id();
         require!(
             self.has_moderator(editor_id.clone()) || editor_id.clone() == env::current_account_id(),
