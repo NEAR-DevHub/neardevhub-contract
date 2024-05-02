@@ -56,7 +56,7 @@ pub struct Contract {
     pub rfps: Vector<VersionedRFP>,
     pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
     pub rfp_linked_proposals: UnorderedMap<RFPId, HashSet<ProposalId>>,
-    pub labels_info: UnorderedMap<String, LabelInfo>,
+    pub global_labels_info: UnorderedMap<String, LabelInfo>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
@@ -82,7 +82,7 @@ impl Contract {
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
             rfp_linked_proposals: UnorderedMap::new(StorageKey::RFPLinkedProposals),
-            labels_info: UnorderedMap::new(StorageKey::LabelInfo),
+            global_labels_info: UnorderedMap::new(StorageKey::LabelInfo),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
@@ -270,7 +270,11 @@ impl Contract {
 
         let proposal_body = body.clone().latest_version();
 
-        self.update_and_check_rfp_link(body.clone(), None);
+        if proposal_body.linked_rfp.is_some() {
+            require!(labels.len() == 0, "Cannot add custom labels to this proposal. It inherits labels from the linked RFP. You should not add any labels to this proposal manually");
+        }
+
+        let labels = self.update_and_check_rfp_link(body.clone(), None, labels);
 
         require!(
             self.is_allowed_to_use_labels(
@@ -346,9 +350,12 @@ impl Contract {
             "Cannot use these labels"
         );
 
-        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
-
         for label in &labels {
+            require!(
+                self.global_labels_info.get(label).is_some(),
+                format!("Label {} is not registered", label)
+            );
+
             let mut other_rfps = self.label_to_rfps.get(label).unwrap_or_default();
             other_rfps.insert(id);
             self.label_to_rfps.insert(label, &other_rfps);
@@ -695,6 +702,10 @@ impl Contract {
         labels: HashSet<String>,
     ) -> Promise {
         near_sdk::log!("edit_proposal");
+        let proposal_body = body.clone().latest_version();
+        if proposal_body.linked_rfp.is_some() {
+            require!(labels.len() == 0, "Cannot edit labels of a proposal linked to RFP. It inherits labels from the linked RFP.");
+        }
         self.edit_proposal_internal(id, body.clone(), labels)
     }
 
@@ -740,7 +751,61 @@ impl Contract {
         }
     }
 
-    fn update_and_check_rfp_link(&mut self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>) {
+    fn get_rfp_labels(&self, rfp_id: RFPId) -> HashSet<String> {
+        let rfp: RFP = self
+            .rfps
+            .get(rfp_id.into())
+            .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+            .into();
+        rfp.snapshot.labels
+    }
+
+    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>, check_if_allowed: bool) {
+        let proposal: Proposal = self
+            .proposals
+            .get(proposal_id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
+            .into();
+        let old_labels_set = proposal.snapshot.labels.clone();
+        let new_labels_set: HashSet<String> = new_labels.clone();
+        let labels_to_remove = &old_labels_set - &new_labels_set;
+        let labels_to_add = &new_labels_set - &old_labels_set;
+        if check_if_allowed {
+            require!(
+                self.is_allowed_to_use_labels(
+                    Some(env::predecessor_account_id()),
+                    labels_to_remove.iter().cloned().collect()
+                ),
+                "Not allowed to remove these labels"
+            );
+            require!(
+                self.is_allowed_to_use_labels(
+                    Some(env::predecessor_account_id()),
+                    labels_to_add.iter().cloned().collect()
+                ),
+                "Not allowed to add these labels"
+            );
+        }
+
+        for label_to_remove in &labels_to_remove {
+            let mut proposals = self.label_to_proposals.get(&label_to_remove).unwrap();
+            proposals.remove(&proposal_id);
+            self.label_to_proposals.insert(&label_to_remove, &proposals);
+        }
+
+        for label_to_add in &labels_to_add {
+            let mut proposals = self.label_to_proposals.get(&label_to_add).unwrap_or_default();
+            proposals.insert(proposal_id);
+            self.label_to_proposals.insert(&label_to_add, &proposals);
+        }
+
+        if !labels_to_remove.is_empty() || !labels_to_add.is_empty() {
+            self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels);
+        }
+    }
+
+    fn update_and_check_rfp_link(&mut self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>, labels: HashSet<String>) -> HashSet<String> {
+        let mut labels = labels;
         let new_body = new_proposal_body.clone().latest_version();
         let old_rfp_id = old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
         if new_body.linked_rfp != old_rfp_id {
@@ -755,8 +820,12 @@ impl Contract {
                 let mut linked_proposals = self.rfp_linked_proposals.get(&new_rfp_id).unwrap_or_default();
                 linked_proposals.insert(new_rfp_id);
                 self.rfp_linked_proposals.insert(&new_rfp_id, &linked_proposals);
+                labels = self.get_rfp_labels(new_rfp_id);
+            } else {
+                labels = HashSet::new();
             }
         }
+        labels
     }
 
     fn edit_proposal_internal(
@@ -779,7 +848,7 @@ impl Contract {
         let proposal_body = body.clone().latest_version();
 
         let old_body = proposal.snapshot.body.clone();
-        self.update_and_check_rfp_link(body.clone(), Some(old_body.clone()));
+        let labels = self.update_and_check_rfp_link(body.clone(), Some(old_body.clone()), labels);
 
         let current_timeline = old_body.latest_version().timeline;
 
@@ -888,8 +957,9 @@ impl Contract {
 
         let rfp_body = body.clone().latest_version();
 
-        require!(self.proposal_categories.contains(&rfp_body.category), "Unknown category");
-
+        for proposal_id in self.rfp_linked_proposals.get(&id).unwrap_or_default() {
+            self.update_proposal_labels(proposal_id, labels.clone(), false);
+        }
 
         if rfp_body.timeline.is_proposal_selected() {
             let mut has_approved_proposal = false;
@@ -927,7 +997,7 @@ impl Contract {
         // Update labels index.
         let new_labels_set = new_labels;
         let labels_to_remove = &old_labels_set - &new_labels_set;
-        let labels_to_add = &new_labels_set - &old_labels_set;
+        let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
         require!(
             self.is_allowed_to_use_labels(
                 Some(editor_id.clone()),
@@ -964,7 +1034,7 @@ impl Contract {
     pub fn get_labels_extended_info(&self) -> Vec<LabelInfoExtended> {
         near_sdk::log!("get_global_labels");
 
-        self.labels_info.iter().map(|(label, label_info)| LabelInfoExtended {
+        self.global_labels_info.iter().map(|(label, label_info)| LabelInfoExtended {
             label: label.clone(),
             description: label_info.description.clone(),
             color: label_info.color.clone(),        
@@ -984,7 +1054,7 @@ impl Contract {
                 description: label.description,
                 color: label.color,
             };
-            self.labels_info.insert(&label.label, &label_info);
+            self.global_labels_info.insert(&label.label, &label_info);
         }
     }
 

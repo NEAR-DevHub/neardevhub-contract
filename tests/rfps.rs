@@ -12,13 +12,32 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
-    let _set_categories = contract
-        .call("set_allowed_categories")
-        .args_json(json!({"new_categories": ["Marketing", "Events"]}))
+    let _set_labels_extended_info = contract
+        .call("set_labels_extended_info")
+        .args_json(json!({
+            "labels": [
+                {
+                    "label": "test1",
+                    "description": "test1 description",
+                    "color": [255, 0, 0]
+                },
+                {
+                    "label": "test2",
+                    "description": "test2 description",
+                    "color": [0, 255, 0]
+                },
+                {
+                    "label": "test3",
+                    "description": "test3 description",
+                    "color": [0, 0, 255]
+                }
+            ]
+        }))
         .max_gas()
-        .deposit(NearToken::from_near(1))
+        .deposit(deposit_amount)
         .transact()
         .await?;
+
 
     let _add_rfp = contract
         .call("add_rfp")
@@ -27,7 +46,6 @@ async fn test_rfp() -> anyhow::Result<()> {
                 "rfp_body_version": "V0",
                 "name": "Some RFP",
                 "description": "some description",
-                "category": "Marketing",
                 "summary": "sum",
                 "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
                 "submission_deadline": "1707821848175250170"
@@ -48,20 +66,20 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    assert_eq!(get_rfp["snapshot"]["category"], "Marketing");
+    assert_eq!(get_rfp["snapshot"]["summary"], "sum");
 
     let social_db_post_block_height: u64 =
         get_rfp["social_db_post_block_height"].as_str().unwrap().parse::<u64>()?;
     assert!(social_db_post_block_height > 0);
 
-    let _edit_rfp_category = contract
+    let _edit_rfp = contract
         .call("edit_rfp")
         .args_json(json!({
             "id": 0,
             "body": {
                 "rfp_body_version": "V0",
                 "name": "Some RFP",
-                "description": "some description",
+                "description": "another description",
                 "category": "Events",
                 "summary": "sum",
                 "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
@@ -74,7 +92,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    let get_rfp_with_new_category: serde_json::Value = contract
+    let get_edited_rfp: serde_json::Value = contract
         .call("get_rfp")
         .args_json(json!({
             "rfp_id" : 0
@@ -83,7 +101,7 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?
         .json()?;
 
-    assert_eq!(get_rfp_with_new_category["snapshot"]["category"], "Events");
+    assert_eq!(get_edited_rfp["snapshot"]["description"], "another description");
 
     let _add_second_rfp = contract
         .call("add_rfp")
@@ -215,45 +233,25 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert!(is_allowed_to_edit_rfp_true.as_bool().unwrap());
 
-    let get_all_allowed_rfp_labels = contract
-        .call("get_all_allowed_rfp_labels")
-        .args_json(json!({
-            "editor": "devhub.near"
-        }))
-        .view()
-        .await?
-        .json::<Value>()?;
-
-    let allowed_rfp_labels = get_all_allowed_rfp_labels
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|x| x.as_str().unwrap())
-        .collect::<Vec<_>>();
-
-    let expected_labels: Vec<&str> = ["test1", "test2", "test3"].to_vec();
-    assert_eq!(allowed_rfp_labels, expected_labels);
-
-    let _add_rfp_incorrect_category = contract
+    let _add_rfp_incorrect_label = contract
         .call("add_rfp")
         .args_json(json!({
             "body": {
                 "rfp_body_version": "V0",
                 "name": "Some RFP",
                 "description": "some description",
-                "category": "NotExistingCategory",
                 "summary": "sum",
                 "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
                 "submission_deadline": "1707821848175250170"
             },
-            "labels": ["test1", "test2"],
+            "labels": ["test4"],
         }))
         .max_gas()
         .deposit(deposit_amount)
         .transact()
         .await?;
 
-    assert!(_add_rfp_incorrect_category.is_failure());
+    assert!( _add_rfp_incorrect_label.is_failure() );
 
     let _add_rfp_proposal = second_account
         .call(contract.id(), "add_proposal")
@@ -272,7 +270,7 @@ async fn test_rfp() -> anyhow::Result<()> {
                 "requested_sponsor": "neardevdao.near",
                 "timeline": {"status": "DRAFT"},
             },
-            "labels": ["test1", "test2"],
+            "labels": ["test1"],
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -312,7 +310,59 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?
         .json()?;
 
+    let proposal_labels = get_proposal["snapshot"]["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_labels: Vec<&str> = ["test1", "test2"].to_vec();
+    assert_eq!(proposal_labels, expected_labels);
+
     assert_eq!(get_proposal["snapshot"]["linked_rfp"], 0);
+
+    let _edit_rfp_labels = contract
+        .call("edit_rfp")
+        .args_json(json!({
+            "id": 0,
+            "body": {
+                "rfp_body_version": "V0",
+                "name": "Some RFP",
+                "description": "some description",
+                "summary": "sum",
+                "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
+                "submission_deadline": "1707821848175250170"
+            },
+            "labels": ["test2", "test3"],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    println!("edit_rfp_labels: {:?}", _edit_rfp_labels);
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    let proposal_labels = get_proposal["snapshot"]["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    println!("get_proposal: {:?}", get_proposal);
+
+    let expected_labels: Vec<&str> = ["test3", "test2"].to_vec();
+    assert_eq!(proposal_labels, expected_labels);
 
     let _edit_rfp_timeline_evaluation = contract
         .call("edit_rfp_timeline")
@@ -426,32 +476,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .await?;
 
     assert!(_edit_proposal_linked_rfp_incorrect_unlink.is_failure());
-
-    let _set_labels_extended_info = contract
-        .call("set_labels_extended_info")
-        .args_json(json!({
-            "labels": [
-                {
-                    "label": "test1",
-                    "description": "test1 description",
-                    "color": [255, 0, 0]
-                },
-                {
-                    "label": "test2",
-                    "description": "test2 description",
-                    "color": [0, 255, 0]
-                },
-                {
-                    "label": "test3",
-                    "description": "test3 description",
-                    "color": [0, 0, 255]
-                }
-            ]
-        }))
-        .max_gas()
-        .deposit(deposit_amount)
-        .transact()
-        .await?;
 
     let get_labels_extended_info = contract
         .call("get_labels_extended_info")

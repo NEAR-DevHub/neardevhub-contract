@@ -68,7 +68,6 @@ pub struct RFPSnapshot {
 #[derive(Clone)]
 pub struct RFPBodyV0 {
     pub name: String,
-    pub category: String,
     pub summary: String,
     pub description: String,
     pub timeline: TimelineStatus,
