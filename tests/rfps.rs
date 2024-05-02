@@ -341,8 +341,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    println!("edit_rfp_labels: {:?}", _edit_rfp_labels);
-
     let get_proposal: serde_json::Value = contract
         .call("get_proposal")
         .args_json(json!({
@@ -358,8 +356,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .iter()
         .map(|x| x.as_str().unwrap())
         .collect::<Vec<_>>();
-
-    println!("get_proposal: {:?}", get_proposal);
 
     let expected_labels: Vec<&str> = ["test3", "test2"].to_vec();
     assert_eq!(proposal_labels, expected_labels);
@@ -424,8 +420,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
-
-    println!("_edit_rfp_timeline_accepting_submissions: {:?}", _edit_rfp_timeline_accepting_submissions);
 
     let _edit_rfp_timeline_cancelled = contract
         .call("edit_rfp_timeline")

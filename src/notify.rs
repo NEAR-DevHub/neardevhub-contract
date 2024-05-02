@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{get_subscribers, PostId, Proposal, ProposalId, RFP, rfp::get_subscribers as get_rfp_subscribers};
 use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
@@ -78,8 +80,11 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) -> Promise {
     )
 }
 
-pub fn notify_rfp_subscribers(rfp: &RFP) -> Promise {
-    let accounts = get_rfp_subscribers(&rfp.snapshot.body.clone().latest_version());
+pub fn notify_rfp_subscribers(rfp: &RFP, additional_accounts: HashSet<AccountId>) -> Promise {
+    let accounts = [
+        get_rfp_subscribers(&rfp.snapshot.body.clone().latest_version()),
+        additional_accounts.iter().map(|x| x.to_string()).collect::<Vec<_>>(),
+    ].concat();
 
     notify_accounts(
         env::current_account_id(),

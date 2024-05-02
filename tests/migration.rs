@@ -332,6 +332,32 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     insta::assert_json_snapshot!(get_proposal, {".snapshot.timestamp" => "[timestamp]", ".social_db_post_block_height" => "91", ".snapshot_history[0].timestamp" => "[timestamp]"});
 
+    let _set_labels_extended_info = contract
+        .call("set_labels_extended_info")
+        .args_json(json!({
+            "labels": [
+                {
+                    "label": "test1",
+                    "description": "test1 description",
+                    "color": [255, 0, 0]
+                },
+                {
+                    "label": "test2",
+                    "description": "test2 description",
+                    "color": [0, 255, 0]
+                },
+                {
+                    "label": "test3",
+                    "description": "test3 description",
+                    "color": [0, 0, 255]
+                }
+            ]
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
     let _add_rfp = contract
         .call("add_rfp")
         .args_json(json!({
@@ -339,7 +365,6 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "rfp_body_version": "V0",
                 "name": "Some RFP",
                 "description": "some description",
-                "category": "Marketing",
                 "summary": "sum",
                 "timeline": {"status": "ACCEPTING_SUBMISSIONS"},
                 "submission_deadline": "1707821848175250170"

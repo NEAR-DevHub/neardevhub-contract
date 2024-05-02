@@ -380,7 +380,7 @@ impl Contract {
                 .set_rfp_block_height_callback(rfp.clone()),
             rfp::repost::rfp_repost_text(rfp.clone()),
         )
-        .then(notify::notify_rfp_subscribers(&rfp))
+        .then(notify::notify_rfp_subscribers(&rfp, self.get_moderators()))
     }
 
     #[private]
@@ -760,48 +760,14 @@ impl Contract {
         rfp.snapshot.labels
     }
 
-    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>, check_if_allowed: bool) {
+    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) {
         let proposal: Proposal = self
             .proposals
             .get(proposal_id.into())
             .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
             .into();
-        let old_labels_set = proposal.snapshot.labels.clone();
-        let new_labels_set: HashSet<String> = new_labels.clone();
-        let labels_to_remove = &old_labels_set - &new_labels_set;
-        let labels_to_add = &new_labels_set - &old_labels_set;
-        if check_if_allowed {
-            require!(
-                self.is_allowed_to_use_labels(
-                    Some(env::predecessor_account_id()),
-                    labels_to_remove.iter().cloned().collect()
-                ),
-                "Not allowed to remove these labels"
-            );
-            require!(
-                self.is_allowed_to_use_labels(
-                    Some(env::predecessor_account_id()),
-                    labels_to_add.iter().cloned().collect()
-                ),
-                "Not allowed to add these labels"
-            );
-        }
 
-        for label_to_remove in &labels_to_remove {
-            let mut proposals = self.label_to_proposals.get(&label_to_remove).unwrap();
-            proposals.remove(&proposal_id);
-            self.label_to_proposals.insert(&label_to_remove, &proposals);
-        }
-
-        for label_to_add in &labels_to_add {
-            let mut proposals = self.label_to_proposals.get(&label_to_add).unwrap_or_default();
-            proposals.insert(proposal_id);
-            self.label_to_proposals.insert(&label_to_add, &proposals);
-        }
-
-        if !labels_to_remove.is_empty() || !labels_to_add.is_empty() {
-            self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels);
-        }
+        self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels);
     }
 
     fn update_and_check_rfp_link(&mut self, new_proposal_body: VersionedProposalBody, old_proposal_body: Option<VersionedProposalBody>, labels: HashSet<String>) -> HashSet<String> {
@@ -918,13 +884,13 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_rfp(&mut self, id: RFPId, body: VersionedRFPBody, labels: HashSet<String>) {
+    pub fn edit_rfp(&mut self, id: RFPId, body: VersionedRFPBody, labels: HashSet<String>) -> Promise {
         near_sdk::log!("edit_rfp");
         self.edit_rfp_internal(id, body.clone(), labels)
     }
 
     #[payable]
-    pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) {
+    pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
         near_sdk::log!("edit_rfp_timeline");
         let rfp: RFP = self
             .rfps
@@ -942,7 +908,7 @@ impl Contract {
         id: RFPId,
         body: VersionedRFPBody,
         labels: HashSet<String>,
-    ) {
+    ) -> Promise {
         let editor_id: AccountId = env::predecessor_account_id();
         require!(
             self.is_allowed_to_write_rfps(editor_id.clone()),
@@ -956,10 +922,6 @@ impl Contract {
             .into();
 
         let rfp_body = body.clone().latest_version();
-
-        for proposal_id in self.rfp_linked_proposals.get(&id).unwrap_or_default() {
-            self.update_proposal_labels(proposal_id, labels.clone(), false);
-        }
 
         if rfp_body.timeline.is_proposal_selected() {
             let mut has_approved_proposal = false;
@@ -992,10 +954,17 @@ impl Contract {
         };
         rfp.snapshot = new_snapshot;
         rfp.snapshot_history.push(old_snapshot);
-        self.rfps.replace(id.try_into().unwrap(), &rfp.into());
+        self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
 
         // Update labels index.
         let new_labels_set = new_labels;
+
+        if old_labels_set.eq(&new_labels_set.clone()) {
+            for proposal_id in self.rfp_linked_proposals.get(&id).unwrap_or_default() {
+                self.update_proposal_labels(proposal_id, new_labels_set.clone());
+            }
+        }
+        
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
         require!(
@@ -1024,6 +993,8 @@ impl Contract {
             rfps.insert(id);
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
+
+        notify::notify_rfp_subscribers(&rfp, self.get_moderators())
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
@@ -1352,6 +1323,17 @@ impl Contract {
             .iter()
             .filter_map(|fc| self.get_community(fc.handle.clone()))
             .collect()
+    }
+
+    fn get_moderators(&self) -> HashSet<AccountId> {
+        let mut moderators: HashSet<AccountId> = HashSet::new();
+        for m in self.access_control.members_list.get_moderators() {
+            if let Member::Account(account_id) = m {
+                moderators.insert(account_id.clone());
+            }
+        }
+        moderators.insert(env::current_account_id());
+        moderators
     }
 
     pub fn has_moderator(&self, account_id: AccountId) -> bool {
