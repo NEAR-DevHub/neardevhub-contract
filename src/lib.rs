@@ -354,6 +354,7 @@ impl Contract {
 
         let rfp = RFP {
             id: id,
+            author_id: env::predecessor_account_id(),
             social_db_post_block_height: 0u64,
             snapshot: RFPSnapshot {
                 editor_id: env::predecessor_account_id(),

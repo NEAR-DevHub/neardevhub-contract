@@ -25,6 +25,7 @@ pub enum VersionedRFP {
 #[derive(Clone)]
 pub struct RFP {
     pub id: RFPId,
+    pub author_id: AccountId,
     #[serde(
         serialize_with = "u64_dec_format::serialize",
         deserialize_with = "u64_dec_format::deserialize"

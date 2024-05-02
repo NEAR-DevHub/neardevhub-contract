@@ -1,4 +1,3 @@
-use crate::rfp::RFPId;
 use crate::{get_subscribers, PostId, Proposal, ProposalId, RFP, rfp::get_subscribers as get_rfp_subscribers};
 use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
