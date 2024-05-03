@@ -1012,8 +1012,8 @@ impl Contract {
         self.global_labels_info
             .iter()
             .map(|(label, label_info)| LabelInfoExtended {
-                label: label.clone(),
-                description: label_info.description.clone(),
+                value: label.clone(),
+                title: label_info.title.clone(),
                 color: label_info.color.clone(),
             })
             .collect()
@@ -1029,8 +1029,8 @@ impl Contract {
         );
 
         for label in labels {
-            let label_info = LabelInfo { description: label.description, color: label.color };
-            self.global_labels_info.insert(&label.label, &label_info);
+            let label_info = LabelInfo { title: label.title, color: label.color };
+            self.global_labels_info.insert(&label.value, &label_info);
         }
     }
 
@@ -1350,14 +1350,14 @@ impl Contract {
 
 #[near]
 pub struct LabelInfo {
-    description: Option<String>,
+    title: Option<String>,
     color: Option<(u8, u8, u8)>,
 }
 
 #[near(serializers=[borsh, json])]
 pub struct LabelInfoExtended {
-    label: String,
-    description: Option<String>,
+    value: String,
+    title: Option<String>,
     color: Option<(u8, u8, u8)>,
 }
 
