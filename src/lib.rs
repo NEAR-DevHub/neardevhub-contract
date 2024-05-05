@@ -1019,6 +1019,11 @@ impl Contract {
             .collect()
     }
 
+    pub fn get_rfp_linked_proposals(&self, rfp_id: RFPId) -> Vec<ProposalId> {
+        near_sdk::log!("get_rfp_linked_proposals");
+        self.rfp_linked_proposals.get(&rfp_id).unwrap_or_default().into_iter().collect()
+    }
+
     #[payable]
     pub fn set_global_labels(&mut self, labels: Vec<LabelInfoExtended>) {
         near_sdk::log!("set_global_labels");
