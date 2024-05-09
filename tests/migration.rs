@@ -337,18 +337,18 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .args_json(json!({
             "labels": [
                 {
-                    "label": "test1",
-                    "description": "test1 description",
+                    "value": "test1",
+                    "title": "test1 description",
                     "color": [255, 0, 0]
                 },
                 {
-                    "label": "test2",
-                    "description": "test2 description",
+                    "value": "test2",
+                    "title": "test2 description",
                     "color": [0, 255, 0]
                 },
                 {
-                    "label": "test3",
-                    "description": "test3 description",
+                    "value": "test3",
+                    "title": "test3 description",
                     "color": [0, 0, 255]
                 }
             ]
@@ -375,6 +375,8 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
         .deposit(deposit_amount)
         .transact()
         .await?;
+
+    println!("_add_rfp: {:?}", _add_rfp);
 
     let _add_proposal = contract
         .call("add_proposal")

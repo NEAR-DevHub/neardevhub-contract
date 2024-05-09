@@ -62,6 +62,7 @@ pub struct RFPSnapshot {
     pub labels: HashSet<PostTag>,
     #[serde(flatten)]
     pub body: VersionedRFPBody,
+    pub linked_proposals: HashSet<RFPId>,
 }
 
 #[near(serializers=[borsh, json])]
