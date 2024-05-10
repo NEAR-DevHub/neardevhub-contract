@@ -142,9 +142,17 @@ impl Contract {
         }
     }
 
-    pub fn get_proposals(&self) -> Vec<VersionedProposal> {
+    pub fn get_proposals(&self, ids: Option< Vec<ProposalId> >) -> Vec<VersionedProposal> {
         near_sdk::log!("get_proposals");
-        self.proposals.to_vec()
+        if ids.is_some() {
+            let mut res: Vec<VersionedProposal> = vec![];
+            for id in ids.unwrap() {
+                res.push(self.proposals.get(id.into()).unwrap_or_else(|| panic!("Proposal id {} not found", id)));
+            }
+            res
+        } else {
+            self.proposals.to_vec()
+        }
     }
 
     pub fn get_proposal(&self, proposal_id: ProposalId) -> VersionedProposal {
@@ -255,16 +263,33 @@ impl Contract {
         notify::notify_mentions(desc.as_str(), id)
     }
 
+    // Usage without accepted_terms_and_conditions_version is deprecated. 
+    // So accepted_terms_and_conditions_version should be used 
+    // as it will become mandatory in the future
     #[payable]
     pub fn add_proposal(
         &mut self,
         body: VersionedProposalBody,
         labels: HashSet<String>,
+        accepted_terms_and_conditions_version: Option<near_sdk::BlockHeight>,
     ) -> Promise {
         near_sdk::log!("add_proposal");
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
+
+        if accepted_terms_and_conditions_version.is_some() {
+            let current_block_height = env::block_height();
+            let earliest_possible = current_block_height - 10000;
+            require!(
+                accepted_terms_and_conditions_version.unwrap() >= earliest_possible,
+                "Terms and conditions version is too old"
+            );
+            require!(
+                accepted_terms_and_conditions_version.unwrap() <= current_block_height,
+                "Terms and conditions version is from the future"
+            );
+        }
 
         let proposal_body = body.clone().latest_version();
 
@@ -910,6 +935,28 @@ impl Contract {
     }
 
     #[payable]
+    pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> Promise {
+        near_sdk::log!("cancel_rfp");
+        let rfp: RFP =
+            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
+        let mut body = rfp.snapshot.body.latest_version();
+        body.timeline = RFPTimelineStatus::Cancelled;
+
+        for proposal_id in proposals_to_cancel {
+            let proposal: Proposal = self.get_proposal(proposal_id).into();
+            let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
+            let review_status = proposal_timeline.get_review_status();
+            self.edit_proposal_timeline(proposal_id, TimelineStatus::Cancelled(review_status));
+        }
+
+        for proposal_id in proposals_to_unlink {
+            self.edit_proposal_linked_rfp(proposal_id, None);
+        }
+
+        self.edit_rfp_timeline(id, RFPTimelineStatus::Cancelled)
+    }
+
+    #[payable]
     pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
         near_sdk::log!("edit_rfp_timeline");
         let rfp: RFP =
@@ -1457,7 +1504,7 @@ mod tests {
             "payouts": [],
             "timeline": {"status": "DRAFT"}
         })).unwrap();
-        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new());
+        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new(), None);
         let receipts = get_created_receipts();
         assert_eq!(3, receipts.len());
 
