@@ -459,5 +459,21 @@ async fn test_rfp() -> anyhow::Result<()> {
 
     assert_eq!(labels_array.len(), 3);
 
+    let _cancel_rfp = contract
+        .call("cancel_rfp")
+        .args_json(json!({
+            "id": 0,
+            "proposals_to_cancel": [0],
+            "proposals_to_unlink": [],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    println!("_cancel_rfp: {:?}", _cancel_rfp);
+
+    assert!(_cancel_rfp.is_success());
+
     Ok(())
 }

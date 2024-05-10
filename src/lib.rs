@@ -1001,8 +1001,19 @@ impl Contract {
         }
 
         if rfp_body.timeline.is_cancelled() {
+            let mut active_linked_proposals = 0;
+            for proposal_id in self.get_rfp_linked_proposals(id) {
+                let proposal: Proposal = self
+                    .proposals
+                    .get(proposal_id.into())
+                    .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
+                    .into();
+                if !proposal.snapshot.body.latest_version().timeline.is_cancelled() {
+                    active_linked_proposals += 1;
+                }
+            }
             require!(
-                self.get_rfp_linked_proposals(id).len() == 0,
+                active_linked_proposals == 0,
                 "Cannot change RFP status to Cancelled if it has linked proposals"
             );
         }
