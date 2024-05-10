@@ -945,7 +945,7 @@ impl Contract {
         for proposal_id in proposals_to_cancel {
             let proposal: Proposal = self.get_proposal(proposal_id).into();
             let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
-            let review_status = proposal_timeline.get_review_status();
+            let review_status = proposal_timeline.get_review_status().clone();
             self.edit_proposal_timeline(proposal_id, TimelineStatus::Cancelled(review_status));
         }
 
