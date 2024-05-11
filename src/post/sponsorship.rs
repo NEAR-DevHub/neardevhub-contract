@@ -44,7 +44,7 @@ pub struct Sponsorship {
         deserialize_with = "u128_dec_format::deserialize"
     )]
     pub amount: Balance,
-    pub supervisor: AccountId,
+    pub supervisor: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
@@ -59,7 +59,7 @@ pub struct SponsorshipV1 {
         deserialize_with = "u128_dec_format::deserialize"
     )]
     pub amount: Balance,
-    pub supervisor: AccountId,
+    pub supervisor: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
