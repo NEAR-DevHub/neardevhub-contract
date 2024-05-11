@@ -33,7 +33,7 @@ pub struct Sponsorship {
     pub sponsorship_token: SponsorshipToken,
     #[serde(with = "u128_dec_format")]
     pub amount: Balance,
-    pub supervisor: AccountId,
+    pub supervisor: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
@@ -44,7 +44,7 @@ pub struct SponsorshipV1 {
     pub sponsorship_token: SponsorshipToken,
     #[serde(with = "u128_dec_format")]
     pub amount: Balance,
-    pub supervisor: AccountId,
+    pub supervisor: String,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
