@@ -341,6 +341,55 @@ async fn test_rfp() -> anyhow::Result<()> {
     let expected_labels: Vec<&str> = ["test3", "test2"].to_vec();
     assert_eq!(proposal_labels, expected_labels);
 
+    let edit_proposal = contract
+        .call("edit_proposal")
+        .args_json(json!({
+            "id": 0,
+            "body": {
+                "proposal_body_version": "V1",
+                "name": "RFP-proposal",
+                "description": "some description",
+                "category": "Marketing",
+                "summary": "sum",
+                "linked_proposals": [1, 3],
+                "requested_sponsorship_usd_amount": "1000000000",
+                "requested_sponsorship_paid_in_currency": "USDT",
+                "receiver_account": "polyprogrammist.near",
+                "supervisor": "frol.near",
+                "requested_sponsor": "neardevdao.near",
+                "timeline": {"status": "DRAFT"},
+                "linked_rfp": 0,
+            },
+            "labels": [],
+        }))
+        .max_gas()
+        .deposit(deposit_amount)
+        .transact()
+        .await?;
+
+    println!("edit_proposal: {:?}", edit_proposal);
+
+    assert!(edit_proposal.is_success());
+
+    let get_proposal: serde_json::Value = contract
+        .call("get_proposal")
+        .args_json(json!({
+            "proposal_id" : 0
+        }))
+        .view()
+        .await?
+        .json()?;
+
+    let proposal_labels = get_proposal["snapshot"]["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    let expected_labels: Vec<&str> = ["test3", "test2"].to_vec();
+    assert_eq!(proposal_labels, expected_labels);
+
     let _edit_rfp_timeline_evaluation = contract
         .call("edit_rfp_timeline")
         .args_json(json!({

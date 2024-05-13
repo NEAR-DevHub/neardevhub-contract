@@ -826,10 +826,10 @@ impl Contract {
             }
             if let Some(new_rfp_id) = new_body.linked_rfp {
                 self.add_linked_proposal_in_rfp(new_rfp_id, proposal_id);
-                labels = self.get_rfp_labels(new_rfp_id);
-            } else {
-                labels = HashSet::new();
             }
+        }
+        if let Some(new_rfp_id) = new_body.linked_rfp {
+            labels = self.get_rfp_labels(new_rfp_id);
         }
         labels
     }
