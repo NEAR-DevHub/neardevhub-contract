@@ -787,15 +787,22 @@ impl Contract {
 
     fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: bool) {
         let mut rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
-        let mut snapshot = rfp.snapshot.clone();
+        let snapshot: RFPSnapshot = rfp.snapshot.clone();
         let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
         if operation {
             linked_proposals.insert(proposal_id);
         } else {
             linked_proposals.remove(&proposal_id);
         }
-        snapshot.linked_proposals = linked_proposals;
-        rfp.snapshot = snapshot;
+        let new_snapshot = RFPSnapshot {
+            editor_id: env::predecessor_account_id(),
+            timestamp: env::block_timestamp(),
+            labels: rfp.snapshot.labels,
+            body: rfp.snapshot.body,
+            linked_proposals: linked_proposals,
+        };
+        rfp.snapshot = new_snapshot;
+        rfp.snapshot_history.push(snapshot);
         self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
     }
 
@@ -998,24 +1005,6 @@ impl Contract {
                 }
             }
             require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
-        }
-
-        if rfp_body.timeline.is_cancelled() {
-            let mut active_linked_proposals = 0;
-            for proposal_id in self.get_rfp_linked_proposals(id) {
-                let proposal: Proposal = self
-                    .proposals
-                    .get(proposal_id.into())
-                    .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
-                    .into();
-                if !proposal.snapshot.body.latest_version().timeline.is_cancelled() {
-                    active_linked_proposals += 1;
-                }
-            }
-            require!(
-                active_linked_proposals == 0,
-                "Cannot change RFP status to Cancelled if it has linked proposals"
-            );
         }
 
         let old_snapshot = rfp.snapshot.clone();
