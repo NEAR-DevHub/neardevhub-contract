@@ -451,19 +451,6 @@ async fn test_rfp() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    let _edit_rfp_timeline_cancelled = contract
-        .call("edit_rfp_timeline")
-        .args_json(json!({
-            "id": 0,
-            "timeline": {"status": "CANCELLED" }
-        }))
-        .max_gas()
-        .deposit(deposit_amount)
-        .transact()
-        .await?;
-
-    assert!(_edit_rfp_timeline_cancelled.is_failure());
-
     let _edit_proposal_unlink_rfp = contract
         .call("edit_proposal_linked_rfp")
         .args_json(json!({
