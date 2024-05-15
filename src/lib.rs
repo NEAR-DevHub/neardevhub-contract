@@ -144,12 +144,11 @@ impl Contract {
 
     pub fn get_proposals(&self, ids: Option< Vec<ProposalId> >) -> Vec<VersionedProposal> {
         near_sdk::log!("get_proposals");
-        if ids.is_some() {
-            let mut res: Vec<VersionedProposal> = vec![];
-            for id in ids.unwrap() {
-                res.push(self.proposals.get(id.into()).unwrap_or_else(|| panic!("Proposal id {} not found", id)));
-            }
-            res
+        if let Some(ids) = ids {
+            ids
+                .into_iter()
+                .filter_map(|id| self.proposals.get(id.into()))
+                .collect()
         } else {
             self.proposals.to_vec()
         }
