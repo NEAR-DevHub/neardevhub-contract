@@ -422,9 +422,10 @@ impl Contract {
         #[allow(unused_mut)] mut rfp: RFP,
         #[callback_unwrap] set_result: SetReturnType,
     ) -> BlockHeightCallbackRetValue {
+        let ret_value = BlockHeightCallbackRetValue { proposal_id: rfp.id };
         rfp.social_db_post_block_height = set_result.block_height.into();
-        self.rfps.push(&rfp.clone().into());
-        BlockHeightCallbackRetValue { proposal_id: rfp.id }
+        self.rfps.push(&rfp.into());
+        ret_value
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
@@ -994,7 +995,7 @@ impl Contract {
             let has_approved_proposal = self.get_rfp_linked_proposals(id)
                 .into_iter()
                 .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
-                .any(|proposal|  proposal.snapshot.body.latest_version().timeline.is_approved());
+                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.is_approved());
             require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
         }
 
@@ -1053,7 +1054,7 @@ impl Contract {
         }
 
         let notify_promise = notify::notify_rfp_subscribers(&rfp, self.get_moderators());
-
+        return Promise::new(env::current_account_id()); // TODO
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
