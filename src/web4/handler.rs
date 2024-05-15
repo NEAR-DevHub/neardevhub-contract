@@ -16,49 +16,47 @@ pub const BASE64_ENGINE: engine::GeneralPurpose =
 pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let path_parts: Vec<&str> = request.path.split('/').collect();
 
+    // A valid path provided by a legit web4 gateway always has '/', so there
+    // are always [0] and [1] elements, and [0] is always empty.
     let page = path_parts[1];
     let mut title = String::from("near/dev/hub");
     let mut description = String::from("The decentralized home base for NEAR builders");
     let mut image = String::from(
         "https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near",
     );
-    let mut redirect_path = String::from("devhub.near/widget/app");
+    let redirect_path;
+    let initial_props_json;
 
-    let mut initial_props_json = json!({"page": page}).to_string();
-
-    if path_parts.len() > 1 {
-        match page {
-            "community" => {
-                if let Some(handle) = path_parts.get(2) {
-                    if let Some(community) = contract.get_community(handle.to_string()) {
-                        title = html_escape::encode_text(community.name.as_str()).to_string();
-                        description =
-                            html_escape::encode_text(community.description.as_str()).to_string();
-                        image = community.logo_url;
-                    }
-                    redirect_path =
-                        format!("devhub.near/widget/app?page={}&handle={}", page, handle);
-                    initial_props_json = json!({"page": page, "handle": handle}).to_string();
+    match (page, path_parts.get(2)) {
+        ("community", Some(handle)) => {
+            if let Some(community) = contract.get_community(handle.to_string()) {
+                title = html_escape::encode_text(community.name.as_str()).to_string();
+                description =
+                    html_escape::encode_text(community.description.as_str()).to_string();
+                image = community.logo_url;
+            }
+            redirect_path =
+                format!("devhub.near/widget/app?page={}&handle={}", page, handle);
+            initial_props_json = json!({"page": page, "handle": handle}).to_string();
+        }
+        ("proposal", Some(id)) => {
+            if let Ok(id) = id.parse::<u32>() {
+                if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
+                    let proposal_body =
+                        Proposal::from(versioned_proposal).snapshot.body.latest_version();
+                    title =
+                        html_escape::encode_text(proposal_body.name.as_str()).to_string();
+                    description = html_escape::encode_text(proposal_body.summary.as_str())
+                        .to_string();
                 }
             }
-            "proposal" => {
-                if let Some(id_string) = path_parts.get(2) {
-                    if let Ok(id) = id_string.parse::<u32>() {
-                        if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
-                            let proposal_body =
-                                Proposal::from(versioned_proposal).snapshot.body.latest_version();
-                            title =
-                                html_escape::encode_text(proposal_body.name.as_str()).to_string();
-                            description = html_escape::encode_text(proposal_body.summary.as_str())
-                                .to_string();
-                        }
-                    }
-                    redirect_path =
-                        format!("devhub.near/widget/app?page={}&id={}", page, id_string);
-                    initial_props_json = json!({"page": page, "id": id_string}).to_string();
-                }
-            }
-            _ => {}
+            redirect_path =
+                format!("devhub.near/widget/app?page={}&id={}", page, id);
+            initial_props_json = json!({"page": page, "id": id}).to_string();
+        }
+        _ => {
+            redirect_path = "devhub.near/widget/app".to_string();
+            initial_props_json = json!({"page": page}).to_string();
         }
     }
 
@@ -185,27 +183,29 @@ mod tests {
     #[test]
     pub fn test_web4_unknown_path() {
         let contract = Contract::new();
-        let response = web4_get(
-            &contract,
-            serde_json::from_value(serde_json::json!({
-                "path": "/unknown/path"
-            }))
-            .unwrap(),
-        );
-        match response {
-            Web4Response::Body { content_type, body } => {
-                assert_eq!("text/html; charset=UTF-8", content_type);
+        for unknown_path in &["/", "/unknown", "/unknown/path"] {
+            let response = web4_get(
+                &contract,
+                serde_json::from_value(serde_json::json!({
+                    "path": unknown_path
+                }))
+                .unwrap(),
+            );
+            match response {
+                Web4Response::Body { content_type, body } => {
+                    assert_eq!("text/html; charset=UTF-8", content_type);
 
-                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+                    let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
-                assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
-                assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
-                );
-                assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
-            }
-            _ => {
-                panic!("Should return Web4Response::Body");
+                    assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
+                    assert!(
+                        body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                    );
+                    assert!(body_string.contains("https://near.social/devhub.near/widget/app"));
+                }
+                _ => {
+                    panic!("Should return Web4Response::Body for '{}' path", unknown_path);
+                }
             }
         }
     }
