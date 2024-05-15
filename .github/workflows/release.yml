@@ -1,7 +1,8 @@
 name: Release
 on:
   push:
-    branches: [main, ci/deploy-to-mainnet]
+    branches: [devgovgigs]
+  workflow_dispatch:
 
 jobs:
   deploy-widgets:
@@ -9,7 +10,7 @@ jobs:
     name: Deploy contract to mainnet
     env:
       NEAR_NETWORK_CONNECTION: mainnet
-      NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
+      NEAR_GIGSBOARD_ACCOUNT_ID: devgovgigs.near
       NEAR_GIGSBOARD_ACCOUNT_PUBLIC_KEY: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_PUBLIC_KEY }}
       NEAR_GIGSBOARD_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEAR_GIGSBOARD_ACCOUNT_PRIVATE_KEY }}
 
