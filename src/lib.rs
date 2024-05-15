@@ -1017,7 +1017,7 @@ impl Contract {
 
         let mut edit_proposal_promise: Option<Promise> = None;
 
-        if !old_labels_set.eq(&new_labels_set.clone()) {
+        if old_labels_set != new_labels_set {
             for proposal_id in self.get_rfp_linked_proposals(id) {
                 edit_proposal_promise = Some(self.update_proposal_labels(proposal_id, new_labels_set.clone()));
             }
