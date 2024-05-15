@@ -294,7 +294,7 @@ impl Contract {
         let proposal_body = body.clone().latest_version();
 
         if proposal_body.linked_rfp.is_some() {
-            require!(labels.len() == 0, "Cannot add custom labels to this proposal. It inherits labels from the linked RFP. You should not add any labels to this proposal manually");
+            require!(labels.is_empty(), "Cannot add custom labels to this proposal. It inherits labels from the linked RFP. You should not add any labels to this proposal manually");
         }
 
         let labels = self.update_and_check_rfp_link(id, body.clone(), None, labels);
