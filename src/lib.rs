@@ -364,14 +364,6 @@ impl Contract {
             "Cannot create proposal which is not in a Accepting Submissions state"
         );
 
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels.iter().cloned().collect()
-            ),
-            "Cannot use these labels"
-        );
-
         for label in &labels {
             require!(
                 self.global_labels_info.get(label).is_some(),
@@ -1026,21 +1018,6 @@ impl Contract {
 
         let labels_to_remove = &old_labels_set - &new_labels_set;
         let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_remove.iter().cloned().collect()
-            ),
-            "Not allowed to remove these labels"
-        );
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_add.iter().cloned().collect()
-            ),
-            "Not allowed to add these labels"
-        );
-
         for label_to_remove in labels_to_remove {
             let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();
             rfps.remove(&id);
