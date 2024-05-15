@@ -1054,11 +1054,6 @@ impl Contract {
 
         let notify_promise = notify::notify_rfp_subscribers(&rfp, self.get_moderators());
 
-        if let Some(edit_proposal_promise) = edit_proposal_promise {
-            edit_proposal_promise.then(notify_promise)
-        } else {
-            notify_promise
-        }
     }
 
     pub fn get_allowed_categories(&self) -> Vec<String> {
