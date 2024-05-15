@@ -991,18 +991,10 @@ impl Contract {
         let rfp_body = body.clone().latest_version();
 
         if rfp_body.timeline.is_proposal_selected() {
-            let mut has_approved_proposal = false;
-            for proposal_id in self.get_rfp_linked_proposals(id) {
-                let proposal: Proposal = self
-                    .proposals
-                    .get(proposal_id.into())
-                    .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
-                    .into();
-                if proposal.snapshot.body.latest_version().timeline.is_approved() {
-                    has_approved_proposal = true;
-                    break;
-                }
-            }
+            let has_approved_proposal = self.get_rfp_linked_proposals(id)
+                .into_iter()
+                .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
+                .any(|proposal|  proposal.snapshot.body.latest_version().timeline.is_approved());
             require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
         }
 
