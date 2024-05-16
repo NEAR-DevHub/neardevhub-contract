@@ -34,8 +34,9 @@ pub struct RFP {
     )]
     pub social_db_post_block_height: BlockHeight,
     pub snapshot: RFPSnapshot,
-    // // Excludes the current snapshot itself.
-    pub snapshot_history: Vec<RFPSnapshot>,
+    // Excludes the current snapshot itself.
+    // Contains the last block height when the retrieved snapshot is still stored inside RFP::snapshot.
+    pub snapshot_history: Vec<BlockHeight>,
 }
 
 impl From<VersionedRFP> for RFP {
@@ -154,7 +155,6 @@ impl Contract {
 
     fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: LinkedProposalChangeOperation) {
         let mut rfp: RFP = self.get_rfp(rfp_id).into();
-        let snapshot: RFPSnapshot = rfp.snapshot.clone();
         let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
         match operation {
             LinkedProposalChangeOperation::Add => {
@@ -172,7 +172,7 @@ impl Contract {
             linked_proposals: linked_proposals,
         };
         rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(snapshot);
+        rfp.snapshot_history.push(env::block_height() - 1);
         self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
     }
 
@@ -246,7 +246,7 @@ impl Contract {
             linked_proposals: old_snapshot.linked_proposals.clone(),
         };
         rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(old_snapshot);
+        rfp.snapshot_history.push(env::block_height() - 1);
         self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
 
         // Update labels index.
