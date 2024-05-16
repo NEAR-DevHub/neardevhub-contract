@@ -718,8 +718,7 @@ impl Contract {
 
     #[payable]
     pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> Promise {
-        let rfp: RFP =
-            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
+        let rfp: RFP = self.get_rfp(id).into();
         let mut body = rfp.snapshot.body.latest_version();
         body.timeline = RFPTimelineStatus::Cancelled;
 
@@ -739,8 +738,7 @@ impl Contract {
 
     #[payable]
     pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
-        let rfp: RFP =
-            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
+        let rfp: RFP = self.get_rfp(id).into();
         let mut body = rfp.snapshot.body.latest_version();
         body.timeline = timeline;
 

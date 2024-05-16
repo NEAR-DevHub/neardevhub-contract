@@ -117,6 +117,12 @@ pub fn get_subscribers(proposal_body: &RFPBodyV0) -> Vec<String> {
     result
 }
 
+enum LinkedProposalChangeOperation {
+    Add,
+    Remove,
+}
+
+
 impl Contract {
     fn assert_can_link_unlink_rfp(&self, rfp_id: Option<RFPId>) {
         if let Some(rfp_id) = rfp_id {
@@ -142,18 +148,21 @@ impl Contract {
     }
 
     pub(crate) fn get_linked_proposals_in_rfp(&self, rfp_id: RFPId) -> HashSet<ProposalId> {
-        let rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
+        let rfp: RFP = self.get_rfp(rfp_id).into();
         rfp.snapshot.linked_proposals
     }
 
-    fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: bool) {
-        let mut rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
+    fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: LinkedProposalChangeOperation) {
+        let mut rfp: RFP = self.get_rfp(rfp_id).into();
         let snapshot: RFPSnapshot = rfp.snapshot.clone();
         let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
-        if operation {
-            linked_proposals.insert(proposal_id);
-        } else {
-            linked_proposals.remove(&proposal_id);
+        match operation {
+            LinkedProposalChangeOperation::Add => {
+                linked_proposals.insert(proposal_id);
+            }
+            LinkedProposalChangeOperation::Remove => {
+                linked_proposals.remove(&proposal_id);
+            }
         }
         let new_snapshot = RFPSnapshot {
             editor_id: env::predecessor_account_id(),
@@ -168,11 +177,11 @@ impl Contract {
     }
 
     fn add_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
-        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, true);
+        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, LinkedProposalChangeOperation::Add);
     }
 
     fn remove_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
-        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, false);
+        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, LinkedProposalChangeOperation::Remove);
     }
 
     pub(crate) fn update_and_check_rfp_link(
@@ -214,8 +223,7 @@ impl Contract {
             "The account is not allowed to edit RFPs"
         );
 
-        let mut rfp: RFP =
-            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
+        let mut rfp: RFP = self.get_rfp(id).into();
 
         let rfp_body = body.clone().latest_version();
 
