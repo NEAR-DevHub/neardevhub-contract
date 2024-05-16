@@ -672,7 +672,7 @@ impl Contract {
         id: ProposalId,
         body: VersionedProposalBody,
         labels: HashSet<String>,
-    ) -> Promise {
+    ) -> ProposalId {
         let proposal_body = body.clone().latest_version();
         if proposal_body.linked_rfp.is_some() {
             require!(labels.len() == 0, "Cannot edit labels of a proposal linked to RFP. It inherits labels from the linked RFP.");
@@ -681,7 +681,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> Promise {
+    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(id.into())
@@ -694,7 +694,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: Option<RFPId>) -> Promise {
+    pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: Option<RFPId>) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(id.into())
@@ -712,12 +712,12 @@ impl Contract {
         id: RFPId,
         body: VersionedRFPBody,
         labels: HashSet<String>,
-    ) -> Promise {
+    ) -> RFPId {
         self.edit_rfp_internal(id, body.clone(), labels)
     }
 
     #[payable]
-    pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> Promise {
+    pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> RFPId {
         let rfp: RFP = self.get_rfp(id).into();
         let mut body = rfp.snapshot.body.latest_version();
         body.timeline = RFPTimelineStatus::Cancelled;
@@ -737,7 +737,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
+    pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> ProposalId {
         let rfp: RFP = self.get_rfp(id).into();
         let mut body = rfp.snapshot.body.latest_version();
         body.timeline = timeline;

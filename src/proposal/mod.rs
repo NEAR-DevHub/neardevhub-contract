@@ -9,7 +9,7 @@ use crate::Contract;
 use crate::str_serializers::*;
 use crate::{notify::get_text_mentions, rfp::RFPId};
 
-use near_sdk::{env, near, require, AccountId, BlockHeight, Timestamp, Promise};
+use near_sdk::{env, near, require, AccountId, BlockHeight, Timestamp};
 
 pub type ProposalId = u32;
 
@@ -204,7 +204,7 @@ pub enum ProposalFundingCurrency {
 }
 
 impl Contract {
-    pub(crate) fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> Promise {
+    pub(crate) fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(proposal_id.into())
@@ -219,7 +219,7 @@ impl Contract {
         id: ProposalId,
         body: VersionedProposalBody,
         labels: HashSet<String>,
-    ) -> Promise {
+    ) -> ProposalId {
         require!(
             self.is_allowed_to_edit_proposal(id, Option::None),
             "The account is not allowed to edit this proposal"
@@ -300,6 +300,7 @@ impl Contract {
             self.label_to_proposals.insert(&label_to_add, &proposals);
         }
 
-        crate::notify::notify_edit_proposal(id, proposal_author)
+        crate::notify::notify_edit_proposal(id, proposal_author);
+        id
     }
 }

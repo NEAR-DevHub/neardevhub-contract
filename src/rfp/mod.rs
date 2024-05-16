@@ -10,7 +10,7 @@ use crate::proposal::{Proposal, ProposalId, VersionedProposalBody};
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
 
-use near_sdk::{env, require, near, AccountId, BlockHeight, Timestamp, Promise};
+use near_sdk::{env, require, near, AccountId, BlockHeight, Timestamp};
 
 pub type RFPId = u32;
 
@@ -216,7 +216,7 @@ impl Contract {
         id: RFPId,
         body: VersionedRFPBody,
         labels: HashSet<String>,
-    ) -> Promise {
+    ) -> RFPId {
         let editor_id: AccountId = env::predecessor_account_id();
         require!(
             self.is_allowed_to_write_rfps(editor_id.clone()),
@@ -252,11 +252,9 @@ impl Contract {
         // Update labels index.
         let new_labels_set = new_labels;
 
-        let mut edit_proposal_promise: Option<Promise> = None;
-
         if old_labels_set != new_labels_set {
             for proposal_id in self.get_rfp_linked_proposals(id) {
-                edit_proposal_promise = Some(self.update_proposal_labels(proposal_id, new_labels_set.clone()));
+                self.update_proposal_labels(proposal_id, new_labels_set.clone());
             }
         }
 
@@ -274,7 +272,7 @@ impl Contract {
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
 
-        let notify_promise = crate::notify::notify_rfp_subscribers(&rfp, self.get_moderators());
-        return Promise::new(env::current_account_id()); // TODO
+        crate::notify::notify_rfp_subscribers(&rfp, self.get_moderators());
+        id
     }
 }
