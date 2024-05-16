@@ -95,7 +95,6 @@ impl Contract {
     /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
     /// `parent_id` post.
     pub fn get_posts(&self, parent_id: Option<PostId>) -> Vec<VersionedPost> {
-        near_sdk::log!("get_posts");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let children_ids = self
             .post_to_children
@@ -112,17 +111,14 @@ impl Contract {
     }
 
     pub fn get_post(&self, post_id: PostId) -> VersionedPost {
-        near_sdk::log!("get_post");
         self.posts.get(post_id).unwrap_or_else(|| panic!("Post id {} not found", post_id))
     }
 
     pub fn get_all_post_ids(&self) -> Vec<PostId> {
-        near_sdk::log!("get_all_post_ids");
         (0..self.posts.len()).collect()
     }
 
     pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
-        near_sdk::log!("get_children_ids");
         let post_id = post_id.unwrap_or(ROOT_POST_ID);
         self.post_to_children
             .get(&post_id)
@@ -130,7 +126,6 @@ impl Contract {
     }
 
     pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
-        near_sdk::log!("get_parent_id");
         let res = self
             .post_to_parent
             .get(&post_id)
@@ -143,7 +138,6 @@ impl Contract {
     }
 
     pub fn get_proposals(&self, ids: Option< Vec<ProposalId> >) -> Vec<VersionedProposal> {
-        near_sdk::log!("get_proposals");
         if let Some(ids) = ids {
             ids
                 .into_iter()
@@ -155,35 +149,29 @@ impl Contract {
     }
 
     pub fn get_proposal(&self, proposal_id: ProposalId) -> VersionedProposal {
-        near_sdk::log!("get_proposal");
         self.proposals
             .get(proposal_id.into())
             .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
     }
 
     pub fn get_all_proposal_ids(&self) -> Vec<ProposalId> {
-        near_sdk::log!("get_all_proposal_ids");
         (0..self.proposals.len().try_into().unwrap()).collect()
     }
 
     pub fn get_rfps(&self) -> Vec<VersionedRFP> {
-        near_sdk::log!("get_rfps");
         self.rfps.to_vec()
     }
 
     pub fn get_rfp(&self, rfp_id: RFPId) -> VersionedRFP {
-        near_sdk::log!("get_rfp");
         self.rfps.get(rfp_id.into()).unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
     }
 
     pub fn get_all_rfp_ids(&self) -> Vec<RFPId> {
-        near_sdk::log!("get_all_rfp_ids");
         (0..self.rfps.len().try_into().unwrap()).collect()
     }
 
     #[payable]
     pub fn add_like(&mut self, post_id: PostId) -> Promise {
-        near_sdk::log!("add_like");
         let mut post: Post = self
             .posts
             .get(post_id)
@@ -204,7 +192,6 @@ impl Contract {
         body: PostBody,
         labels: HashSet<String>,
     ) -> Promise {
-        near_sdk::log!("add_post");
         let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
         let id = self.posts.len();
         let author_id = env::predecessor_account_id();
@@ -272,7 +259,6 @@ impl Contract {
         labels: HashSet<String>,
         accepted_terms_and_conditions_version: Option<near_sdk::BlockHeight>,
     ) -> Promise {
-        near_sdk::log!("add_proposal");
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
@@ -347,7 +333,6 @@ impl Contract {
 
     #[payable]
     pub fn add_rfp(&mut self, body: VersionedRFPBody, labels: HashSet<String>) -> Promise {
-        near_sdk::log!("add_rfp");
         let id: RFPId = self.rfps.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
@@ -421,12 +406,10 @@ impl Contract {
     }
 
     pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
-        near_sdk::log!("get_posts_by_author");
         self.authors.get(&author).map(|posts| posts.into_iter().collect()).unwrap_or_default()
     }
 
     pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
-        near_sdk::log!("get_posts_by_label");
         let mut res: Vec<_> =
             self.label_to_posts.get(&label).unwrap_or_default().into_iter().collect();
         res.sort();
@@ -434,7 +417,6 @@ impl Contract {
     }
 
     pub fn get_proposals_by_author(&self, author: AccountId) -> Vec<ProposalId> {
-        near_sdk::log!("get_proposals_by_author");
         self.author_proposals
             .get(&author)
             .map(|proposals| proposals.into_iter().collect())
@@ -442,7 +424,6 @@ impl Contract {
     }
 
     pub fn get_proposals_by_label(&self, label: String) -> Vec<ProposalId> {
-        near_sdk::log!("get_proposals_by_label");
         let mut res: Vec<_> =
             self.label_to_proposals.get(&label).unwrap_or_default().into_iter().collect();
         res.sort();
@@ -450,7 +431,6 @@ impl Contract {
     }
 
     pub fn get_rfps_by_label(&self, label: String) -> Vec<RFPId> {
-        near_sdk::log!("get_rfps_by_label");
         let mut res: Vec<_> =
             self.label_to_rfps.get(&label).unwrap_or_default().into_iter().collect();
         res.sort();
@@ -458,28 +438,24 @@ impl Contract {
     }
 
     pub fn get_all_labels(&self) -> Vec<String> {
-        near_sdk::log!("get_all_labels");
         let mut res: Vec<_> = self.label_to_posts.keys().collect();
         res.sort();
         res
     }
 
     pub fn get_all_proposal_labels(&self) -> Vec<String> {
-        near_sdk::log!("get_all_proposal_labels");
         let mut res: Vec<_> = self.label_to_proposals.keys().collect();
         res.sort();
         res
     }
     
     pub fn get_all_authors(&self) -> Vec<AccountId> {
-        near_sdk::log!("get_all_authors");
         let mut res: Vec<_> = self.authors.keys().collect();
         res.sort();
         res
     }
 
     pub fn get_all_proposal_authors(&self) -> Vec<AccountId> {
-        near_sdk::log!("get_all_proposal_authors");
         let mut res: Vec<_> = self.author_proposals.keys().collect();
         res.sort();
         res
@@ -490,7 +466,6 @@ impl Contract {
         proposal_id: ProposalId,
         editor: Option<AccountId>,
     ) -> bool {
-        near_sdk::log!("is_allowed_to_edit_proposal");
         let proposal: Proposal = self
             .proposals
             .get(proposal_id.try_into().unwrap())
@@ -510,12 +485,10 @@ impl Contract {
     }
 
     pub fn is_allowed_to_write_rfps(&self, editor: AccountId) -> bool {
-        near_sdk::log!("is_allowed_to_write_rfps");
         editor == env::current_account_id() || self.has_moderator(editor)
     }
 
     pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
-        near_sdk::log!("is_allowed_to_edit");
         let post: Post = self
             .posts
             .get(post_id)
@@ -570,18 +543,15 @@ impl Contract {
     }
 
     pub fn get_all_allowed_labels(&self, editor: AccountId) -> Vec<String> {
-        near_sdk::log!("get_all_allowed_labels");
         self.filtered_labels(&self.label_to_posts, &editor)
     }
 
     pub fn get_all_allowed_proposal_labels(&self, editor: AccountId) -> Vec<String> {
-        near_sdk::log!("get_all_allowed_proposal_labels");
         self.filtered_labels(&self.label_to_proposals, &editor)
     }
 
     #[payable]
     pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) -> Promise {
-        near_sdk::log!("edit_post");
         require!(
             self.is_allowed_to_edit(id, Option::None),
             "The account is not allowed to edit this post"
@@ -703,7 +673,6 @@ impl Contract {
         body: VersionedProposalBody,
         labels: HashSet<String>,
     ) -> Promise {
-        near_sdk::log!("edit_proposal");
         let proposal_body = body.clone().latest_version();
         if proposal_body.linked_rfp.is_some() {
             require!(labels.len() == 0, "Cannot edit labels of a proposal linked to RFP. It inherits labels from the linked RFP.");
@@ -713,7 +682,6 @@ impl Contract {
 
     #[payable]
     pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> Promise {
-        near_sdk::log!("edit_proposal_timeline");
         let proposal: Proposal = self
             .proposals
             .get(id.into())
@@ -727,7 +695,6 @@ impl Contract {
 
     #[payable]
     pub fn edit_proposal_linked_rfp(&mut self, id: ProposalId, rfp_id: Option<RFPId>) -> Promise {
-        near_sdk::log!("edit_proposal_linked_rfp");
         let proposal: Proposal = self
             .proposals
             .get(id.into())
@@ -739,189 +706,6 @@ impl Contract {
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
 
-    fn assert_can_link_unlink_rfp(&self, rfp_id: Option<RFPId>) {
-        if let Some(rfp_id) = rfp_id {
-            let rfp: RFP = self
-                .rfps
-                .get(rfp_id.into())
-                .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
-                .into();
-            require!(
-                rfp.snapshot.body.latest_version().timeline.is_accepting_submissions() || self.is_allowed_to_write_rfps(env::predecessor_account_id()),
-                format!("The RFP {} is not in the Accepting Submissions state, so you can't link or unlink to this RFP", rfp_id)
-            );
-        }
-    }
-
-    fn get_rfp_labels(&self, rfp_id: RFPId) -> HashSet<String> {
-        let rfp: RFP = self
-            .rfps
-            .get(rfp_id.into())
-            .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
-            .into();
-        rfp.snapshot.labels
-    }
-
-    fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> Promise {
-        let proposal: Proposal = self
-            .proposals
-            .get(proposal_id.into())
-            .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
-            .into();
-
-        self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels)
-    }
-
-    fn get_linked_proposals_in_rfp(&self, rfp_id: RFPId) -> HashSet<ProposalId> {
-        let rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
-        rfp.snapshot.linked_proposals
-    }
-
-    fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: bool) {
-        let mut rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
-        let snapshot: RFPSnapshot = rfp.snapshot.clone();
-        let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
-        if operation {
-            linked_proposals.insert(proposal_id);
-        } else {
-            linked_proposals.remove(&proposal_id);
-        }
-        let new_snapshot = RFPSnapshot {
-            editor_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            labels: rfp.snapshot.labels,
-            body: rfp.snapshot.body,
-            linked_proposals: linked_proposals,
-        };
-        rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(snapshot);
-        self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
-    }
-
-    fn add_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
-        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, true);
-    }
-
-    fn remove_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
-        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, false);
-    }
-
-    fn update_and_check_rfp_link(
-        &mut self,
-        proposal_id: ProposalId,
-        new_proposal_body: VersionedProposalBody,
-        old_proposal_body: Option<VersionedProposalBody>,
-        labels: HashSet<String>,
-    ) -> HashSet<String> {
-        let mut labels = labels;
-        let new_body = new_proposal_body.clone().latest_version();
-        let old_rfp_id =
-            old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
-        if new_body.linked_rfp != old_rfp_id {
-            self.assert_can_link_unlink_rfp(new_body.linked_rfp);
-            self.assert_can_link_unlink_rfp(old_rfp_id);
-            if let Some(old_rfp_id) = old_rfp_id {
-                self.remove_linked_proposal_in_rfp(old_rfp_id, proposal_id);
-            }
-            if let Some(new_rfp_id) = new_body.linked_rfp {
-                self.add_linked_proposal_in_rfp(new_rfp_id, proposal_id);
-            }
-        }
-        if let Some(new_rfp_id) = new_body.linked_rfp {
-            labels = self.get_rfp_labels(new_rfp_id);
-        }
-        labels
-    }
-
-    fn edit_proposal_internal(
-        &mut self,
-        id: ProposalId,
-        body: VersionedProposalBody,
-        labels: HashSet<String>,
-    ) -> Promise {
-        require!(
-            self.is_allowed_to_edit_proposal(id, Option::None),
-            "The account is not allowed to edit this proposal"
-        );
-        let editor_id = env::predecessor_account_id();
-        let mut proposal: Proposal = self
-            .proposals
-            .get(id.into())
-            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
-            .into();
-
-        let proposal_body = body.clone().latest_version();
-
-        let old_body = proposal.snapshot.body.clone();
-        let labels = self.update_and_check_rfp_link(id, body.clone(), Some(old_body.clone()), labels);
-
-        let current_timeline = old_body.latest_version().timeline;
-
-        require!(
-            self.has_moderator(editor_id.clone())
-                || editor_id.clone() == env::current_account_id()
-                || current_timeline.is_draft()
-                    && (proposal_body.timeline.is_empty_review()
-                        || proposal_body.timeline.is_draft())
-                || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
-            "This account is only allowed to change proposal status from DRAFT to REVIEW"
-        );
-
-        require!(
-            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
-            "You can't change the timeline of the proposal to this status without adding a supervisor"
-        );
-
-        require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
-
-        let old_snapshot = proposal.snapshot.clone();
-        let old_labels_set = old_snapshot.labels.clone();
-        let new_labels = labels;
-        let new_snapshot = ProposalSnapshot {
-            editor_id: editor_id.clone(),
-            timestamp: env::block_timestamp(),
-            labels: new_labels.clone(),
-            body: body,
-        };
-        proposal.snapshot = new_snapshot;
-        proposal.snapshot_history.push(old_snapshot);
-        let proposal_author = proposal.author_id.clone();
-        self.proposals.replace(id.try_into().unwrap(), &proposal.into());
-
-        // Update labels index.
-        let new_labels_set = new_labels;
-        let labels_to_remove = &old_labels_set - &new_labels_set;
-        let labels_to_add = &new_labels_set - &old_labels_set;
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_remove.iter().cloned().collect()
-            ),
-            "Not allowed to remove these labels"
-        );
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_add.iter().cloned().collect()
-            ),
-            "Not allowed to add these labels"
-        );
-
-        for label_to_remove in labels_to_remove {
-            let mut proposals = self.label_to_proposals.get(&label_to_remove).unwrap();
-            proposals.remove(&id);
-            self.label_to_proposals.insert(&label_to_remove, &proposals);
-        }
-
-        for label_to_add in labels_to_add {
-            let mut proposals = self.label_to_proposals.get(&label_to_add).unwrap_or_default();
-            proposals.insert(id);
-            self.label_to_proposals.insert(&label_to_add, &proposals);
-        }
-
-        notify::notify_edit_proposal(id, proposal_author)
-    }
-
     #[payable]
     pub fn edit_rfp(
         &mut self,
@@ -929,13 +713,11 @@ impl Contract {
         body: VersionedRFPBody,
         labels: HashSet<String>,
     ) -> Promise {
-        near_sdk::log!("edit_rfp");
         self.edit_rfp_internal(id, body.clone(), labels)
     }
 
     #[payable]
     pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> Promise {
-        near_sdk::log!("cancel_rfp");
         let rfp: RFP =
             self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
         let mut body = rfp.snapshot.body.latest_version();
@@ -957,7 +739,6 @@ impl Contract {
 
     #[payable]
     pub fn edit_rfp_timeline(&mut self, id: RFPId, timeline: RFPTimelineStatus) -> Promise {
-        near_sdk::log!("edit_rfp_timeline");
         let rfp: RFP =
             self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
         let mut body = rfp.snapshot.body.latest_version();
@@ -966,82 +747,11 @@ impl Contract {
         self.edit_rfp_internal(id, body.into(), rfp.snapshot.labels)
     }
 
-    fn edit_rfp_internal(
-        &mut self,
-        id: RFPId,
-        body: VersionedRFPBody,
-        labels: HashSet<String>,
-    ) -> Promise {
-        let editor_id: AccountId = env::predecessor_account_id();
-        require!(
-            self.is_allowed_to_write_rfps(editor_id.clone()),
-            "The account is not allowed to edit RFPs"
-        );
-
-        let mut rfp: RFP =
-            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
-
-        let rfp_body = body.clone().latest_version();
-
-        if rfp_body.timeline.is_proposal_selected() {
-            let has_approved_proposal = self.get_rfp_linked_proposals(id)
-                .into_iter()
-                .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
-                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.is_approved());
-            require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
-        }
-
-        let old_snapshot = rfp.snapshot.clone();
-        let old_labels_set = old_snapshot.labels.clone();
-        let new_labels = labels;
-        let new_snapshot = RFPSnapshot {
-            editor_id: env::predecessor_account_id(),
-            timestamp: env::block_timestamp(),
-            labels: new_labels.clone(),
-            body: body,
-            linked_proposals: old_snapshot.linked_proposals.clone(),
-        };
-        rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(old_snapshot);
-        self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
-
-        // Update labels index.
-        let new_labels_set = new_labels;
-
-        let mut edit_proposal_promise: Option<Promise> = None;
-
-        if old_labels_set != new_labels_set {
-            for proposal_id in self.get_rfp_linked_proposals(id) {
-                edit_proposal_promise = Some(self.update_proposal_labels(proposal_id, new_labels_set.clone()));
-            }
-        }
-
-        let labels_to_remove = &old_labels_set - &new_labels_set;
-        let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
-        for label_to_remove in labels_to_remove {
-            let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();
-            rfps.remove(&id);
-            self.label_to_rfps.insert(&label_to_remove, &rfps);
-        }
-
-        for label_to_add in labels_to_add {
-            let mut rfps = self.label_to_rfps.get(&label_to_add).unwrap_or_default();
-            rfps.insert(id);
-            self.label_to_rfps.insert(&label_to_add, &rfps);
-        }
-
-        let notify_promise = notify::notify_rfp_subscribers(&rfp, self.get_moderators());
-        return Promise::new(env::current_account_id()); // TODO
-    }
-
     pub fn get_allowed_categories(&self) -> Vec<String> {
-        near_sdk::log!("get_allowed_categories");
         self.proposal_categories.clone()
     }
 
     pub fn get_global_labels(&self) -> Vec<LabelInfoExtended> {
-        near_sdk::log!("get_global_labels");
-
         self.global_labels_info
             .iter()
             .map(|(label, label_info)| LabelInfoExtended {
@@ -1053,7 +763,6 @@ impl Contract {
     }
 
     pub fn get_rfp_linked_proposals(&self, rfp_id: RFPId) -> Vec<ProposalId> {
-        near_sdk::log!("get_rfp_linked_proposals");
         self.get_linked_proposals_in_rfp(rfp_id)
             .into_iter()
             .collect()
@@ -1061,7 +770,6 @@ impl Contract {
 
     #[payable]
     pub fn set_global_labels(&mut self, labels: Vec<LabelInfoExtended>) {
-        near_sdk::log!("set_global_labels");
         let editor_id = env::predecessor_account_id();
         require!(
             self.has_moderator(editor_id.clone()) || editor_id.clone() == env::current_account_id(),
@@ -1078,7 +786,6 @@ impl Contract {
 
     #[payable]
     pub fn set_allowed_categories(&mut self, new_categories: Vec<String>) {
-        near_sdk::log!("set_allowed_categories");
         let editor_id = env::predecessor_account_id();
         require!(
             self.has_moderator(editor_id.clone()) || editor_id.clone() == env::current_account_id(),
@@ -1122,7 +829,6 @@ impl Contract {
     }
 
     pub fn get_all_communities_metadata(&self) -> Vec<CommunityMetadata> {
-        near_sdk::log!("get_all_communities");
         self.communities
             .iter()
             .map(|(handle, community)| CommunityMetadata {

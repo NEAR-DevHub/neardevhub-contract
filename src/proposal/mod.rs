@@ -5,10 +5,11 @@ use std::collections::HashSet;
 
 use self::timeline::TimelineStatus;
 
+use crate::Contract;
 use crate::str_serializers::*;
 use crate::{notify::get_text_mentions, rfp::RFPId};
 
-use near_sdk::{near, AccountId, BlockHeight, Timestamp};
+use near_sdk::{env, near, require, AccountId, BlockHeight, Timestamp, Promise};
 
 pub type ProposalId = u32;
 
@@ -200,4 +201,105 @@ pub enum ProposalFundingCurrency {
     USDT,
     USDC,
     OTHER,
+}
+
+impl Contract {
+    pub(crate) fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> Promise {
+        let proposal: Proposal = self
+            .proposals
+            .get(proposal_id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", proposal_id))
+            .into();
+
+        self.edit_proposal_internal(proposal_id, proposal.snapshot.body, new_labels)
+    }
+
+    pub(crate) fn edit_proposal_internal(
+        &mut self,
+        id: ProposalId,
+        body: VersionedProposalBody,
+        labels: HashSet<String>,
+    ) -> Promise {
+        require!(
+            self.is_allowed_to_edit_proposal(id, Option::None),
+            "The account is not allowed to edit this proposal"
+        );
+        let editor_id = env::predecessor_account_id();
+        let mut proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+
+        let proposal_body = body.clone().latest_version();
+
+        let old_body = proposal.snapshot.body.clone();
+        let labels = self.update_and_check_rfp_link(id, body.clone(), Some(old_body.clone()), labels);
+
+        let current_timeline = old_body.latest_version().timeline;
+
+        require!(
+            self.has_moderator(editor_id.clone())
+                || editor_id.clone() == env::current_account_id()
+                || current_timeline.is_draft()
+                    && (proposal_body.timeline.is_empty_review()
+                        || proposal_body.timeline.is_draft())
+                || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
+            "This account is only allowed to change proposal status from DRAFT to REVIEW"
+        );
+
+        require!(
+            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
+            "You can't change the timeline of the proposal to this status without adding a supervisor"
+        );
+
+        require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
+
+        let old_snapshot = proposal.snapshot.clone();
+        let old_labels_set = old_snapshot.labels.clone();
+        let new_labels = labels;
+        let new_snapshot = ProposalSnapshot {
+            editor_id: editor_id.clone(),
+            timestamp: env::block_timestamp(),
+            labels: new_labels.clone(),
+            body: body,
+        };
+        proposal.snapshot = new_snapshot;
+        proposal.snapshot_history.push(old_snapshot);
+        let proposal_author = proposal.author_id.clone();
+        self.proposals.replace(id.try_into().unwrap(), &proposal.into());
+
+        // Update labels index.
+        let new_labels_set = new_labels;
+        let labels_to_remove = &old_labels_set - &new_labels_set;
+        let labels_to_add = &new_labels_set - &old_labels_set;
+        require!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_remove.iter().cloned().collect()
+            ),
+            "Not allowed to remove these labels"
+        );
+        require!(
+            self.is_allowed_to_use_labels(
+                Some(editor_id.clone()),
+                labels_to_add.iter().cloned().collect()
+            ),
+            "Not allowed to add these labels"
+        );
+
+        for label_to_remove in labels_to_remove {
+            let mut proposals = self.label_to_proposals.get(&label_to_remove).unwrap();
+            proposals.remove(&id);
+            self.label_to_proposals.insert(&label_to_remove, &proposals);
+        }
+
+        for label_to_add in labels_to_add {
+            let mut proposals = self.label_to_proposals.get(&label_to_add).unwrap_or_default();
+            proposals.insert(id);
+            self.label_to_proposals.insert(&label_to_add, &proposals);
+        }
+
+        crate::notify::notify_edit_proposal(id, proposal_author)
+    }
 }

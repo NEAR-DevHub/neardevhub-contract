@@ -5,10 +5,12 @@ use std::collections::HashSet;
 
 pub use self::timeline::TimelineStatus;
 
+use crate::Contract;
+use crate::proposal::{Proposal, ProposalId, VersionedProposalBody};
 use crate::notify::get_text_mentions;
 use crate::str_serializers::*;
 
-use near_sdk::{near, AccountId, BlockHeight, Timestamp};
+use near_sdk::{env, require, near, AccountId, BlockHeight, Timestamp, Promise};
 
 pub type RFPId = u32;
 
@@ -113,4 +115,158 @@ pub fn get_subscribers(proposal_body: &RFPBodyV0) -> Vec<String> {
     ]
     .concat();
     result
+}
+
+impl Contract {
+    fn assert_can_link_unlink_rfp(&self, rfp_id: Option<RFPId>) {
+        if let Some(rfp_id) = rfp_id {
+            let rfp: RFP = self
+                .rfps
+                .get(rfp_id.into())
+                .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+                .into();
+            require!(
+                rfp.snapshot.body.latest_version().timeline.is_accepting_submissions() || self.is_allowed_to_write_rfps(env::predecessor_account_id()),
+                format!("The RFP {} is not in the Accepting Submissions state, so you can't link or unlink to this RFP", rfp_id)
+            );
+        }
+    }
+
+    fn get_rfp_labels(&self, rfp_id: RFPId) -> HashSet<String> {
+        let rfp: RFP = self
+            .rfps
+            .get(rfp_id.into())
+            .unwrap_or_else(|| panic!("RFP id {} not found", rfp_id))
+            .into();
+        rfp.snapshot.labels
+    }
+
+    pub(crate) fn get_linked_proposals_in_rfp(&self, rfp_id: RFPId) -> HashSet<ProposalId> {
+        let rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
+        rfp.snapshot.linked_proposals
+    }
+
+    fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: bool) {
+        let mut rfp: RFP = self.rfps.get(rfp_id.into()).unwrap().into();
+        let snapshot: RFPSnapshot = rfp.snapshot.clone();
+        let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
+        if operation {
+            linked_proposals.insert(proposal_id);
+        } else {
+            linked_proposals.remove(&proposal_id);
+        }
+        let new_snapshot = RFPSnapshot {
+            editor_id: env::predecessor_account_id(),
+            timestamp: env::block_timestamp(),
+            labels: rfp.snapshot.labels,
+            body: rfp.snapshot.body,
+            linked_proposals: linked_proposals,
+        };
+        rfp.snapshot = new_snapshot;
+        rfp.snapshot_history.push(snapshot);
+        self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
+    }
+
+    fn add_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
+        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, true);
+    }
+
+    fn remove_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
+        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, false);
+    }
+
+    pub(crate) fn update_and_check_rfp_link(
+        &mut self,
+        proposal_id: ProposalId,
+        new_proposal_body: VersionedProposalBody,
+        old_proposal_body: Option<VersionedProposalBody>,
+        labels: HashSet<String>,
+    ) -> HashSet<String> {
+        let mut labels = labels;
+        let new_body = new_proposal_body.clone().latest_version();
+        let old_rfp_id =
+            old_proposal_body.clone().map(|old| old.latest_version().linked_rfp).flatten();
+        if new_body.linked_rfp != old_rfp_id {
+            self.assert_can_link_unlink_rfp(new_body.linked_rfp);
+            self.assert_can_link_unlink_rfp(old_rfp_id);
+            if let Some(old_rfp_id) = old_rfp_id {
+                self.remove_linked_proposal_in_rfp(old_rfp_id, proposal_id);
+            }
+            if let Some(new_rfp_id) = new_body.linked_rfp {
+                self.add_linked_proposal_in_rfp(new_rfp_id, proposal_id);
+            }
+        }
+        if let Some(new_rfp_id) = new_body.linked_rfp {
+            labels = self.get_rfp_labels(new_rfp_id);
+        }
+        labels
+    }
+
+    pub(crate) fn edit_rfp_internal(
+        &mut self,
+        id: RFPId,
+        body: VersionedRFPBody,
+        labels: HashSet<String>,
+    ) -> Promise {
+        let editor_id: AccountId = env::predecessor_account_id();
+        require!(
+            self.is_allowed_to_write_rfps(editor_id.clone()),
+            "The account is not allowed to edit RFPs"
+        );
+
+        let mut rfp: RFP =
+            self.rfps.get(id.into()).unwrap_or_else(|| panic!("RFP id {} not found", id)).into();
+
+        let rfp_body = body.clone().latest_version();
+
+        if rfp_body.timeline.is_proposal_selected() {
+            let has_approved_proposal = self.get_rfp_linked_proposals(id)
+                .into_iter()
+                .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
+                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.is_approved());
+            require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
+        }
+
+        let old_snapshot = rfp.snapshot.clone();
+        let old_labels_set = old_snapshot.labels.clone();
+        let new_labels = labels;
+        let new_snapshot = RFPSnapshot {
+            editor_id: env::predecessor_account_id(),
+            timestamp: env::block_timestamp(),
+            labels: new_labels.clone(),
+            body: body,
+            linked_proposals: old_snapshot.linked_proposals.clone(),
+        };
+        rfp.snapshot = new_snapshot;
+        rfp.snapshot_history.push(old_snapshot);
+        self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
+
+        // Update labels index.
+        let new_labels_set = new_labels;
+
+        let mut edit_proposal_promise: Option<Promise> = None;
+
+        if old_labels_set != new_labels_set {
+            for proposal_id in self.get_rfp_linked_proposals(id) {
+                edit_proposal_promise = Some(self.update_proposal_labels(proposal_id, new_labels_set.clone()));
+            }
+        }
+
+        let labels_to_remove = &old_labels_set - &new_labels_set;
+        let labels_to_add: HashSet<String> = &new_labels_set - &old_labels_set;
+        for label_to_remove in labels_to_remove {
+            let mut rfps = self.label_to_rfps.get(&label_to_remove).unwrap();
+            rfps.remove(&id);
+            self.label_to_rfps.insert(&label_to_remove, &rfps);
+        }
+
+        for label_to_add in labels_to_add {
+            let mut rfps = self.label_to_rfps.get(&label_to_add).unwrap_or_default();
+            rfps.insert(id);
+            self.label_to_rfps.insert(&label_to_add, &rfps);
+        }
+
+        let notify_promise = crate::notify::notify_rfp_subscribers(&rfp, self.get_moderators());
+        return Promise::new(env::current_account_id()); // TODO
+    }
 }
