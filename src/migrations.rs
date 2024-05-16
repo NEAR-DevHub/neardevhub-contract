@@ -17,7 +17,6 @@ pub struct ContractV1 {
 }
 
 // From ContractV1 to ContractV2
-#[near]
 impl Contract {
     fn unsafe_add_acl() {
         let ContractV1 { posts, post_to_parent, post_to_children, label_to_posts } =
@@ -59,7 +58,6 @@ pub struct ContractV2 {
 }
 
 // From ContractV2 to ContractV3
-#[near]
 impl Contract {
     fn unsafe_add_post_authors() {
         let ContractV2 { posts, post_to_parent, post_to_children, label_to_posts, access_control } =
@@ -107,7 +105,6 @@ pub struct ContractV3 {
 }
 
 // From ContractV3 to ContractV4
-#[near]
 impl Contract {
     fn unsafe_add_communities() {
         let ContractV3 {
@@ -143,7 +140,6 @@ pub struct ContractV4 {
 }
 
 // From ContractV4 to ContractV5
-#[near]
 impl Contract {
     fn unsafe_add_featured_communities() {
         let ContractV4 {
@@ -204,7 +200,6 @@ pub struct ContractV5 {
 }
 
 // From ContractV5 to ContractV6
-#[near]
 impl Contract {
     fn unsafe_multiple_telegrams() {
         let ContractV5 {
@@ -302,7 +297,6 @@ pub struct ContractV6 {
 }
 
 // From ContractV6 to ContractV7
-#[near]
 impl Contract {
     fn unsafe_add_board_and_feature_flags() {
         let ContractV6 {
@@ -409,7 +403,6 @@ pub struct ContractV7 {
 }
 
 // From ContractV7 to ContractV8
-#[near]
 impl Contract {
     fn unsafe_add_community_addons() {
         let ContractV7 {
@@ -513,7 +506,6 @@ pub struct ContractV8 {
 }
 
 // From ContractV8 to ContractV9
-#[near]
 impl Contract {
     fn unsafe_clean_up_community() {
         let ContractV8 {
@@ -605,7 +597,6 @@ pub struct ContractV9 {
 }
 
 // From ContractV9 to ContractV10
-#[near]
 impl Contract {
     fn unsafe_add_proposals() {
         let ContractV9 {
@@ -657,7 +648,6 @@ pub struct ContractV10 {
 }
 
 // From ContractV10 to ContractV11
-#[near]
 impl Contract {
     fn unsafe_add_rfp() {
         let ContractV10 {
