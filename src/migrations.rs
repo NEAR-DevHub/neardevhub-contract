@@ -4,8 +4,9 @@
 
 use crate::*;
 use near_sdk::{borsh::to_vec, env, near, NearToken, Promise};
+use near_sdk::store::Lazy;
 use std::cmp::min;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 
 #[near]
 #[derive(PanicOnDefault)]
@@ -679,7 +680,7 @@ impl Contract {
             proposal_categories,
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
-            labels_info: UnorderedMap::new(StorageKey::LabelInfo),
+            global_labels_info: Lazy::new(StorageKey::LabelInfo, HashMap::new()),
             communities,
             featured_communities,
             available_addons,
@@ -702,7 +703,7 @@ pub struct ContractV11 {
     pub proposal_categories: Vec<String>,
     pub rfps: Vector<VersionedRFP>,
     pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
-    pub labels_info: UnorderedMap<String, LabelInfo>,
+    pub global_labels_info: Lazy<HashMap<String, LabelInfo>>,
     pub communities: UnorderedMap<CommunityHandle, CommunityV5>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,

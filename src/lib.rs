@@ -25,11 +25,12 @@ use devhub_common::{social_db_contract, SetReturnType};
 
 use near_sdk::borsh::BorshDeserialize;
 use near_sdk::collections::{LookupMap, UnorderedMap, Vector};
+use near_sdk::store::Lazy;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json::{json, Number, Value};
 use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
 
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::convert::TryInto;
 
 type PostId = u64;
@@ -57,7 +58,7 @@ pub struct Contract {
     pub proposal_categories: Vec<String>,
     pub rfps: Vector<VersionedRFP>,
     pub label_to_rfps: UnorderedMap<String, HashSet<RFPId>>,
-    pub global_labels_info: UnorderedMap<String, LabelInfo>,
+    pub global_labels_info: Lazy<HashMap<String, LabelInfo>>,
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
@@ -82,7 +83,7 @@ impl Contract {
             proposal_categories: default_categories(),
             rfps: Vector::new(StorageKey::RFPs),
             label_to_rfps: UnorderedMap::new(StorageKey::LabelToRFPs),
-            global_labels_info: UnorderedMap::new(StorageKey::LabelInfo),
+            global_labels_info: Lazy::new(StorageKey::LabelInfo, HashMap::new()),
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
@@ -351,7 +352,7 @@ impl Contract {
 
         for label in &labels {
             require!(
-                self.global_labels_info.get(label).is_some(),
+                self.global_labels_info.get().get(label).is_some(),
                 format!("Label {} is not registered", label)
             );
 
@@ -778,7 +779,7 @@ impl Contract {
 
         for label in labels {
             let label_info = LabelInfo { title: label.title, color: label.color };
-            self.global_labels_info.insert(&label.value, &label_info);
+            (*self.global_labels_info).insert(label.value, label_info);
         }
     }
 
