@@ -235,11 +235,23 @@ impl Contract {
         &mut self,
         body: VersionedProposalBody,
         labels: HashSet<String>,
+        accepted_terms_and_conditions_version: near_sdk::BlockHeight,
     ) -> Promise {
         near_sdk::log!("add_proposal");
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
+
+        let current_block_height = env::block_height();
+        let earliest_possible = current_block_height - 10000;
+        require!(
+            accepted_terms_and_conditions_version >= earliest_possible,
+            "Terms and conditions version is too old"
+        );
+        require!(
+            accepted_terms_and_conditions_version <= current_block_height,
+            "Terms and conditions version is from the future"
+        );
 
         let proposal_body = body.clone().latest_version();
 
