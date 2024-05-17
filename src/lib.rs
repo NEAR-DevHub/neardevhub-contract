@@ -245,13 +245,13 @@ impl Contract {
         let editor_id = author_id.clone();
 
         let current_block_height = env::block_height();
-        let earliest_possible = current_block_height - 10000;
+
         require!(
-            accepted_terms_and_conditions_version >= earliest_possible,
+            accepted_terms_and_conditions_version + 10000 >= current_block_height,
             "Terms and conditions version is too old"
         );
         require!(
-            accepted_terms_and_conditions_version <= current_block_height,
+            accepted_terms_and_conditions_version <= env::block_height(),
             "Terms and conditions version is from the future"
         );
 
@@ -1067,7 +1067,7 @@ mod tests {
             "payouts": [],
             "timeline": {"status": "DRAFT"}
         })).unwrap();
-        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new());
+        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new(), 0);
         let receipts = get_created_receipts();
         assert_eq!(3, receipts.len());
 
