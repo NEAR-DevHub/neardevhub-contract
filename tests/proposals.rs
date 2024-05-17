@@ -30,11 +30,14 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
         .transact()
         .await?;
+
+    println!("add proposal: {:?}", _add_proposal);
 
     let get_proposal: serde_json::Value = contract
         .call("get_proposal")
@@ -116,6 +119,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test3"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -170,6 +174,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test2", "test3"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(NearToken::from_near(1))
@@ -325,6 +330,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
