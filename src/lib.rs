@@ -250,32 +250,15 @@ impl Contract {
         notify::notify_mentions(desc.as_str(), id)
     }
 
-    // Usage without accepted_terms_and_conditions_version is deprecated. 
-    // So accepted_terms_and_conditions_version should be used 
-    // as it will become mandatory in the future
     #[payable]
     pub fn add_proposal(
         &mut self,
         body: VersionedProposalBody,
         labels: HashSet<String>,
-        accepted_terms_and_conditions_version: Option<near_sdk::BlockHeight>,
     ) -> Promise {
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
-
-        if accepted_terms_and_conditions_version.is_some() {
-            let current_block_height = env::block_height();
-            let earliest_possible = current_block_height - 10000;
-            require!(
-                accepted_terms_and_conditions_version.unwrap() >= earliest_possible,
-                "Terms and conditions version is too old"
-            );
-            require!(
-                accepted_terms_and_conditions_version.unwrap() <= current_block_height,
-                "Terms and conditions version is from the future"
-            );
-        }
 
         let proposal_body = body.clone().latest_version();
 
