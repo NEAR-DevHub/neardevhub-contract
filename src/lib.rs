@@ -1156,7 +1156,7 @@ mod tests {
             "payouts": [],
             "timeline": {"status": "DRAFT"}
         })).unwrap();
-        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new(), None);
+        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new());
         let receipts = get_created_receipts();
         assert_eq!(3, receipts.len());
 
