@@ -35,7 +35,7 @@ pub struct RFP {
     pub social_db_post_block_height: BlockHeight,
     pub snapshot: RFPSnapshot,
     // Excludes the current snapshot itself.
-    // Contains the last block height when the retrieved snapshot is still stored inside RFP::snapshot.
+    // Contains the block height when the RFP was added or edited.
     pub snapshot_history: Vec<BlockHeight>,
 }
 
