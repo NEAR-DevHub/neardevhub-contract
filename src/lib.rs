@@ -702,10 +702,6 @@ impl Contract {
 
     #[payable]
     pub fn cancel_rfp(&mut self, id: RFPId, proposals_to_cancel: Vec<ProposalId>, proposals_to_unlink: Vec<ProposalId>) -> RFPId {
-        let rfp: RFP = self.get_rfp(id).into();
-        let mut body = rfp.snapshot.body.latest_version();
-        body.timeline = RFPTimelineStatus::Cancelled;
-
         for proposal_id in proposals_to_cancel {
             let proposal: Proposal = self.get_proposal(proposal_id).into();
             let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
