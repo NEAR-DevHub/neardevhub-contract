@@ -62,6 +62,11 @@ pub struct RFPSnapshot {
         deserialize_with = "u64_dec_format::deserialize"
     )]
     pub timestamp: Timestamp,
+    #[serde(
+        serialize_with = "u64_dec_format::serialize",
+        deserialize_with = "u64_dec_format::deserialize"
+    )]
+    pub block_height: BlockHeight,
     pub labels: HashSet<PostTag>,
     #[serde(flatten)]
     pub body: VersionedRFPBody,
@@ -164,15 +169,16 @@ impl Contract {
                 linked_proposals.remove(&proposal_id);
             }
         }
+        rfp.snapshot_history.push(rfp.snapshot.block_height);
         let new_snapshot = RFPSnapshot {
             editor_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
+            block_height: env::block_height(),
             labels: rfp.snapshot.labels,
             body: rfp.snapshot.body,
             linked_proposals: linked_proposals,
         };
         rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(env::block_height() - 1);
         self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
     }
 
@@ -238,15 +244,16 @@ impl Contract {
         let old_snapshot = rfp.snapshot.clone();
         let old_labels_set = old_snapshot.labels.clone();
         let new_labels = labels;
+        rfp.snapshot_history.push(rfp.snapshot.block_height);
         let new_snapshot = RFPSnapshot {
             editor_id: env::predecessor_account_id(),
             timestamp: env::block_timestamp(),
+            block_height: env::block_height(),
             labels: new_labels.clone(),
             body: body,
             linked_proposals: old_snapshot.linked_proposals.clone(),
         };
         rfp.snapshot = new_snapshot;
-        rfp.snapshot_history.push(env::block_height() - 1);
         self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
 
         // Update labels index.

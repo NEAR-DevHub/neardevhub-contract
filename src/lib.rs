@@ -351,6 +351,7 @@ impl Contract {
             snapshot: RFPSnapshot {
                 editor_id: env::predecessor_account_id(),
                 timestamp: env::block_timestamp(),
+                block_height: env::block_height(),
                 labels,
                 body: body.clone(),
                 linked_proposals: HashSet::new(),
