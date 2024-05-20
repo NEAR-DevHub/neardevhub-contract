@@ -44,6 +44,30 @@ impl TimelineStatus {
             _ => false,
         }
     }
+
+    pub fn is_approved(&self) -> bool {
+        matches!(self, TimelineStatus::Approved(..))
+    }
+
+    pub fn get_review_status(&self) -> &ReviewStatus {
+        match self {
+            TimelineStatus::Review(review_status)
+            | TimelineStatus::Approved(review_status)
+            | TimelineStatus::Rejected(review_status)
+            | TimelineStatus::ApprovedConditionally(review_status)
+            | TimelineStatus::Cancelled(review_status) => review_status,
+            TimelineStatus::PaymentProcessing(payment_processing_status) => {
+                &payment_processing_status.review_status
+            },
+            TimelineStatus::Funded(funded_status) => {
+                &funded_status.payment_processing_status.review_status
+            },
+            TimelineStatus::Draft => &ReviewStatus {
+                sponsor_requested_review: false,
+                reviewer_completed_attestation: false,
+            },
+        }
+    }
 }
 
 #[near(serializers=[borsh, json])]
