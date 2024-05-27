@@ -33,7 +33,7 @@ fn repost_internal(text: String, contract_address: AccountId) -> near_sdk::serde
     json!({
         contract_address: {
             "post": {
-                "main": main_value.to_string(),
+                "main": main_value.(),
             },
             "index": {
                 "post": "{\"key\":\"main\",\"value\":{\"type\":\"md\"}}",
