@@ -8,8 +8,10 @@ jobs:
   rununittest:
     name: Unit tests
     runs-on: ubuntu-latest
+    env:
+      NEAR_DEVHUB_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo $${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
+        run: echo $NEAR_DEVHUB_ACCOUNT_ID
