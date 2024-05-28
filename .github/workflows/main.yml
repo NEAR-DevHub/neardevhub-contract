@@ -14,4 +14,4 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo $NEAR_DEVHUB_ACCOUNT_ID
+        run: echo $NEAR_DEVHUB_ACCOUNT_ID 8
