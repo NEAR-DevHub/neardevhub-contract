@@ -9,10 +9,10 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     env:
-      NEAR_DEVHUB_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
+      NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
       KEK: 9
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo "$NEAR_DEVHUB_ACCOUNT_ID" 8 $KEK
+        run: echo "$NEAR_GIGSBOARD_ACCOUNT_ID" 8 $KEK
