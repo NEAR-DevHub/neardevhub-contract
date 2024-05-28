@@ -10,6 +10,7 @@ jobs:
   rununittest:
     name: Unit tests
     runs-on: ubuntu-latest
+    environment: devhub.near
     env:
       KEK: 9
     steps:
