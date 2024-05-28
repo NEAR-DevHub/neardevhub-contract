@@ -15,7 +15,7 @@ jobs:
     env:
       KEK: 9
       YYY: ${{ vars.YYY }}
-    environment: devhub.near
+    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
