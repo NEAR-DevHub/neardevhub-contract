@@ -15,5 +15,4 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        env: NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
         run: echo "the var is: $NEAR_GIGSBOARD_ACCOUNT_ID" 8 $KEK
