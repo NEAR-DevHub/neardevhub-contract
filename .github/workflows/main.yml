@@ -12,4 +12,4 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
+        run: echo $${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
