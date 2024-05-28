@@ -9,10 +9,11 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     env:
-      NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
+      V_NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
       KEK: 9
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo "the var is: $NEAR_GIGSBOARD_ACCOUNT_ID" 8 $KEK
+        run: 
+          echo "the var is: $NEAR_GIGSBOARD_ACCOUNT_ID $V_NEAR_GIGSBOARD_ACCOUNT_ID 8 $KEK" 
