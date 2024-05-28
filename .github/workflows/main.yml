@@ -13,8 +13,9 @@ jobs:
     environment: devhub.near
     env:
       KEK: 9
+      YYY: ${{ vars.YYY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Unit tests
-        run: echo "$NEAR_GIGSBOARD_ACCOUNT_ID" 8 $KEK
+        run: echo "$NEAR_GIGSBOARD_ACCOUNT_ID $YYY" 8 $KEK
