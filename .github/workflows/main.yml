@@ -8,6 +8,7 @@ jobs:
   rununittest:
     name: Unit tests
     runs-on: ubuntu-latest
+    environment: devhub.near
     env:
       NEAR_GIGSBOARD_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
       KEK: 9
