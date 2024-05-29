@@ -15,6 +15,7 @@ use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
+use near_sdk::json_types::Base64VecU8;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
@@ -733,14 +734,16 @@ impl Contract {
     }
 
     pub fn get_global_labels(&self) -> Vec<LabelInfoExtended> {
-        self.global_labels_info
+        let mut result: Vec<LabelInfoExtended> = self.global_labels_info
             .iter()
             .map(|(label, label_info)| LabelInfoExtended {
                 value: label.clone(),
                 title: label_info.title.clone(),
                 color: label_info.color.clone(),
             })
-            .collect()
+            .collect();
+        result.sort_by(|a, b| a.value.cmp(&b.value));
+        result
     }
 
     pub fn get_rfp_linked_proposals(&self, rfp_id: RFPId) -> Vec<ProposalId> {

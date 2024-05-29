@@ -45,8 +45,15 @@ impl TimelineStatus {
         }
     }
 
-    pub fn is_approved(&self) -> bool {
-        matches!(self, TimelineStatus::Approved(..))
+    pub fn was_approved(&self) -> bool {
+        match self {
+            TimelineStatus::Approved(..) => true,
+            TimelineStatus::ApprovedConditionally(..) => true,
+            TimelineStatus::PaymentProcessing(..) => true,
+            TimelineStatus::Funded(..) => true,
+            _ => false,
+            
+        }
     }
 
     pub fn get_review_status(&self) -> &ReviewStatus {
