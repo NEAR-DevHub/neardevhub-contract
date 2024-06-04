@@ -1,6 +1,11 @@
-use near_sdk::{base64::{
-    alphabet, engine::{self, general_purpose}, Engine
-}, env};
+use near_sdk::{
+    base64::{
+        alphabet,
+        engine::{self, general_purpose},
+        Engine,
+    },
+    env,
+};
 use serde_json::json;
 
 use crate::{
@@ -19,8 +24,9 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let page = path_parts[1];
     let mut title = String::from("near/dev/hub");
     let mut description = String::from("The decentralized home base for NEAR builders");
-    let mut image = String::from(
-        "https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near",
+    let mut image = format!(
+        "https://i.near.social/magic/large/https://near.social/magic/img/account/{}",
+        env::current_account_id()
     );
     let redirect_path;
     let initial_props_json;
@@ -29,8 +35,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         ("community", Some(handle)) => {
             if let Some(community) = contract.get_community(handle.to_string()) {
                 title = html_escape::encode_text(community.name.as_str()).to_string();
-                description =
-                    html_escape::encode_text(community.description.as_str()).to_string();
+                description = html_escape::encode_text(community.description.as_str()).to_string();
                 image = community.logo_url;
             }
             redirect_path =
@@ -42,10 +47,9 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
                 if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
                     let proposal_body =
                         Proposal::from(versioned_proposal).snapshot.body.latest_version();
-                    title =
-                        html_escape::encode_text(proposal_body.name.as_str()).to_string();
-                    description = html_escape::encode_text(proposal_body.summary.as_str())
-                        .to_string();
+                    title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
+                    description =
+                        html_escape::encode_text(proposal_body.summary.as_str()).to_string();
                 }
             }
             redirect_path =
@@ -93,7 +97,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 </head>
 <body>
 <nav class="navbar navbar-expand-sm navbar-light bg-dark" style="display: flex; flex-wrap: nowrap; padding-left: 5px; padding-right: 5px; height: 73px; border-bottom: rgb(0, 236, 151) solid 5px;">
-    <a class="navbar-brand" href="/""><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/devhub.near" style="height: 68px" /></a>
+    <a class="navbar-brand" href="/"><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/{current_account_id}" style="height: 68px" /></a>
     <p class="nav-text" style="flex-grow: 1"></p>
     <p class="nav-text text-light" style="margin-top: 1rem; margin-right: 1rem">Choose your gateway</p>
     <div class="navbar-nav gatewaylinks">
@@ -133,11 +137,39 @@ mod tests {
 
     fn view_test_env() {
         let contract: String = "not-only-devhub.near".to_string();
-        let context = VMContextBuilder::new()
-            .current_account_id(contract.try_into().unwrap())
-            .build();
+        let context =
+            VMContextBuilder::new().current_account_id(contract.try_into().unwrap()).build();
 
         testing_env!(context);
+    }
+
+    #[test]
+    pub fn test_logo() {
+        view_test_env();
+        let contract = Contract::new();
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/proposal/1"
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+                assert!(body_string.contains("<a class=\"navbar-brand\" href=\"/\"><img src=\"https://i.near.social/magic/large/https://near.social/magic/img/account/not-only-devhub.near\" style=\"height: 68px\" /></a>"));
+                assert!(body_string.contains("<meta property=\"og:image\" content=\"https://i.near.social/magic/large/https://near.social/magic/img/account/not-only-devhub.near\" />"));
+                assert!(body_string.contains("<meta name=\"twitter:image\" content=\"https://i.near.social/magic/large/https://near.social/magic/img/account/not-only-devhub.near\">"));
+                let expected_initial_props_string =
+                    json!({"page": "proposal", "id": "1"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
     }
 
     #[test]
@@ -206,13 +238,15 @@ mod tests {
                 Web4Response::Body { content_type, body } => {
                     assert_eq!("text/html; charset=UTF-8", content_type);
 
-                    let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+                    let body_string =
+                        String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
                     assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
+                    assert!(body_string
+                        .contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">"));
                     assert!(
-                        body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                        body_string.contains("https://near.social/not-only-devhub.near/widget/app")
                     );
-                    assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 }
                 _ => {
                     panic!("Should return Web4Response::Body for '{}' path", unknown_path);
@@ -345,10 +379,12 @@ mod tests {
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this proposal is so great\" />"));
                 assert!(body_string
                     .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
-                assert!(body_string
-                    .contains("https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"));
-                assert!(body_string
-                    .contains("https://near.org/not-only-devhub.near/widget/app?page=proposal&id=0"));
+                assert!(body_string.contains(
+                    "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
+                ));
+                assert!(body_string.contains(
+                    "https://near.org/not-only-devhub.near/widget/app?page=proposal&id=0"
+                ));
                 let expected_initial_props_string =
                     json!({"page": "proposal", "id": "0"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
@@ -418,10 +454,12 @@ mod tests {
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this &lt;script&gt;alert('hello');&lt;/script&gt; proposal is so great\" />"));
                 assert!(body_string
                     .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
-                assert!(body_string
-                    .contains("https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"));
-                assert!(body_string
-                    .contains("https://near.org/not-only-devhub.near/widget/app?page=proposal&id=0"));
+                assert!(body_string.contains(
+                    "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
+                ));
+                assert!(body_string.contains(
+                    "https://near.org/not-only-devhub.near/widget/app?page=proposal&id=0"
+                ));
                 let expected_initial_props_string =
                     json!({"page": "proposal", "id": "0"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
