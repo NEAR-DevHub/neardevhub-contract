@@ -14,7 +14,7 @@ expression: get_proposal
       "test1",
       "test2"
     ],
-    "proposal_body_version": "V0",
+    "proposal_body_version": "V1",
     "name": "another post",
     "category": "Marketing",
     "summary": "sum",
@@ -35,7 +35,8 @@ expression: get_proposal
       "kyc_verified": false,
       "test_transaction_sent": false,
       "request_for_trustees_created": false
-    }
+    },
+    "linked_rfp": null
   },
   "snapshot_history": [
     {

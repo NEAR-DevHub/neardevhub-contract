@@ -2,6 +2,12 @@ name: Release
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Account to deploy'
+        type: environment
+        required: true
 
 jobs:
   deploy-devhub-contract:
@@ -12,6 +18,7 @@ jobs:
       NEAR_DEVHUB_ACCOUNT_ID: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_ID }}
       NEAR_DEVHUB_ACCOUNT_PUBLIC_KEY: ${{ vars.NEAR_GIGSBOARD_ACCOUNT_PUBLIC_KEY }}
       NEAR_DEVHUB_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEAR_GIGSBOARD_ACCOUNT_PRIVATE_KEY }}
+    environment: ${{ inputs.environment || 'devhub.near' }}
 
     steps:
     - name: Checkout repository
