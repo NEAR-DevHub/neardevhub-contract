@@ -1082,6 +1082,21 @@ impl Contract {
     pub fn web4_get(&self, request: Web4Request) -> Web4Response {
         web4::handler::web4_get(self, request)
     }
+    
+    pub fn set_social_db_profile_description(&self, description: String) -> Promise {
+        let editor = env::predecessor_account_id();
+        require!(editor == env::current_account_id() || self.has_moderator(editor), "Permission denied");
+        social_db_contract()
+            .with_static_gas(env::prepaid_gas().saturating_div(3))
+            .with_attached_deposit(env::attached_deposit())
+            .set(json!({
+                env::current_account_id(): {
+                    "profile": {
+                        "description": description
+                    }
+                }
+            }))
+    }
 }
 
 #[near]
