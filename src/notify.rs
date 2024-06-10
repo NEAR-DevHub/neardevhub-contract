@@ -77,6 +77,7 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) -> Promise {
         json!({
             "type": "proposal/mention",
             "proposal": proposal.id,
+            "widget_account_id": env::current_account_id(),
             "notifier": env::predecessor_account_id(),
         }),
     )
@@ -95,6 +96,7 @@ pub fn notify_rfp_subscribers(rfp: &RFP, additional_accounts: HashSet<AccountId>
         json!({
             "type": "rfp/mention",
             "rfp": rfp.id,
+            "widget_account_id": env::current_account_id(),
             "notifier": env::current_account_id(),
         }),
     )
@@ -132,6 +134,7 @@ pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> 
         json!({
             "type": "proposal/edit",
             "proposal": proposal_id,
+            "widget_account_id": env::current_account_id(),
             "notifier": env::predecessor_account_id(),
         }),
     )
