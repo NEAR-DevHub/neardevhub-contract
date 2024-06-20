@@ -6,7 +6,7 @@ use near_sdk::{
     },
     env,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::{
     web4::types::{Web4Request, Web4Response},
@@ -22,8 +22,36 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     // A valid path provided by a legit web4 gateway always has '/', so there
     // are always [0] and [1] elements, and [0] is always empty.
     let page = path_parts[1];
+
+    let metadata_preload_url = format!("https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22{}/widget/app/metadata/**%22]", env::current_account_id());
+
     let mut title = String::from("near/dev/hub");
     let mut description = String::from("The decentralized home base for NEAR builders");
+
+    if request.preloads.is_none() {
+        Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
+    }
+
+    if let Some(preloads) = request.preloads {
+        if let Some(metadata_preload_response) = preloads.get(&metadata_preload_url) {
+            if let Web4Response::Body { content_type: _, body } = metadata_preload_response {
+                let body_value: Value = serde_json::from_str(body).unwrap();
+
+                let title_str = body_value[env::current_account_id().to_string()]["widget"]["app"]
+                    ["metadata"]["name"]
+                    .as_str()
+                    .unwrap();
+                let description_str = body_value[env::current_account_id().to_string()]["widget"]
+                    ["app"]["metadata"]["description"]
+                    .as_str()
+                    .unwrap();
+
+                title = html_escape::encode_text(title_str).to_string();
+                description = html_escape::encode_text(description_str).to_string();
+            }
+        }
+    }
+
     let mut image = format!(
         "https://i.near.social/magic/large/https://near.social/magic/img/account/{}",
         env::current_account_id()
@@ -141,6 +169,46 @@ mod tests {
             VMContextBuilder::new().current_account_id(contract.try_into().unwrap()).build();
 
         testing_env!(context);
+    }
+
+    #[test]
+    pub fn test_metadata_preloads() {
+        view_test_env();
+        let contract = Contract::new();
+
+        let description_preload_url = "https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22not-only-devhub.near/widget/app/metadata/**%22]";
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/",
+                "preloads": {
+                    description_preload_url: {
+                        "contentType": "application/json",
+                        "body": serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
+                                    "description":"A description of any devhub portal instance, not just devhub itself","image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
+                                    "name":"NotOnlyDevHub","tags":
+                                {"devhub":"","communities":"","developer-governance":"","app":""}}}}}}).to_string()
+                    }
+                },
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+                println!("{}", body_string);
+                assert!(body_string.contains(
+                    "<meta property=\"og:description\" content=\"A description of any devhub portal instance, not just devhub itself\" />"
+                ));
+                assert!(body_string
+                    .contains("<meta property=\"og:title\" content=\"NotOnlyDevHub\" />"));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
     }
 
     #[test]
