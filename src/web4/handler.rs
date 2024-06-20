@@ -6,7 +6,7 @@ use near_sdk::{
     },
     env,
 };
-use serde_json::{json, Value};
+use serde_json::json;
 
 use crate::{
     web4::types::{Web4Request, Web4Response},
@@ -35,19 +35,32 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     if let Some(preloads) = request.preloads {
         if let Some(metadata_preload_response) = preloads.get(&metadata_preload_url) {
             if let Web4Response::Body { content_type: _, body } = metadata_preload_response {
-                let body_value: Value = serde_json::from_str(body).unwrap();
+                match serde_json::from_str::<serde_json::Value>(body) {
+                    Ok(body_value) => {
+                        if let Some(title_str) = body_value[env::current_account_id().to_string()]
+                            ["widget"]["app"]["metadata"]["name"]
+                            .as_str()
+                        {
+                            title = html_escape::encode_text(title_str).to_string();
+                        } else {
+                            title = String::from("No name in profile metadata");
+                        }
 
-                let title_str = body_value[env::current_account_id().to_string()]["widget"]["app"]
-                    ["metadata"]["name"]
-                    .as_str()
-                    .unwrap();
-                let description_str = body_value[env::current_account_id().to_string()]["widget"]
-                    ["app"]["metadata"]["description"]
-                    .as_str()
-                    .unwrap();
-
-                title = html_escape::encode_text(title_str).to_string();
-                description = html_escape::encode_text(description_str).to_string();
+                        if let Some(description_str) = body_value
+                            [env::current_account_id().to_string()]["widget"]["app"]["metadata"]
+                            ["description"]
+                            .as_str()
+                        {
+                            description = html_escape::encode_text(description_str).to_string();
+                        } else {
+                            description = String::from("No description in profile metadata");
+                        }
+                    }
+                    Err(_e) => {
+                        title = String::from("No metadata found");
+                        description = String::from("No metadata found");
+                    }
+                }
             }
         }
     }
@@ -187,7 +200,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_metadata_preloads() {
+    pub fn test_preload_url_response() {
         view_test_env();
         let contract = Contract::new();
 
@@ -206,6 +219,13 @@ mod tests {
                 panic!("Should return Web4Response::PreloadUrls");
             }
         }
+    }
+
+    #[test]
+    pub fn test_response_with_preload_content() {
+        view_test_env();
+        let contract = Contract::new();
+
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
@@ -219,12 +239,48 @@ mod tests {
                 assert_eq!("text/html; charset=UTF-8", content_type);
 
                 let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
-                println!("{}", body_string);
+
                 assert!(body_string.contains(
                     "<meta property=\"og:description\" content=\"A description of any devhub portal instance, not just devhub itself\" />"
                 ));
                 assert!(body_string
                     .contains("<meta property=\"og:title\" content=\"NotOnlyDevHub\" />"));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_response_with_empty_preload_content() {
+        view_test_env();
+        let contract = Contract::new();
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/",
+                "preloads": {
+                        String::from(PRELOAD_URL): {
+                            "contentType": "application/json",
+                            "body": ""
+                        }
+                },
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains(
+                    "<meta property=\"og:description\" content=\"No metadata found\" />"
+                ));
+                assert!(body_string
+                    .contains("<meta property=\"og:title\" content=\"No metadata found\" />"));
             }
             _ => {
                 panic!("Should return Web4Response::Body");
