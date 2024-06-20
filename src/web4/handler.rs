@@ -29,7 +29,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let mut description = String::from("The decentralized home base for NEAR builders");
 
     if request.preloads.is_none() {
-        Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
+        return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
     }
 
     if let Some(preloads) = request.preloads {
@@ -163,6 +163,21 @@ mod tests {
         base64::Engine, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
     };
 
+    const PRELOAD_URL: &str = "https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22not-only-devhub.near/widget/app/metadata/**%22]";
+
+    fn create_preload_result(title: String, description: String) -> serde_json::Value {
+        return serde_json::json!({
+                String::from(PRELOAD_URL): {
+                    "contentType": "application/json",
+                    "body": serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
+                                "description":description,
+                                "image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
+                                "name":title,
+                                "tags": {"devhub":"","communities":"","developer-governance":"","app":""}}}}}}).to_string()
+                }
+        });
+    }
+
     fn view_test_env() {
         let contract: String = "not-only-devhub.near".to_string();
         let context =
@@ -176,20 +191,26 @@ mod tests {
         view_test_env();
         let contract = Contract::new();
 
-        let description_preload_url = "https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22not-only-devhub.near/widget/app/metadata/**%22]";
+        let response_before_preload = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/"
+            }))
+            .unwrap(),
+        );
+        match response_before_preload {
+            Web4Response::PreloadUrls { preload_urls } => {
+                assert_eq!(PRELOAD_URL, preload_urls.get(0).unwrap())
+            }
+            _ => {
+                panic!("Should return Web4Response::PreloadUrls");
+            }
+        }
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
                 "path": "/",
-                "preloads": {
-                    description_preload_url: {
-                        "contentType": "application/json",
-                        "body": serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
-                                    "description":"A description of any devhub portal instance, not just devhub itself","image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
-                                    "name":"NotOnlyDevHub","tags":
-                                {"devhub":"","communities":"","developer-governance":"","app":""}}}}}}).to_string()
-                    }
-                },
+                "preloads": create_preload_result(String::from("NotOnlyDevHub"),String::from("A description of any devhub portal instance, not just devhub itself")),
             }))
             .unwrap(),
         );
@@ -218,7 +239,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/1"
+                "path": "/proposal/1",
+                "preloads": create_preload_result(String::from("title"), String::from("description")),
             }))
             .unwrap(),
         );
@@ -266,7 +288,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community/webassemblymusic"
+                "path": "/community/webassemblymusic",
+                "preloads": create_preload_result(String::from("title"), String::from("description")),
             }))
             .unwrap(),
         );
@@ -298,7 +321,8 @@ mod tests {
             let response = web4_get(
                 &contract,
                 serde_json::from_value(serde_json::json!({
-                    "path": unknown_path
+                    "path": unknown_path,
+                    "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
                 }))
                 .unwrap(),
             );
@@ -330,7 +354,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community/blablablablabla"
+                "path": "/community/blablablablabla",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -363,7 +388,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community"
+                "path": "/community",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -434,7 +460,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/0"
+                "path": "/proposal/0",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -509,7 +536,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/0"
+                "path": "/proposal/0",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -545,7 +573,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/1"
+                "path": "/proposal/1",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -577,7 +606,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal"
+                "path": "/proposal",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
