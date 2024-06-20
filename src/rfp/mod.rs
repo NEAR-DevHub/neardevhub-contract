@@ -237,7 +237,7 @@ impl Contract {
             let has_approved_proposal = self.get_rfp_linked_proposals(id)
                 .into_iter()
                 .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
-                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.is_approved());
+                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.was_approved());
             require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
         }
 
