@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub const BASE64_ENGINE: engine::GeneralPurpose =
-    engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
+    engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
 pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let path_parts: Vec<&str> = request.path.split('/').collect();
@@ -35,7 +35,9 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     if let Some(preloads) = request.preloads {
         if let Some(metadata_preload_response) = preloads.get(&metadata_preload_url) {
             if let Web4Response::Body { content_type: _, body } = metadata_preload_response {
-                match serde_json::from_str::<serde_json::Value>(body) {
+                match serde_json::from_slice::<serde_json::Value>(
+                    BASE64_ENGINE.decode(body).unwrap().as_slice(),
+                ) {
                     Ok(body_value) => {
                         if let Some(title_str) = body_value[env::current_account_id().to_string()]
                             ["widget"]["app"]["metadata"]["name"]
@@ -179,14 +181,18 @@ mod tests {
     const PRELOAD_URL: &str = "https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22not-only-devhub.near/widget/app/metadata/**%22]";
 
     fn create_preload_result(title: String, description: String) -> serde_json::Value {
+        let body_string = serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
+            "description":description,
+            "image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
+            "name":title,
+            "tags": {"devhub":"","communities":"","developer-governance":"","app":""}}}}}})
+        .to_string();
+
+        let body_base64 = BASE64_ENGINE.encode(body_string);
         return serde_json::json!({
                 String::from(PRELOAD_URL): {
                     "contentType": "application/json",
-                    "body": serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
-                                "description":description,
-                                "image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
-                                "name":title,
-                                "tags": {"devhub":"","communities":"","developer-governance":"","app":""}}}}}}).to_string()
+                    "body": body_base64
                 }
         });
     }
