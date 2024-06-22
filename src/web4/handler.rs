@@ -23,7 +23,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     // are always [0] and [1] elements, and [0] is always empty.
     let page = path_parts[1];
 
-    let metadata_preload_url = format!("https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22{}/widget/app/metadata/**%22]", env::current_account_id());
+    let metadata_preload_url = format!(
+        "/web4/contract/social.near/get?keys.json=%5B%22{}/widget/app/metadata/**%22%5D",
+        env::current_account_id()
+    );
 
     let mut title = String::from("near/dev/hub");
     let mut description = String::from("The decentralized home base for NEAR builders");
@@ -178,7 +181,7 @@ mod tests {
         base64::Engine, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
     };
 
-    const PRELOAD_URL: &str = "https://rpc.web4.near.page/account/social.near/view/get?keys.json=[%22not-only-devhub.near/widget/app/metadata/**%22]";
+    const PRELOAD_URL: &str = "/web4/contract/social.near/get?keys.json=%5B%22not-only-devhub.near/widget/app/metadata/**%22%5D";
 
     fn create_preload_result(title: String, description: String) -> serde_json::Value {
         let body_string = serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
