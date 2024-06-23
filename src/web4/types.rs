@@ -14,7 +14,7 @@ pub struct Web4Request {
     pub preloads: Option<std::collections::HashMap<String, Web4Response>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, NearSchema)]
+#[derive(Debug, Serialize, Deserialize, NearSchema, Clone)]
 #[serde(crate = "near_sdk::serde", untagged)]
 pub enum Web4Response {
     Body {

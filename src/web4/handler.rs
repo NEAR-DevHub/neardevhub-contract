@@ -14,19 +14,53 @@ use crate::{
 };
 
 pub const BASE64_ENGINE: engine::GeneralPurpose =
-    engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
+    engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
 pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
+    let current_account_id = env::current_account_id().to_string();
     let path_parts: Vec<&str> = request.path.split('/').collect();
 
     // A valid path provided by a legit web4 gateway always has '/', so there
     // are always [0] and [1] elements, and [0] is always empty.
     let page = path_parts[1];
-    let mut title = String::from("near/dev/hub");
+
+    let metadata_preload_url = format!(
+        "/web4/contract/social.near/get?keys.json=%5B%22{}/widget/app/metadata/**%22%5D",
+        &current_account_id
+    );
+
+    let mut app_name = String::from("near/dev/hub");
+    let mut title = String::new();
     let mut description = String::from("The decentralized home base for NEAR builders");
+
+    let Some(preloads) = request.preloads else {
+        return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
+    };
+
+    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url) {
+        if let Ok(body_value) = serde_json::from_slice::<serde_json::Value>(
+            &BASE64_ENGINE.decode(body).unwrap()
+        ) {
+            if let Some(app_name_str) = body_value[&current_account_id]
+                ["widget"]["app"]["metadata"]["name"]
+                .as_str()
+            {
+                app_name = app_name_str.to_string();
+            }
+
+            if let Some(description_str) = body_value
+                [&current_account_id]["widget"]["app"]["metadata"]
+                ["description"]
+                .as_str()
+            {
+                description = description_str.to_string();
+            }
+        }
+    }
+
     let mut image = format!(
         "https://i.near.social/magic/large/https://near.social/magic/img/account/{}",
-        env::current_account_id()
+        &current_account_id
     );
     let redirect_path;
     let initial_props_json;
@@ -34,35 +68,43 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     match (page, path_parts.get(2)) {
         ("community", Some(handle)) => {
             if let Some(community) = contract.get_community(handle.to_string()) {
-                title = html_escape::encode_text(community.name.as_str()).to_string();
-                description = html_escape::encode_text(community.description.as_str()).to_string();
+                title = format!(" - Community - {}", community.name);
+                description = community.description;
                 image = community.logo_url;
+            } else {
+                title = format!(" - Community - {}", handle);
             }
             redirect_path =
-                format!("{}/widget/app?page={}&handle={}", env::current_account_id(), page, handle);
-            initial_props_json = json!({"page": page, "handle": handle}).to_string();
+                format!("{}/widget/app?page={}&handle={}", &current_account_id, page, handle);
+            initial_props_json = json!({"page": page, "handle": handle});
         }
         ("proposal", Some(id)) => {
             if let Ok(id) = id.parse::<u32>() {
                 if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
                     let proposal_body =
                         Proposal::from(versioned_proposal).snapshot.body.latest_version();
-                    title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
-                    description =
-                        html_escape::encode_text(proposal_body.summary.as_str()).to_string();
+                    title = format!(" - Proposal #{} - {}", id, proposal_body.name);
+                    description = proposal_body.summary;
+                } else {
+                    title = format!(" - Proposal #{}", id);
                 }
+            } else {
+                title = " - Proposals".to_string();
             }
             redirect_path =
-                format!("{}/widget/app?page={}&id={}", env::current_account_id(), page, id);
-            initial_props_json = json!({"page": page, "id": id}).to_string();
+                format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            initial_props_json = json!({"page": page, "id": id});
         }
         _ => {
-            redirect_path = format!("{}/widget/app", env::current_account_id()).to_string();
-            initial_props_json = json!({"page": page}).to_string();
+            redirect_path = format!("{}/widget/app", &current_account_id);
+            initial_props_json = json!({"page": page});
         }
     }
 
-    let current_account_id = env::current_account_id().to_string();
+    let app_name = html_escape::encode_text(&app_name).to_string();
+    let title = html_escape::encode_text(&title).to_string();
+    let description = html_escape::encode_text(&description).to_string();
+
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
@@ -72,12 +114,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta property="og:url" content="{url}" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="{title}" />
+    <meta property="og:title" content="{app_name}{title}" />
     <meta property="og:description" content="{description}" />
     <meta property="og:image" content="{image}" />
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{title}">
+    <meta name="twitter:title" content="{app_name}{title}">
     <meta name="twitter:description" content="{description}">
     <meta name="twitter:image" content="{image}">
     <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/main.794b6347ae264789bc61.bundle.js"></script>
@@ -135,6 +177,25 @@ mod tests {
         base64::Engine, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
     };
 
+    const PRELOAD_URL: &str = "/web4/contract/social.near/get?keys.json=%5B%22not-only-devhub.near/widget/app/metadata/**%22%5D";
+
+    fn create_preload_result(title: String, description: String) -> serde_json::Value {
+        let body_string = serde_json::json!({"not-only-devhub.near":{"widget":{"app":{"metadata":{
+            "description":description,
+            "image":{"ipfs_cid":"bafkreido4srg4aj7l7yg2tz22nbu3ytdidjczdvottfr5ek6gqorwg6v74"},
+            "name":title,
+            "tags": {"devhub":"","communities":"","developer-governance":"","app":""}}}}}})
+        .to_string();
+
+        let body_base64 = BASE64_ENGINE.encode(body_string);
+        return serde_json::json!({
+                String::from(PRELOAD_URL): {
+                    "contentType": "application/json",
+                    "body": body_base64
+                }
+        });
+    }
+
     fn view_test_env() {
         let contract: String = "not-only-devhub.near".to_string();
         let context =
@@ -144,13 +205,103 @@ mod tests {
     }
 
     #[test]
+    pub fn test_preload_url_response() {
+        view_test_env();
+        let contract = Contract::new();
+
+        let response_before_preload = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/"
+            }))
+            .unwrap(),
+        );
+        match response_before_preload {
+            Web4Response::PreloadUrls { preload_urls } => {
+                assert_eq!(PRELOAD_URL, preload_urls.get(0).unwrap())
+            }
+            _ => {
+                panic!("Should return Web4Response::PreloadUrls");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_response_with_preload_content() {
+        view_test_env();
+        let contract = Contract::new();
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/",
+                "preloads": create_preload_result(String::from("NotOnlyDevHub"),String::from("A description of any devhub portal instance, not just devhub itself")),
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains(
+                    "<meta property=\"og:description\" content=\"A description of any devhub portal instance, not just devhub itself\" />"
+                ));
+                assert!(body_string
+                    .contains("<meta property=\"og:title\" content=\"NotOnlyDevHub\" />"));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_response_with_empty_preload_content() {
+        view_test_env();
+        let contract = Contract::new();
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/",
+                "preloads": {
+                        String::from(PRELOAD_URL): {
+                            "contentType": "application/json",
+                            "body": ""
+                        }
+                },
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains(
+                    "<meta property=\"og:description\" content=\"The decentralized home base for NEAR builders\" />"
+                ));
+                assert!(body_string
+                    .contains("<meta property=\"og:title\" content=\"near/dev/hub\" />"));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
     pub fn test_logo() {
         view_test_env();
         let contract = Contract::new();
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/1"
+                "path": "/proposal/1",
+                "preloads": create_preload_result(String::from("title"), String::from("description")),
             }))
             .unwrap(),
         );
@@ -198,7 +349,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community/webassemblymusic"
+                "path": "/community/webassemblymusic",
+                "preloads": create_preload_result(String::from("title"), String::from("description")),
             }))
             .unwrap(),
         );
@@ -210,7 +362,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"Music stored forever in the NEAR blockchain\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"WebAssembly Music\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"title - Community - WebAssembly Music\">"));
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app?page=community&handle=webassemblymusic"));
                 let expected_initial_props_string =
                     json!({"page": "community", "handle": "webassemblymusic"}).to_string();
@@ -230,7 +382,8 @@ mod tests {
             let response = web4_get(
                 &contract,
                 serde_json::from_value(serde_json::json!({
-                    "path": unknown_path
+                    "path": unknown_path,
+                    "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
                 }))
                 .unwrap(),
             );
@@ -262,7 +415,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community/blablablablabla"
+                "path": "/community/blablablablabla",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -274,7 +428,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
                 assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Community - blablablablabla\">")
                 );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 assert!(body_string.contains("https://near.org/not-only-devhub.near/widget/app"));
@@ -295,7 +449,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/community"
+                "path": "/community",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -366,7 +521,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/0"
+                "path": "/proposal/0",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -378,7 +534,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this proposal is so great\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #0 - The best proposal ever\">"));
                 assert!(body_string.contains(
                     "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
                 ));
@@ -441,7 +597,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/0"
+                "path": "/proposal/0",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -453,7 +610,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this &lt;script&gt;alert('hello');&lt;/script&gt; proposal is so great\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #0 - The best proposal ever\">"));
                 assert!(body_string.contains(
                     "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
                 ));
@@ -477,7 +634,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal/1"
+                "path": "/proposal/1",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );
@@ -489,7 +647,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
                 assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">")
                 );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string =
@@ -509,7 +667,8 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": "/proposal"
+                "path": "/proposal",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
             }))
             .unwrap(),
         );

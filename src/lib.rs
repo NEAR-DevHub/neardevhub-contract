@@ -15,7 +15,6 @@ use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
-use near_sdk::json_types::Base64VecU8;
 use post::*;
 use proposal::timeline::TimelineStatus;
 use proposal::*;
