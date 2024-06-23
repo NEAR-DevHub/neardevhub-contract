@@ -17,6 +17,7 @@ pub const BASE64_ENGINE: engine::GeneralPurpose =
     engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
 pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
+    let current_account_id = env::current_account_id().to_string();
     let path_parts: Vec<&str> = request.path.split('/').collect();
 
     // A valid path provided by a legit web4 gateway always has '/', so there
@@ -25,54 +26,41 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 
     let metadata_preload_url = format!(
         "/web4/contract/social.near/get?keys.json=%5B%22{}/widget/app/metadata/**%22%5D",
-        env::current_account_id()
+        &current_account_id
     );
 
-    let mut title = String::from("near/dev/hub");
+    let mut app_name = String::from("near/dev/hub");
+    let mut title = String::new();
     let mut description = String::from("The decentralized home base for NEAR builders");
 
-    if request.preloads.is_none() {
+    let Some(preloads) = request.preloads else {
         return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
-    }
+    };
 
-    if let Some(preloads) = request.preloads {
-        if let Some(metadata_preload_response) = preloads.get(&metadata_preload_url) {
-            if let Web4Response::Body { content_type: _, body } = metadata_preload_response {
-                match serde_json::from_slice::<serde_json::Value>(
-                    BASE64_ENGINE.decode(body).unwrap().as_slice(),
-                ) {
-                    Ok(body_value) => {
-                        if let Some(title_str) = body_value[env::current_account_id().to_string()]
-                            ["widget"]["app"]["metadata"]["name"]
-                            .as_str()
-                        {
-                            title = html_escape::encode_text(title_str).to_string();
-                        } else {
-                            title = String::from("No name in profile metadata");
-                        }
+    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url) {
+        if let Ok(body_value) = serde_json::from_slice::<serde_json::Value>(
+            &BASE64_ENGINE.decode(body).unwrap()
+        ) {
+            if let Some(app_name_str) = body_value[&current_account_id]
+                ["widget"]["app"]["metadata"]["name"]
+                .as_str()
+            {
+                app_name = app_name_str.to_string();
+            }
 
-                        if let Some(description_str) = body_value
-                            [env::current_account_id().to_string()]["widget"]["app"]["metadata"]
-                            ["description"]
-                            .as_str()
-                        {
-                            description = html_escape::encode_text(description_str).to_string();
-                        } else {
-                            description = String::from("No description in profile metadata");
-                        }
-                    }
-                    Err(_e) => {
-                        title = String::from("No metadata found");
-                        description = String::from("No metadata found");
-                    }
-                }
+            if let Some(description_str) = body_value
+                [&current_account_id]["widget"]["app"]["metadata"]
+                ["description"]
+                .as_str()
+            {
+                description = description_str.to_string();
             }
         }
     }
 
     let mut image = format!(
         "https://i.near.social/magic/large/https://near.social/magic/img/account/{}",
-        env::current_account_id()
+        &current_account_id
     );
     let redirect_path;
     let initial_props_json;
@@ -80,35 +68,43 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     match (page, path_parts.get(2)) {
         ("community", Some(handle)) => {
             if let Some(community) = contract.get_community(handle.to_string()) {
-                title = html_escape::encode_text(community.name.as_str()).to_string();
-                description = html_escape::encode_text(community.description.as_str()).to_string();
+                title = format!(" - Community - {}", community.name);
+                description = community.description;
                 image = community.logo_url;
+            } else {
+                title = format!(" - Community - {}", handle);
             }
             redirect_path =
-                format!("{}/widget/app?page={}&handle={}", env::current_account_id(), page, handle);
-            initial_props_json = json!({"page": page, "handle": handle}).to_string();
+                format!("{}/widget/app?page={}&handle={}", &current_account_id, page, handle);
+            initial_props_json = json!({"page": page, "handle": handle});
         }
         ("proposal", Some(id)) => {
             if let Ok(id) = id.parse::<u32>() {
                 if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
                     let proposal_body =
                         Proposal::from(versioned_proposal).snapshot.body.latest_version();
-                    title = html_escape::encode_text(proposal_body.name.as_str()).to_string();
-                    description =
-                        html_escape::encode_text(proposal_body.summary.as_str()).to_string();
+                    title = format!(" - Proposal #{} - {}", id, proposal_body.name);
+                    description = proposal_body.summary;
+                } else {
+                    title = format!(" - Proposal #{}", id);
                 }
+            } else {
+                title = " - Proposals".to_string();
             }
             redirect_path =
-                format!("{}/widget/app?page={}&id={}", env::current_account_id(), page, id);
-            initial_props_json = json!({"page": page, "id": id}).to_string();
+                format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            initial_props_json = json!({"page": page, "id": id});
         }
         _ => {
-            redirect_path = format!("{}/widget/app", env::current_account_id()).to_string();
-            initial_props_json = json!({"page": page}).to_string();
+            redirect_path = format!("{}/widget/app", &current_account_id);
+            initial_props_json = json!({"page": page});
         }
     }
 
-    let current_account_id = env::current_account_id().to_string();
+    let app_name = html_escape::encode_text(&app_name).to_string();
+    let title = html_escape::encode_text(&title).to_string();
+    let description = html_escape::encode_text(&description).to_string();
+
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
@@ -118,12 +114,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta property="og:url" content="{url}" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="{title}" />
+    <meta property="og:title" content="{app_name}{title}" />
     <meta property="og:description" content="{description}" />
     <meta property="og:image" content="{image}" />
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{title}">
+    <meta name="twitter:title" content="{app_name}{title}">
     <meta name="twitter:description" content="{description}">
     <meta name="twitter:image" content="{image}">
     <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/main.794b6347ae264789bc61.bundle.js"></script>
@@ -286,10 +282,10 @@ mod tests {
                 let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
                 assert!(body_string.contains(
-                    "<meta property=\"og:description\" content=\"No metadata found\" />"
+                    "<meta property=\"og:description\" content=\"The decentralized home base for NEAR builders\" />"
                 ));
                 assert!(body_string
-                    .contains("<meta property=\"og:title\" content=\"No metadata found\" />"));
+                    .contains("<meta property=\"og:title\" content=\"near/dev/hub\" />"));
             }
             _ => {
                 panic!("Should return Web4Response::Body");
@@ -366,7 +362,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"Music stored forever in the NEAR blockchain\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"WebAssembly Music\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"title - Community - WebAssembly Music\">"));
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app?page=community&handle=webassemblymusic"));
                 let expected_initial_props_string =
                     json!({"page": "community", "handle": "webassemblymusic"}).to_string();
@@ -432,7 +428,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
                 assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Community - blablablablabla\">")
                 );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 assert!(body_string.contains("https://near.org/not-only-devhub.near/widget/app"));
@@ -538,7 +534,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this proposal is so great\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #0 - The best proposal ever\">"));
                 assert!(body_string.contains(
                     "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
                 ));
@@ -614,7 +610,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this &lt;script&gt;alert('hello');&lt;/script&gt; proposal is so great\" />"));
                 assert!(body_string
-                    .contains("<meta name=\"twitter:title\" content=\"The best proposal ever\">"));
+                    .contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #0 - The best proposal ever\">"));
                 assert!(body_string.contains(
                     "https://near.social/not-only-devhub.near/widget/app?page=proposal&id=0"
                 ));
@@ -651,7 +647,7 @@ mod tests {
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
                 assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub\">")
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">")
                 );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string =
