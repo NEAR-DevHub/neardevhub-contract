@@ -54,7 +54,7 @@ pub fn notify_accounts(
         }
 
         social_db_contract()
-            .with_static_gas(env::prepaid_gas().saturating_div(4))
+            .with_static_gas(env::prepaid_gas().saturating_div(5))
             .with_attached_deposit(env::attached_deposit())
             .set(json!({
                 notifier : {
