@@ -567,18 +567,18 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_timeline_payment.is_success());
 
-    let _edit_proposal_timeline_funded = contract
-        .call("edit_proposal_timeline")
+    let _edit_proposal_versional_timeline_funded = contract
+        .call("edit_proposal_versioned_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
+            "timeline": {"timeline_version": "V1", "status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "kyc_verified_review": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
         }))
         .max_gas()
         .deposit(deposit_amount)
         .transact()
         .await?;
 
-    assert!(_edit_proposal_timeline_funded.is_success());
+    assert!(_edit_proposal_versional_timeline_funded.is_success());
 
     let get_proposal: serde_json::Value = contract
         .call("get_proposal")

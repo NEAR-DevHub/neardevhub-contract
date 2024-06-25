@@ -14,8 +14,9 @@ use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
+
 use common::*;
-use proposal::timeline::TimelineStatus;
+use proposal::timeline::{TimelineStatus, TimelineStatusV1, VersionedTimelineStatus};
 use proposal::*;
 use rfp::{
     RFPId, RFPSnapshot, TimelineStatus as RFPTimelineStatus, VersionedRFP, VersionedRFPBody, RFP,
@@ -150,8 +151,10 @@ impl Contract {
 
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
+        let timeline = proposal_body.timeline.clone().latest_version();
+
         require!(
-            proposal_body.timeline.is_draft() || proposal_body.timeline.is_empty_review(),
+            timeline.is_draft() || timeline.is_empty_review(),
             "Cannot create proposal which is not in a draft or a review state"
         );
 
@@ -180,7 +183,7 @@ impl Contract {
 
         proposal::repost::publish_to_socialdb_feed(
             Self::ext(env::current_account_id())
-                .with_static_gas(env::prepaid_gas().saturating_div(4))
+                .with_static_gas(env::prepaid_gas().saturating_div(5))
                 .set_block_height_callback(proposal.clone()),
             proposal::repost::proposal_repost_text(proposal.clone()),
         )
@@ -447,7 +450,25 @@ impl Contract {
             .unwrap_or_else(|| panic!("Proposal id {} not found", id))
             .into();
         let mut body = proposal.snapshot.body.latest_version();
-        body.timeline = timeline;
+        body.timeline = timeline.into();
+
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
+    }
+
+    #[payable]
+    pub fn edit_proposal_versioned_timeline(
+        &mut self,
+        id: ProposalId,
+        timeline: VersionedTimelineStatus,
+    ) -> ProposalId {
+        near_sdk::log!("edit_proposal_versioned_timeline");
+        let proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+        let mut body = proposal.snapshot.body.latest_version();
+        body.timeline = timeline.into();
 
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
@@ -480,8 +501,8 @@ impl Contract {
         for proposal_id in proposals_to_cancel {
             let proposal: Proposal = self.get_proposal(proposal_id).into();
             let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
-            let review_status = proposal_timeline.get_review_status().clone();
-            self.edit_proposal_timeline(proposal_id, TimelineStatus::Cancelled(review_status));
+            let review_status = proposal_timeline.latest_version().get_review_status().clone();
+            self.edit_proposal_versioned_timeline(proposal_id, TimelineStatusV1::Cancelled(review_status).into());
         }
 
         for proposal_id in proposals_to_unlink {
