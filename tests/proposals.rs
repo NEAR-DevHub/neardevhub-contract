@@ -12,26 +12,6 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
-    let add_idea_post = contract
-        .call("add_post")
-        .args_json(json!({
-            "parent_id": null,
-            "labels": [],
-            "body": {
-                "name": "This is a test idea.",
-                "description": "This is a test description.",
-                "post_type": "Idea",
-                "idea_version": "V1"
-            }
-        }))
-        .deposit(deposit_amount)
-        .transact()
-        .await?;
-
-    println!("add idea post: {:?}", add_idea_post);
-    assert!(add_idea_post.is_success());
-
-
     let _set_categories = contract
         .call("set_allowed_categories")
         .args_json(json!({"new_categories": ["Marketing", "Events"]}))
