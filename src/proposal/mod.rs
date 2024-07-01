@@ -156,20 +156,20 @@ impl From<ProposalBodyV0> for ProposalBodyV1 {
 }
 
 impl From<ProposalBodyV1> for ProposalBodyV2 {
-    fn from(v0: ProposalBodyV1) -> Self {
+    fn from(v1: ProposalBodyV1) -> Self {
         ProposalBodyV2 {
-            name: v0.name,
-            category: v0.category,
-            summary: v0.summary,
-            description: v0.description,
-            linked_proposals: v0.linked_proposals,
-            requested_sponsorship_usd_amount: v0.requested_sponsorship_usd_amount,
-            requested_sponsorship_paid_in_currency: v0.requested_sponsorship_paid_in_currency,
-            receiver_account: v0.receiver_account,
-            requested_sponsor: v0.requested_sponsor,
-            supervisor: v0.supervisor,
-            timeline: v0.timeline.into(),
-            linked_rfp: None,
+            name: v1.name,
+            category: v1.category,
+            summary: v1.summary,
+            description: v1.description,
+            linked_proposals: v1.linked_proposals,
+            requested_sponsorship_usd_amount: v1.requested_sponsorship_usd_amount,
+            requested_sponsorship_paid_in_currency: v1.requested_sponsorship_paid_in_currency,
+            receiver_account: v1.receiver_account,
+            requested_sponsor: v1.requested_sponsor,
+            supervisor: v1.supervisor,
+            timeline: v1.timeline.into(),
+            linked_rfp: v1.linked_rfp,
         }
     }
 }
