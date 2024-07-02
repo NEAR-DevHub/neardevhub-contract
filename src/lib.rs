@@ -257,10 +257,22 @@ impl Contract {
         &mut self,
         body: VersionedProposalBody,
         labels: HashSet<String>,
+        accepted_terms_and_conditions_version: near_sdk::BlockHeight,
     ) -> Promise {
         let id: ProposalId = self.proposals.len().try_into().unwrap();
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
+
+        let current_block_height = env::block_height();
+
+        require!(
+            accepted_terms_and_conditions_version + 10000 >= current_block_height,
+            "Terms and conditions version is too old"
+        );
+        require!(
+            accepted_terms_and_conditions_version <= env::block_height(),
+            "Terms and conditions version is from the future"
+        );
 
         let proposal_body = body.clone().latest_version();
 
@@ -1178,7 +1190,7 @@ mod tests {
             "payouts": [],
             "timeline": {"status": "DRAFT"}
         })).unwrap();
-        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new());
+        contract.add_proposal(VersionedProposalBody::V0(body), HashSet::new(), 0);
         let receipts = get_created_receipts();
         assert_eq!(3, receipts.len());
 
