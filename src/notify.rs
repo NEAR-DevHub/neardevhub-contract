@@ -1,4 +1,8 @@
-use crate::{get_subscribers, PostId, Proposal, ProposalId};
+use std::collections::HashSet;
+
+use crate::{
+    get_subscribers, rfp::get_subscribers as get_rfp_subscribers, PostId, Proposal, ProposalId, RFP,
+};
 use devhub_common::social_db_contract;
 use near_sdk::serde_json::json;
 use near_sdk::{env, AccountId, Promise};
@@ -71,9 +75,29 @@ pub fn notify_proposal_subscribers(proposal: &Proposal) -> Promise {
         env::current_account_id(),
         accounts,
         json!({
-            "type": "devhub/mention",
+            "type": "proposal/mention",
             "proposal": proposal.id,
+            "widgetAccountId": env::current_account_id(),
             "notifier": env::predecessor_account_id(),
+        }),
+    )
+}
+
+pub fn notify_rfp_subscribers(rfp: &RFP, additional_accounts: HashSet<AccountId>) -> Promise {
+    let accounts = [
+        get_rfp_subscribers(&rfp.snapshot.body.clone().latest_version()),
+        additional_accounts.iter().map(|x| x.to_string()).collect::<Vec<_>>(),
+    ]
+    .concat();
+
+    notify_accounts(
+        env::current_account_id(),
+        accounts,
+        json!({
+            "type": "rfp/mention",
+            "rfp": rfp.id,
+            "widgetAccountId": env::current_account_id(),
+            "notifier": env::current_account_id(),
         }),
     )
 }
@@ -108,8 +132,9 @@ pub fn notify_edit_proposal(proposal_id: ProposalId, post_author: AccountId) -> 
         env::current_account_id(),
         post_author,
         json!({
-            "type": "devhub/edit",
+            "type": "proposal/edit",
             "proposal": proposal_id,
+            "widgetAccountId": env::current_account_id(),
             "notifier": env::predecessor_account_id(),
         }),
     )
