@@ -44,7 +44,7 @@ fn repost_internal(text: String, contract_address: AccountId) -> near_sdk::serde
 
 pub fn publish_to_socialdb_feed(callback: Promise, text: String) -> Promise {
     social_db_contract()
-        .with_static_gas(env::prepaid_gas().saturating_div(3))
+        .with_static_gas(env::prepaid_gas().saturating_div(10))
         .with_attached_deposit(env::attached_deposit())
         .set(repost_internal(text, env::current_account_id()))
         .then(callback)

@@ -5,7 +5,6 @@
 use crate::*;
 use near_sdk::{borsh::to_vec, env, near, NearToken, Promise};
 use near_sdk::store::Lazy;
-use std::cmp::min;
 use std::collections::{HashSet, HashMap};
 
 #[near]
@@ -73,24 +72,6 @@ impl Contract {
             access_control,
             authors,
         });
-    }
-
-    fn unsafe_insert_old_post_authors(start: u64, end: u64) -> StateVersion {
-        let mut contract: ContractV3 = env::state_read().unwrap();
-        let total = contract.posts.len();
-        let end = min(total, end);
-        for i in start..end {
-            let versioned_post = contract.posts.get(i);
-            if let Some(versioned_post) = versioned_post {
-                let post: Post = versioned_post.into();
-                let mut author_posts =
-                    contract.authors.get(&post.author_id).unwrap_or_else(|| HashSet::new());
-                author_posts.insert(post.id);
-                contract.authors.insert(&post.author_id, &author_posts);
-            }
-        }
-        env::state_write(&contract);
-        StateVersion::V3 { done: end == total, migrated_count: end }
     }
 }
 
@@ -780,10 +761,8 @@ impl Contract {
                 Contract::unsafe_add_post_authors();
                 state_version_write(&StateVersion::V3 { done: false, migrated_count: 0 })
             }
-            StateVersion::V3 { done: false, migrated_count } => {
-                let new_version =
-                    Contract::unsafe_insert_old_post_authors(migrated_count, migrated_count + 100);
-                state_version_write(&new_version);
+            StateVersion::V3 { done: false, .. } => {
+                unimplemented!();
             }
             StateVersion::V3 { done: true, migrated_count: _ } => {
                 Contract::unsafe_add_communities();
