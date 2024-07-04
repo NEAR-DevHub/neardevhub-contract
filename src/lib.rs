@@ -183,7 +183,7 @@ impl Contract {
 
         proposal::repost::publish_to_socialdb_feed(
             Self::ext(env::current_account_id())
-                .with_static_gas(env::prepaid_gas().saturating_div(5))
+                .with_static_gas(env::prepaid_gas().saturating_div(4))
                 .set_block_height_callback(proposal.clone()),
             proposal::repost::proposal_repost_text(proposal.clone()),
         )
