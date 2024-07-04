@@ -16,7 +16,7 @@ use crate::access_control::AccessControl;
 use community::*;
 
 use common::*;
-use proposal::timeline::{TimelineStatus, TimelineStatusV1, VersionedTimelineStatus};
+use proposal::timeline::{TimelineStatusV1, TimelineStatus, VersionedTimelineStatus};
 use proposal::*;
 use rfp::{
     RFPId, RFPSnapshot, TimelineStatus as RFPTimelineStatus, VersionedRFP, VersionedRFPBody, RFP,
@@ -443,7 +443,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> ProposalId {
+    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatusV1) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(id.into())
@@ -502,7 +502,7 @@ impl Contract {
             let proposal: Proposal = self.get_proposal(proposal_id).into();
             let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
             let review_status = proposal_timeline.latest_version().get_review_status().clone();
-            self.edit_proposal_versioned_timeline(proposal_id, TimelineStatusV1::Cancelled(review_status).into());
+            self.edit_proposal_versioned_timeline(proposal_id, TimelineStatus::Cancelled(review_status).into());
         }
 
         for proposal_id in proposals_to_unlink {
