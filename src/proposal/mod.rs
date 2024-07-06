@@ -3,7 +3,7 @@ pub mod timeline;
 
 use std::collections::HashSet;
 
-use self::timeline::TimelineStatus;
+use self::timeline::{TimelineStatusV1, VersionedTimelineStatus};
 
 use crate::Contract;
 use crate::str_serializers::*;
@@ -82,7 +82,7 @@ pub struct ProposalBodyV0 {
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,
     pub supervisor: Option<AccountId>,
-    pub timeline: TimelineStatus,
+    pub timeline: TimelineStatusV1,
 }
 
 #[near(serializers=[borsh, json])]
@@ -102,7 +102,28 @@ pub struct ProposalBodyV1 {
     pub receiver_account: AccountId,
     pub requested_sponsor: AccountId,
     pub supervisor: Option<AccountId>,
-    pub timeline: TimelineStatus,
+    pub timeline: TimelineStatusV1,
+    pub linked_rfp: Option<RFPId>,
+}
+
+#[near(serializers=[borsh, json])]
+#[derive(Clone)]
+pub struct ProposalBodyV2 {
+    pub name: String,
+    pub category: String,
+    pub summary: String,
+    pub description: String,
+    pub linked_proposals: Vec<ProposalId>,
+    #[serde(
+        serialize_with = "u32_dec_format::serialize",
+        deserialize_with = "u32_dec_format::deserialize"
+    )]
+    pub requested_sponsorship_usd_amount: u32,
+    pub requested_sponsorship_paid_in_currency: ProposalFundingCurrency,
+    pub receiver_account: AccountId,
+    pub requested_sponsor: AccountId,
+    pub supervisor: Option<AccountId>,
+    pub timeline: VersionedTimelineStatus,
     pub linked_rfp: Option<RFPId>,
 }
 
@@ -112,6 +133,7 @@ pub struct ProposalBodyV1 {
 pub enum VersionedProposalBody {
     V0(ProposalBodyV0),
     V1(ProposalBodyV1),
+    V2(ProposalBodyV2),
 }
 
 impl From<ProposalBodyV0> for ProposalBodyV1 {
@@ -133,6 +155,25 @@ impl From<ProposalBodyV0> for ProposalBodyV1 {
     }
 }
 
+impl From<ProposalBodyV1> for ProposalBodyV2 {
+    fn from(v1: ProposalBodyV1) -> Self {
+        ProposalBodyV2 {
+            name: v1.name,
+            category: v1.category,
+            summary: v1.summary,
+            description: v1.description,
+            linked_proposals: v1.linked_proposals,
+            requested_sponsorship_usd_amount: v1.requested_sponsorship_usd_amount,
+            requested_sponsorship_paid_in_currency: v1.requested_sponsorship_paid_in_currency,
+            receiver_account: v1.receiver_account,
+            requested_sponsor: v1.requested_sponsor,
+            supervisor: v1.supervisor,
+            timeline: v1.timeline.into(),
+            linked_rfp: v1.linked_rfp,
+        }
+    }
+}
+
 impl From<VersionedProposalBody> for ProposalBodyV0 {
     fn from(solution: VersionedProposalBody) -> Self {
         match solution {
@@ -147,6 +188,20 @@ impl From<VersionedProposalBody> for ProposalBodyV1 {
         match solution {
             VersionedProposalBody::V0(v0) => v0.into(),
             VersionedProposalBody::V1(v1) => v1,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<VersionedProposalBody> for ProposalBodyV2 {
+    fn from(solution: VersionedProposalBody) -> Self {
+        match solution {
+            VersionedProposalBody::V0(v0) => {
+                let v1: ProposalBodyV1 = v0.into();
+                v1.into()
+            },
+            VersionedProposalBody::V1(v1) => v1.into(),
+            VersionedProposalBody::V2(v2) => v2,
         }
     }
 }
@@ -163,13 +218,19 @@ impl From<ProposalBodyV1> for VersionedProposalBody {
     }
 }
 
+impl From<ProposalBodyV2> for VersionedProposalBody {
+    fn from(p: ProposalBodyV2) -> Self {
+        VersionedProposalBody::V2(p)
+    }
+}
+
 impl VersionedProposalBody {
-    pub fn latest_version(self) -> ProposalBodyV1 {
+    pub fn latest_version(self) -> ProposalBodyV2 {
         self.into()
     }
 }
 
-pub fn get_subscribers(proposal_body: &ProposalBodyV1) -> Vec<String> {
+pub fn get_subscribers(proposal_body: &ProposalBodyV2) -> Vec<String> {
     let mut result = [
         get_text_mentions(proposal_body.description.as_str()),
         get_text_mentions(proposal_body.summary.as_str()),
@@ -236,20 +297,21 @@ impl Contract {
         let old_body = proposal.snapshot.body.clone();
         let labels = self.update_and_check_rfp_link(id, body.clone(), Some(old_body.clone()), labels);
 
-        let current_timeline = old_body.latest_version().timeline;
+        let current_timeline = old_body.latest_version().timeline.latest_version();
+        let new_timeline = proposal_body.timeline.latest_version();
 
         require!(
             self.has_moderator(editor_id.clone())
                 || editor_id.clone() == env::current_account_id()
                 || current_timeline.is_draft()
-                    && (proposal_body.timeline.is_empty_review()
-                        || proposal_body.timeline.is_draft())
-                || current_timeline.can_be_cancelled() && proposal_body.timeline.is_cancelled(),
+                    && (new_timeline.is_empty_review()
+                        || new_timeline.is_draft())
+                || current_timeline.can_be_cancelled() && new_timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
 
         require!(
-            proposal_body.timeline.is_draft() ||  proposal_body.timeline.is_review() || proposal_body.timeline.is_cancelled() || proposal_body.supervisor.is_some(),
+            new_timeline.is_draft() ||  new_timeline.is_review() || new_timeline.is_cancelled() || proposal_body.supervisor.is_some(),
             "You can't change the timeline of the proposal to this status without adding a supervisor"
         );
 
