@@ -3,9 +3,8 @@ pub mod community;
 pub mod debug;
 pub mod migrations;
 mod notify;
-pub mod post;
+pub mod common;
 pub mod proposal;
-mod repost;
 pub mod rfp;
 pub mod stats;
 pub mod str_serializers;
@@ -15,8 +14,9 @@ use crate::access_control::members::ActionType;
 use crate::access_control::members::Member;
 use crate::access_control::AccessControl;
 use community::*;
-use post::*;
-use proposal::timeline::TimelineStatus;
+
+use common::*;
+use proposal::timeline::{TimelineStatusV1, TimelineStatus, VersionedTimelineStatus};
 use proposal::*;
 use rfp::{
     RFPId, RFPSnapshot, TimelineStatus as RFPTimelineStatus, VersionedRFP, VersionedRFPBody, RFP,
@@ -36,11 +36,6 @@ use std::collections::{HashSet, HashMap};
 use std::convert::TryInto;
 
 type PostId = u64;
-type IdeaId = u64;
-type AttestationId = u64;
-type SolutionId = u64;
-type SponsorshipId = u64;
-type CommentId = u64;
 
 /// An imaginary top post representing the landing page.
 const ROOT_POST_ID: u64 = u64::MAX;
@@ -95,51 +90,6 @@ impl Contract {
         contract
     }
 
-    /// If `parent_id` is not provided get all landing page posts. Otherwise, get all posts under
-    /// `parent_id` post.
-    pub fn get_posts(&self, parent_id: Option<PostId>) -> Vec<VersionedPost> {
-        let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
-        let children_ids = self
-            .post_to_children
-            .get(&parent_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
-        children_ids
-            .into_iter()
-            .map(|id| {
-                self.posts
-                    .get(id)
-                    .unwrap_or_else(|| panic!("Post id {} not found. Broken state invariant", id))
-            })
-            .collect()
-    }
-
-    pub fn get_post(&self, post_id: PostId) -> VersionedPost {
-        self.posts.get(post_id).unwrap_or_else(|| panic!("Post id {} not found", post_id))
-    }
-
-    pub fn get_all_post_ids(&self) -> Vec<PostId> {
-        (0..self.posts.len()).collect()
-    }
-
-    pub fn get_children_ids(&self, post_id: Option<PostId>) -> Vec<PostId> {
-        let post_id = post_id.unwrap_or(ROOT_POST_ID);
-        self.post_to_children
-            .get(&post_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", post_id))
-    }
-
-    pub fn get_parent_id(&self, post_id: PostId) -> Option<PostId> {
-        let res = self
-            .post_to_parent
-            .get(&post_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", post_id));
-        if res == ROOT_POST_ID {
-            Option::None
-        } else {
-            Option::Some(res)
-        }
-    }
-
     pub fn get_proposals(&self, ids: Option< Vec<ProposalId> >) -> Vec<VersionedProposal> {
         if let Some(ids) = ids {
             ids
@@ -174,85 +124,6 @@ impl Contract {
     }
 
     #[payable]
-    pub fn add_like(&mut self, post_id: PostId) -> Promise {
-        let mut post: Post = self
-            .posts
-            .get(post_id)
-            .unwrap_or_else(|| panic!("Post id {} not found", post_id))
-            .into();
-        let post_author = post.author_id.clone();
-        let like =
-            Like { author_id: env::predecessor_account_id(), timestamp: env::block_timestamp() };
-        post.likes.insert(like);
-        self.posts.replace(post_id, &post.into());
-        notify::notify_like(post_id, post_author)
-    }
-
-    #[payable]
-    pub fn add_post(
-        &mut self,
-        parent_id: Option<PostId>,
-        body: PostBody,
-        labels: HashSet<String>,
-    ) -> Promise {
-        let parent_id = parent_id.unwrap_or(ROOT_POST_ID);
-        let id = self.posts.len();
-        let author_id = env::predecessor_account_id();
-        let editor_id = author_id.clone();
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels.iter().cloned().collect()
-            ),
-            "Cannot use these labels"
-        );
-
-        for label in &labels {
-            let mut other_posts = self.label_to_posts.get(label).unwrap_or_default();
-            other_posts.insert(id);
-            self.label_to_posts.insert(label, &other_posts);
-        }
-        let post = Post {
-            id,
-            author_id: author_id.clone(),
-            likes: Default::default(),
-            snapshot: PostSnapshot { editor_id, timestamp: env::block_timestamp(), labels, body },
-            snapshot_history: vec![],
-        };
-        self.posts.push(&post.clone().into());
-        self.post_to_parent.insert(&id, &parent_id);
-
-        let mut siblings = self
-            .post_to_children
-            .get(&parent_id)
-            .unwrap_or_else(|| panic!("Parent id {} not found", parent_id));
-        siblings.push(id);
-        self.post_to_children.insert(&parent_id, &siblings);
-
-        // Don't forget to add an empty list of your own children.
-        self.post_to_children.insert(&id, &vec![]);
-
-        let mut author_posts = self.authors.get(&author_id).unwrap_or_default();
-        author_posts.insert(post.id);
-        self.authors.insert(&post.author_id, &author_posts);
-
-        let desc = get_post_description(post.clone());
-
-        if parent_id != ROOT_POST_ID {
-            let parent_post: Post = self
-                .posts
-                .get(parent_id)
-                .unwrap_or_else(|| panic!("Parent post with id {} not found", parent_id))
-                .into();
-            let parent_author = parent_post.author_id;
-            notify::notify_reply(parent_id, parent_author);
-        } else {
-            repost::repost(post);
-        }
-        notify::notify_mentions(desc.as_str(), id)
-    }
-
-    #[payable]
     pub fn add_proposal(
         &mut self,
         body: VersionedProposalBody,
@@ -280,8 +151,10 @@ impl Contract {
 
         require!(self.proposal_categories.contains(&proposal_body.category), "Unknown category");
 
+        let timeline = proposal_body.timeline.clone().latest_version();
+
         require!(
-            proposal_body.timeline.is_draft() || proposal_body.timeline.is_empty_review(),
+            timeline.is_draft() || timeline.is_empty_review(),
             "Cannot create proposal which is not in a draft or a review state"
         );
 
@@ -392,17 +265,6 @@ impl Contract {
         ret_value
     }
 
-    pub fn get_posts_by_author(&self, author: AccountId) -> Vec<PostId> {
-        self.authors.get(&author).map(|posts| posts.into_iter().collect()).unwrap_or_default()
-    }
-
-    pub fn get_posts_by_label(&self, label: String) -> Vec<PostId> {
-        let mut res: Vec<_> =
-            self.label_to_posts.get(&label).unwrap_or_default().into_iter().collect();
-        res.sort();
-        res
-    }
-
     pub fn get_proposals_by_author(&self, author: AccountId) -> Vec<ProposalId> {
         self.author_proposals
             .get(&author)
@@ -420,12 +282,6 @@ impl Contract {
     pub fn get_rfps_by_label(&self, label: String) -> Vec<RFPId> {
         let mut res: Vec<_> =
             self.label_to_rfps.get(&label).unwrap_or_default().into_iter().collect();
-        res.sort();
-        res
-    }
-
-    pub fn get_all_labels(&self) -> Vec<String> {
-        let mut res: Vec<_> = self.label_to_posts.keys().collect();
         res.sort();
         res
     }
@@ -475,25 +331,6 @@ impl Contract {
         editor == env::current_account_id() || self.has_moderator(editor)
     }
 
-    pub fn is_allowed_to_edit(&self, post_id: PostId, editor: Option<AccountId>) -> bool {
-        let post: Post = self
-            .posts
-            .get(post_id)
-            .unwrap_or_else(|| panic!("Post id {} not found", post_id))
-            .into();
-        let editor = editor.unwrap_or_else(env::predecessor_account_id);
-        // First check for simple cases.
-        if editor == env::current_account_id() || editor == post.author_id {
-            return true;
-        }
-
-        // Then check for complex case.
-        self.access_control
-            .members_list
-            .check_permissions(editor, post.snapshot.labels.into_iter().collect::<Vec<_>>())
-            .contains(&ActionType::EditPost)
-    }
-
     pub fn is_allowed_to_use_labels(&self, editor: Option<AccountId>, labels: Vec<String>) -> bool {
         let editor = editor.unwrap_or_else(env::predecessor_account_id);
         // First check for simple cases.
@@ -529,70 +366,8 @@ impl Contract {
         res
     }
 
-    pub fn get_all_allowed_labels(&self, editor: AccountId) -> Vec<String> {
-        self.filtered_labels(&self.label_to_posts, &editor)
-    }
-
     pub fn get_all_allowed_proposal_labels(&self, editor: AccountId) -> Vec<String> {
         self.filtered_labels(&self.label_to_proposals, &editor)
-    }
-
-    #[payable]
-    pub fn edit_post(&mut self, id: PostId, body: PostBody, labels: HashSet<String>) -> Promise {
-        require!(
-            self.is_allowed_to_edit(id, Option::None),
-            "The account is not allowed to edit this post"
-        );
-        let editor_id = env::predecessor_account_id();
-        let mut post: Post =
-            self.posts.get(id).unwrap_or_else(|| panic!("Post id {} not found", id)).into();
-
-        let old_snapshot = post.snapshot.clone();
-        let old_labels_set = old_snapshot.labels.clone();
-        let new_labels = labels;
-        let new_snapshot = PostSnapshot {
-            editor_id: editor_id.clone(),
-            timestamp: env::block_timestamp(),
-            labels: new_labels.clone(),
-            body,
-        };
-        post.snapshot = new_snapshot;
-        post.snapshot_history.push(old_snapshot);
-        let post_author = post.author_id.clone();
-        self.posts.replace(id, &post.into());
-
-        // Update labels index.
-        let new_labels_set = new_labels;
-        let labels_to_remove = &old_labels_set - &new_labels_set;
-        let labels_to_add = &new_labels_set - &old_labels_set;
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_remove.iter().cloned().collect()
-            ),
-            "Not allowed to remove these labels"
-        );
-        require!(
-            self.is_allowed_to_use_labels(
-                Some(editor_id.clone()),
-                labels_to_add.iter().cloned().collect()
-            ),
-            "Not allowed to add these labels"
-        );
-
-        for label_to_remove in labels_to_remove {
-            let mut posts = self.label_to_posts.get(&label_to_remove).unwrap();
-            posts.remove(&id);
-            self.label_to_posts.insert(&label_to_remove, &posts);
-        }
-
-        for label_to_add in labels_to_add {
-            let mut posts = self.label_to_posts.get(&label_to_add).unwrap_or_default();
-            posts.insert(id);
-            self.label_to_posts.insert(&label_to_add, &posts);
-        }
-
-        notify::notify_edit(id, post_author)
     }
 
     #[payable]
@@ -668,14 +443,32 @@ impl Contract {
     }
 
     #[payable]
-    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatus) -> ProposalId {
+    pub fn edit_proposal_timeline(&mut self, id: ProposalId, timeline: TimelineStatusV1) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(id.into())
             .unwrap_or_else(|| panic!("Proposal id {} not found", id))
             .into();
         let mut body = proposal.snapshot.body.latest_version();
-        body.timeline = timeline;
+        body.timeline = timeline.into();
+
+        self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
+    }
+
+    #[payable]
+    pub fn edit_proposal_versioned_timeline(
+        &mut self,
+        id: ProposalId,
+        timeline: VersionedTimelineStatus,
+    ) -> ProposalId {
+        near_sdk::log!("edit_proposal_versioned_timeline");
+        let proposal: Proposal = self
+            .proposals
+            .get(id.into())
+            .unwrap_or_else(|| panic!("Proposal id {} not found", id))
+            .into();
+        let mut body = proposal.snapshot.body.latest_version();
+        body.timeline = timeline.into();
 
         self.edit_proposal_internal(id, body.into(), proposal.snapshot.labels)
     }
@@ -708,8 +501,8 @@ impl Contract {
         for proposal_id in proposals_to_cancel {
             let proposal: Proposal = self.get_proposal(proposal_id).into();
             let proposal_timeline = proposal.snapshot.body.latest_version().timeline;
-            let review_status = proposal_timeline.get_review_status().clone();
-            self.edit_proposal_timeline(proposal_id, TimelineStatus::Cancelled(review_status));
+            let review_status = proposal_timeline.latest_version().get_review_status().clone();
+            self.edit_proposal_versioned_timeline(proposal_id, TimelineStatus::Cancelled(review_status).into());
         }
 
         for proposal_id in proposals_to_unlink {
@@ -1121,7 +914,7 @@ pub struct BlockHeightCallbackRetValue {
 mod tests {
     use crate::community::AddOn;
 
-    use crate::{PostBody, ProposalBodyV0, VersionedProposalBody};
+    use crate::{ProposalBodyV0, VersionedProposalBody};
 
     use near_sdk::test_utils::{get_created_receipts, VMContextBuilder};
     use near_sdk::{testing_env, VMContext};
@@ -1187,34 +980,6 @@ mod tests {
         {
             assert_eq!(method_name, b"set");
             assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"proposal/mention\\\",\\\"proposal\\\":0,\\\"widgetAccountId\\\":\\\"bob.near\\\",\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"proposal/mention\\\",\\\"proposal\\\":0,\\\"widgetAccountId\\\":\\\"bob.near\\\",\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"frol.near\\\",\\\"value\\\":{\\\"type\\\":\\\"proposal/mention\\\",\\\"proposal\\\":0,\\\"widgetAccountId\\\":\\\"bob.near\\\",\\\"notifier\\\":\\\"bob.near\\\"}},{\\\"key\\\":\\\"neardevdao.near\\\",\\\"value\\\":{\\\"type\\\":\\\"proposal/mention\\\",\\\"proposal\\\":0,\\\"widgetAccountId\\\":\\\"bob.near\\\",\\\"notifier\\\":\\\"bob.near\\\"}}]\"}}}}");
-        } else {
-            assert!(false, "Expected a function call ...")
-        }
-    }
-
-    #[test]
-    pub fn test_add_post_with_mention() {
-        let context = get_context(false);
-        testing_env!(context);
-        let mut contract = Contract::new();
-
-        let body: PostBody = near_sdk::serde_json::from_str(r#"
-        {
-            "name": "another post",
-            "description": "Hello to @petersalomonsen.near and @psalomo.near. This is an idea with mentions.",
-            "post_type": "Idea",
-            "idea_version": "V1"
-        }"#).unwrap();
-        contract.add_post(None, body, HashSet::new());
-        let receipts = get_created_receipts();
-        assert_eq!(2, receipts.len());
-
-        // Extract the method_name and args values
-        if let near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } =
-            &receipts[1].actions[0]
-        {
-            assert_eq!(method_name, b"set");
-            assert_eq!(args, b"{\"data\":{\"bob.near\":{\"index\":{\"notify\":\"[{\\\"key\\\":\\\"petersalomonsen.near\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}},{\\\"key\\\":\\\"psalomo.near.\\\",\\\"value\\\":{\\\"type\\\":\\\"devgovgigs/mention\\\",\\\"post\\\":0}}]\"}}}}");
         } else {
             assert!(false, "Expected a function call ...")
         }
