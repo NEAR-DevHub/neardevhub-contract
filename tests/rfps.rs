@@ -252,6 +252,7 @@ async fn test_rfp() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"},
             },
             "labels": ["test1"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
