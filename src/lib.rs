@@ -142,7 +142,7 @@ impl Contract {
         );
         require!(
             accepted_terms_and_conditions_version <= env::block_height(),
-            "Terms and conditions version is from the future"
+            "Terms and conditions version cannot be from the future"
         );
 
         let proposal_body = body.clone().latest_version();

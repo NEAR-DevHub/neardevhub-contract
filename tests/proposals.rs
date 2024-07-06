@@ -45,8 +45,6 @@ async fn test_proposal() -> anyhow::Result<()> {
         .transact()
         .await?;
 
-    println!("add proposal: {:?}", _add_proposal);
-
     let get_proposal: serde_json::Value = contract
         .call("get_proposal")
         .args_json(json!({
