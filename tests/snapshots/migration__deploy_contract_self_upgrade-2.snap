@@ -1,5 +1,6 @@
 ---
 source: tests/migration.rs
+assertion_line: 115
 expression: get_proposal
 ---
 {
@@ -14,7 +15,7 @@ expression: get_proposal
       "test1",
       "test2"
     ],
-    "proposal_body_version": "V1",
+    "proposal_body_version": "V2",
     "name": "another post",
     "category": "Marketing",
     "summary": "sum",
@@ -29,12 +30,11 @@ expression: get_proposal
     "requested_sponsor": "neardevdao.near",
     "supervisor": "frol.near",
     "timeline": {
-      "status": "PAYMENT_PROCESSING",
+      "timeline_version": "V1",
+      "status": "REVIEW",
       "sponsor_requested_review": true,
       "reviewer_completed_attestation": false,
-      "kyc_verified": false,
-      "test_transaction_sent": false,
-      "request_for_trustees_created": false
+      "kyc_verified": false
     },
     "linked_rfp": null
   },

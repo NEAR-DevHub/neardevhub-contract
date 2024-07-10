@@ -56,6 +56,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -64,18 +65,18 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     assert!(_add_proposal.is_success());
 
-    let _edit_proposal_timeline_payment = contract
+    let _edit_proposal_timeline_review = contract
         .call("edit_proposal_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"status": "PAYMENT_PROCESSING", "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
+            "timeline": {"status": "REVIEW", "kyc_verified": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false }
         }))
         .max_gas()
         .deposit(deposit_amount)
         .transact()
         .await?;
 
-    assert!(_edit_proposal_timeline_payment.is_success());
+    assert!(_edit_proposal_timeline_review.is_success());
 
     // Call self upgrade with current branch code
     // compile the current code
@@ -175,6 +176,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0
         }))
         .max_gas()
         .deposit(deposit_amount)
