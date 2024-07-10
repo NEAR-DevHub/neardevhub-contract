@@ -42,7 +42,7 @@ fn convert_review_status_to_v1(review_status: ReviewStatusV1, kyc_verified: bool
     ReviewStatusV2 {
         sponsor_requested_review: review_status.sponsor_requested_review,
         reviewer_completed_attestation: review_status.reviewer_completed_attestation,
-        kyc_verified_review: kyc_verified,
+        kyc_verified: kyc_verified,
     }
 }
 
@@ -50,7 +50,6 @@ impl From<PaymentProcessingStatusV1> for PaymentProcessingStatusV2 {
     fn from(value: PaymentProcessingStatusV1) -> Self {
         PaymentProcessingStatusV2 {
             review_status: convert_review_status_to_v1(value.review_status, value.kyc_verified),
-            kyc_verified: value.kyc_verified,
             test_transaction_sent: value.test_transaction_sent,
             request_for_trustees_created: value.request_for_trustees_created,
         }
@@ -170,7 +169,7 @@ impl TimelineStatus {
             TimelineStatus::Draft => &ReviewStatus {
                 sponsor_requested_review: false,
                 reviewer_completed_attestation: false,
-                kyc_verified_review: false,
+                kyc_verified: false,
             },
         }
     }
@@ -188,7 +187,7 @@ pub struct ReviewStatusV1 {
 pub struct ReviewStatusV2 {
     sponsor_requested_review: bool,
     reviewer_completed_attestation: bool,
-    kyc_verified_review: bool,
+    kyc_verified: bool,
 }
 
 #[near(serializers=[borsh, json])]
@@ -206,7 +205,6 @@ pub struct PaymentProcessingStatusV1 {
 pub struct PaymentProcessingStatusV2 {
     #[serde(flatten)]
     review_status: ReviewStatusV2,
-    kyc_verified: bool,
     test_transaction_sent: bool,
     request_for_trustees_created: bool,
 }
