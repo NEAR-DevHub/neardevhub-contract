@@ -205,6 +205,7 @@ pub struct PaymentProcessingStatusV1 {
 pub struct PaymentProcessingStatusV2 {
     #[serde(flatten)]
     review_status: ReviewStatusV2,
+    kyc_verified_temp: bool,
     test_transaction_sent: bool,
     request_for_trustees_created: bool,
 }

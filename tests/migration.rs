@@ -175,6 +175,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0
         }))
         .max_gas()
         .deposit(deposit_amount)
