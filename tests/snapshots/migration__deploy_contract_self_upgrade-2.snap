@@ -1,5 +1,6 @@
 ---
 source: tests/migration.rs
+assertion_line: 115
 expression: get_proposal
 ---
 {
@@ -30,13 +31,10 @@ expression: get_proposal
     "supervisor": "frol.near",
     "timeline": {
       "timeline_version": "V1",
-      "status": "PAYMENT_PROCESSING",
+      "status": "REVIEW",
       "sponsor_requested_review": true,
       "reviewer_completed_attestation": false,
-      "kyc_verified_review": false,
-      "kyc_verified": false,
-      "test_transaction_sent": false,
-      "request_for_trustees_created": false
+      "kyc_verified": false
     },
     "linked_rfp": null
   },
