@@ -575,7 +575,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .call("edit_proposal_versioned_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"timeline_version": "V1", "status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "kyc_verified_review": true, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
+            "timeline": {"timeline_version": "V1", "status": "FUNDED", "trustees_released_payment": false, "kyc_verified": true, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -594,7 +594,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .json()?;
 
     assert_eq!(get_proposal["snapshot"]["timeline"]["status"], "FUNDED");
-    assert_eq!(get_proposal["snapshot"]["timeline"]["kyc_verified_review"], true);
+    assert_eq!(get_proposal["snapshot"]["timeline"]["kyc_verified"], true);
 
     let _add_team = contract
         .call("add_member")
