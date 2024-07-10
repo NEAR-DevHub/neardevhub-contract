@@ -50,6 +50,7 @@ impl From<PaymentProcessingStatusV1> for PaymentProcessingStatusV2 {
     fn from(value: PaymentProcessingStatusV1) -> Self {
         PaymentProcessingStatusV2 {
             review_status: convert_review_status_to_v1(value.review_status, value.kyc_verified),
+            kyc_verified_temp: false,
             test_transaction_sent: value.test_transaction_sent,
             request_for_trustees_created: value.request_for_trustees_created,
         }
