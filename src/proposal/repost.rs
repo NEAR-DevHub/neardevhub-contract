@@ -5,7 +5,7 @@ use devhub_common::social_db_contract;
 
 use crate::Proposal;
 
-fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk::serde_json::Value {
+pub fn proposal_repost_text(proposal: Proposal) -> String {
     let proposal_link =
         format!("/events-committee.near/widget/app?page=proposal&id={}", proposal.id);
 
@@ -22,6 +22,10 @@ fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk:
         category = category
     );
 
+    text
+}
+
+fn repost_internal(text: String, contract_address: AccountId) -> near_sdk::serde_json::Value {
     let main_value = json!({
         "type": "md",
         "text": text
@@ -39,10 +43,10 @@ fn repost_internal(proposal: Proposal, contract_address: AccountId) -> near_sdk:
     })
 }
 
-pub fn publish_to_socialdb_feed(callback: Promise, proposal: Proposal) -> Promise {
+pub fn publish_to_socialdb_feed(callback: Promise, text: String) -> Promise {
     social_db_contract()
         .with_static_gas(env::prepaid_gas().saturating_div(3))
         .with_attached_deposit(env::attached_deposit())
-        .set(repost_internal(proposal, env::current_account_id()))
+        .set(repost_internal(text, env::current_account_id()))
         .then(callback)
 }

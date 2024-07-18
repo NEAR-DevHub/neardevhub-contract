@@ -12,6 +12,14 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     let deposit_amount = NearToken::from_near(2);
 
+    let _set_categories = contract
+        .call("set_allowed_categories")
+        .args_json(json!({"new_categories": ["Marketing", "Events"]}))
+        .max_gas()
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await?;
+
     let _add_proposal = contract
         .call("add_proposal")
         .args_json(json!({
@@ -30,6 +38,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -116,6 +125,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test3"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -170,6 +180,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "DRAFT"}
             },
             "labels": ["test2", "test3"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(NearToken::from_near(1))
@@ -325,6 +336,7 @@ async fn test_proposal() -> anyhow::Result<()> {
                 "timeline": {"status": "REVIEW", "sponsor_requested_review": true, "reviewer_completed_attestation": false }
             },
             "labels": ["test1", "test2"],
+            "accepted_terms_and_conditions_version": 0,
         }))
         .max_gas()
         .deposit(deposit_amount)
@@ -559,18 +571,18 @@ async fn test_proposal() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_timeline_payment.is_success());
 
-    let _edit_proposal_timeline_funded = contract
-        .call("edit_proposal_timeline")
+    let _edit_proposal_versional_timeline_funded = contract
+        .call("edit_proposal_versioned_timeline")
         .args_json(json!({
             "id": 0,
-            "timeline": {"status": "FUNDED", "trustees_released_payment": false, "kyc_verified": false, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
+            "timeline": {"timeline_version": "V1", "status": "FUNDED", "trustees_released_payment": false, "kyc_verified": true, "test_transaction_sent": false, "request_for_trustees_created": false, "sponsor_requested_review": true, "reviewer_completed_attestation": false, "payouts": [ "https://nearblocks.io/txns/6UwrzrYqBhA3ft2mDHXtvpzEFwkWhvCauJS1FGKjG37p" ] }
         }))
         .max_gas()
         .deposit(deposit_amount)
         .transact()
         .await?;
 
-    assert!(_edit_proposal_timeline_funded.is_success());
+    assert!(_edit_proposal_versional_timeline_funded.is_success());
 
     let get_proposal: serde_json::Value = contract
         .call("get_proposal")
@@ -582,6 +594,7 @@ async fn test_proposal() -> anyhow::Result<()> {
         .json()?;
 
     assert_eq!(get_proposal["snapshot"]["timeline"]["status"], "FUNDED");
+    assert_eq!(get_proposal["snapshot"]["timeline"]["kyc_verified"], true);
 
     let _add_team = contract
         .call("add_member")
