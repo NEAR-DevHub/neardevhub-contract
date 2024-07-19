@@ -3,6 +3,7 @@ name = "devhub"
 version = "0.2.0"
 authors = ["NEAR DevHub <neardevhub.org>"]
 edition = "2021"
+repository = "https://github.com/NEAR-DevHub/neardevhub-contract"
 
 [lib]
 crate-type = ["cdylib"]
@@ -21,6 +22,19 @@ regex = "1"
 near-workspaces = { version = "0.10.0", features = ["unstable"], default-features = false  }
 tokio = { version = "1.10.0", features = ["full"] }
 anyhow = "1.0"
+
+# fields to configure build with WASM reproducibility, according to specs  
+# in https://github.com/near/NEPs/blob/master/neps/nep-0330.md 
+[package.metadata.near.reproducible_build]
+# docker image, descriptor of build environment
+image = "dj8yfo/sourcescan:0.x.x-dev-git-pull-179-ccache-cut-single" # ERROR: replace with tag in `sourcescan/cargo-near` 
+# tag after colon above serves only descriptive purpose; image is identified by digest
+image_digest = "sha256:b46ea2c26ef5762c0675aa3563bd38aa045366c27a9918867a2455c83c8b046a"
+# build command inside of docker container 
+# if docker image from default gallery is used https://hub.docker.com/r/sourcescan/cargo-near/tags,
+# the command may be any combination of flags of `cargo-near`,
+# supported by respective version of binary inside the container besides `--no-locked` flag
+container_build_command = ["cargo", "near", "build"]
 
 [profile.release]
 codegen-units = 1
