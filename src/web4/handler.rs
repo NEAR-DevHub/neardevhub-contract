@@ -105,6 +105,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let title = html_escape::encode_text(&title).to_string();
     let description = html_escape::encode_text(&description).to_string();
 
+    let scroll_comment_into_view_js = include_str!("./scroll_comment_into_view.js");
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
@@ -152,6 +153,9 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     </div>
 </nav>
     <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
+    <script>
+        {scroll_comment_into_view_js}
+    </script>
 </body>
 </html>"#,
         url = redirect_path
