@@ -37,21 +37,19 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
     };
 
-    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url) {
-        if let Ok(body_value) = serde_json::from_slice::<serde_json::Value>(
-            &BASE64_ENGINE.decode(body).unwrap()
-        ) {
-            if let Some(app_name_str) = body_value[&current_account_id]
-                ["widget"]["app"]["metadata"]["name"]
-                .as_str()
+    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url)
+    {
+        if let Ok(body_value) =
+            serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
+        {
+            if let Some(app_name_str) =
+                body_value[&current_account_id]["widget"]["app"]["metadata"]["name"].as_str()
             {
                 app_name = app_name_str.to_string();
             }
 
-            if let Some(description_str) = body_value
-                [&current_account_id]["widget"]["app"]["metadata"]
-                ["description"]
-                .as_str()
+            if let Some(description_str) =
+                body_value[&current_account_id]["widget"]["app"]["metadata"]["description"].as_str()
             {
                 description = description_str.to_string();
             }
@@ -91,8 +89,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             } else {
                 title = " - Proposals".to_string();
             }
-            redirect_path =
-                format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            redirect_path = format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
             initial_props_json = json!({"page": page, "id": id});
         }
         _ => {
@@ -137,6 +134,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             }}
         }}
     </style>
+    <script>
+      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId setPersonProperties".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      posthog.init('phc_API_KEY',{api_host:'https://eu.i.posthog.com' })
+    </script>
 </head>
 <body>
 <nav class="navbar navbar-expand-sm navbar-light bg-dark" style="display: flex; flex-wrap: nowrap; padding-left: 5px; padding-right: 5px; height: 73px; border-bottom: rgb(0, 236, 151) solid 5px;">
@@ -288,8 +289,9 @@ mod tests {
                 assert!(body_string.contains(
                     "<meta property=\"og:description\" content=\"The decentralized home base for NEAR builders\" />"
                 ));
-                assert!(body_string
-                    .contains("<meta property=\"og:title\" content=\"near/dev/hub\" />"));
+                assert!(
+                    body_string.contains("<meta property=\"og:title\" content=\"near/dev/hub\" />")
+                );
             }
             _ => {
                 panic!("Should return Web4Response::Body");
@@ -650,9 +652,9 @@ mod tests {
                 let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
-                assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">")
-                );
+                assert!(body_string.contains(
+                    "<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">"
+                ));
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string =
                     json!({"page": "proposal", "id": "1"}).to_string();
