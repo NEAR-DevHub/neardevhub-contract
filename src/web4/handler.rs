@@ -37,19 +37,21 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
     };
 
-    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url)
-    {
-        if let Ok(body_value) =
-            serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
-        {
-            if let Some(app_name_str) =
-                body_value[&current_account_id]["widget"]["app"]["metadata"]["name"].as_str()
+    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url) {
+        if let Ok(body_value) = serde_json::from_slice::<serde_json::Value>(
+            &BASE64_ENGINE.decode(body).unwrap()
+        ) {
+            if let Some(app_name_str) = body_value[&current_account_id]
+                ["widget"]["app"]["metadata"]["name"]
+                .as_str()
             {
                 app_name = app_name_str.to_string();
             }
 
-            if let Some(description_str) =
-                body_value[&current_account_id]["widget"]["app"]["metadata"]["description"].as_str()
+            if let Some(description_str) = body_value
+                [&current_account_id]["widget"]["app"]["metadata"]
+                ["description"]
+                .as_str()
             {
                 description = description_str.to_string();
             }
@@ -60,33 +62,11 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         "https://i.near.social/magic/large/https://near.social/magic/img/account/{}",
         &current_account_id
     );
-    let mut redirect_path;
-    let mut initial_props_json;
+    let redirect_path;
+    let initial_props_json;
 
-    // Directly check the `c` and `s` query parameters and map them manually.
-    let campaign_name = match request.query.get("c").and_then(|vec| vec.get(0).map(|s| s.as_str()))
-    {
-        Some("1") => Some("x_ros_announcement"),
-        Some("2") => Some("wuasm"),
-        Some("3") => Some("redacted"),
-        _ => None,
-    };
-
-    let social_platform =
-        match request.query.get("s").and_then(|vec| vec.get(0).map(|s| s.as_str())) {
-            Some("i") => Some("instagram"),
-            Some("x") => Some("twitter"),
-            Some("f") => Some("facebook"),
-            Some("t") => Some("telegram"),
-            Some("y") => Some("youtube"),
-            Some("d") => Some("discord"),
-            Some("tt") => Some("tiktok"),
-            Some("l") => Some("linkedin"),
-            _ => None,
-        };
-
-    match (page, path_parts.get(2), path_parts.get(3)) {
-        ("community", Some(handle), _) => {
+    match (page, path_parts.get(2)) {
+        ("community", Some(handle)) => {
             if let Some(community) = contract.get_community(handle.to_string()) {
                 title = format!(" - Community - {}", community.name);
                 description = community.description;
@@ -98,7 +78,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
                 format!("{}/widget/app?page={}&handle={}", &current_account_id, page, handle);
             initial_props_json = json!({"page": page, "handle": handle});
         }
-        ("proposal", Some(id), _) => {
+        ("proposal", Some(id)) => {
             if let Ok(id) = id.parse::<u32>() {
                 if let Some(versioned_proposal) = contract.proposals.get(id.into()) {
                     let proposal_body =
@@ -111,44 +91,13 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             } else {
                 title = " - Proposals".to_string();
             }
-            redirect_path = format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            redirect_path =
+                format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
             initial_props_json = json!({"page": page, "id": id});
-        }
-        // Handle blog route with community and blog title
-        ("blog", Some(community), Some(blog_title)) => {
-            redirect_path = format!(
-                "{}/widget/app?page=blogv2&community={}&id={}",
-                &current_account_id, community, blog_title
-            );
-            initial_props_json = json!({
-                "page": "blogv2",
-                "community": community,
-                "id": blog_title
-            });
-            title = format!(" - Blog - {} - {}", community, blog_title);
-            description =
-                format!("Read the latest blog from the {} community: {}", community, blog_title);
         }
         _ => {
             redirect_path = format!("{}/widget/app", &current_account_id);
             initial_props_json = json!({"page": page});
-        }
-    }
-
-    if let Some(campaign_value) = &campaign_name {
-        redirect_path = format!("{}&campaign={}", redirect_path, campaign_value);
-        // Modify initial_props_json to add the campaign field
-        if let Some(obj) = initial_props_json.as_object_mut() {
-            obj.insert("campaign".to_string(), json!(campaign_value));
-        }
-    }
-
-    if let Some(social_value) = &social_platform {
-        redirect_path = format!("{}&social={}", redirect_path, social_value);
-
-        // Modify initial_props_json to add the social field
-        if let Some(obj) = initial_props_json.as_object_mut() {
-            obj.insert("social".to_string(), json!(social_value));
         }
     }
 
@@ -159,56 +108,56 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let scroll_comment_into_view_js = include_str!("./scroll_comment_into_view.js");
     let body = format!(
         r#"<!DOCTYPE html>
-  <html>
-  <head>
-      <title>{title}</title>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta property="og:url" content="{url}" />
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content="{app_name}{title}" />
-      <meta property="og:description" content="{description}" />
-      <meta property="og:image" content="{image}" />
-  
-      <meta name="twitter:card" content="summary_large_image">
-      <meta name="twitter:title" content="{app_name}{title}">
-      <meta name="twitter:description" content="{description}">
-      <meta name="twitter:image" content="{image}">
-      <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/main.794b6347ae264789bc61.bundle.js"></script>
-      <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/runtime.25b143da327a5371509f.bundle.js"></script>
-      <style>
-          @media screen and (max-width: 600px) {{
-              .gatewaylinks .nav-link {{
-                  padding-top: 0px!important;
-                  padding-bottom: 0px!important;
-                  margin: 0px;
-              }}
-              .gatewaylinks img {{
-                  height: 30px;
-              }}
-          }}
-      </style>
-  </head>
-  <body>
-  <nav class="navbar navbar-expand-sm navbar-light bg-dark" style="display: flex; flex-wrap: nowrap; padding-left: 5px; padding-right: 5px; height: 73px; border-bottom: rgb(0, 236, 151) solid 5px;">
-      <a class="navbar-brand" href="/"><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/{current_account_id}" style="height: 68px" /></a>
-      <p class="nav-text" style="flex-grow: 1"></p>
-      <p class="nav-text text-light" style="margin-top: 1rem; margin-right: 1rem">Choose your gateway</p>
-      <div class="navbar-nav gatewaylinks">
-          <a href="https://near.org/{redirect_path}" class="nav-link">
-              <img src="https://ipfs.web4.near.page/ipfs/bafybeia2ptgyoz7b6oxu3k57jmiras2pgigmw7a3cp6osjog67rndmf36y/nearorg.svg" />
-          </a>
-          <a href="https://near.social/{redirect_path}" class="nav-link">
-              <img src="https://ipfs.web4.near.page/ipfs/bafybeia2ptgyoz7b6oxu3k57jmiras2pgigmw7a3cp6osjog67rndmf36y/nearsocial.svg" />
-          </a>
-      </div>
-  </nav>
-      <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
-      <script>
-          {scroll_comment_into_view_js}
-      </script>
-  </body>
-  </html>"#,
+<html>
+<head>
+    <title>{title}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta property="og:url" content="{url}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{app_name}{title}" />
+    <meta property="og:description" content="{description}" />
+    <meta property="og:image" content="{image}" />
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{app_name}{title}">
+    <meta name="twitter:description" content="{description}">
+    <meta name="twitter:image" content="{image}">
+    <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/main.794b6347ae264789bc61.bundle.js"></script>
+    <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/runtime.25b143da327a5371509f.bundle.js"></script>
+    <style>
+        @media screen and (max-width: 600px) {{
+            .gatewaylinks .nav-link {{
+                padding-top: 0px!important;
+                padding-bottom: 0px!important;
+                margin: 0px;
+            }}
+            .gatewaylinks img {{
+                height: 30px;
+            }}
+        }}
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-sm navbar-light bg-dark" style="display: flex; flex-wrap: nowrap; padding-left: 5px; padding-right: 5px; height: 73px; border-bottom: rgb(0, 236, 151) solid 5px;">
+    <a class="navbar-brand" href="/"><img src="https://i.near.social/magic/large/https://near.social/magic/img/account/{current_account_id}" style="height: 68px" /></a>
+    <p class="nav-text" style="flex-grow: 1"></p>
+    <p class="nav-text text-light" style="margin-top: 1rem; margin-right: 1rem">Choose your gateway</p>
+    <div class="navbar-nav gatewaylinks">
+        <a href="https://near.org/{redirect_path}" class="nav-link">
+            <img src="https://ipfs.web4.near.page/ipfs/bafybeia2ptgyoz7b6oxu3k57jmiras2pgigmw7a3cp6osjog67rndmf36y/nearorg.svg" />
+        </a>
+        <a href="https://near.social/{redirect_path}" class="nav-link">
+            <img src="https://ipfs.web4.near.page/ipfs/bafybeia2ptgyoz7b6oxu3k57jmiras2pgigmw7a3cp6osjog67rndmf36y/nearsocial.svg" />
+        </a>
+    </div>
+</nav>
+    <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
+    <script>
+        {scroll_comment_into_view_js}
+    </script>
+</body>
+</html>"#,
         url = redirect_path
     );
 
@@ -339,9 +288,8 @@ mod tests {
                 assert!(body_string.contains(
                     "<meta property=\"og:description\" content=\"The decentralized home base for NEAR builders\" />"
                 ));
-                assert!(
-                    body_string.contains("<meta property=\"og:title\" content=\"near/dev/hub\" />")
-                );
+                assert!(body_string
+                    .contains("<meta property=\"og:title\" content=\"near/dev/hub\" />"));
             }
             _ => {
                 panic!("Should return Web4Response::Body");
@@ -423,33 +371,6 @@ mod tests {
                 let expected_initial_props_string =
                     json!({"page": "community", "handle": "webassemblymusic"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
-            }
-            _ => {
-                panic!("Should return Web4Response::Body");
-            }
-        }
-    }
-
-    #[test]
-    pub fn test_blog_page_response() {
-        view_test_env();
-        let contract = Contract::new();
-
-        let response = web4_get(
-            &contract,
-            serde_json::from_value(serde_json::json!({
-                "path": "/blog/dev-dao/blog-title?c=1&s=i",
-                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
-            }))
-            .unwrap(),
-        );
-        match response {
-            Web4Response::Body { content_type, body } => {
-                assert_eq!("text/html; charset=UTF-8", content_type);
-
-                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
-                assert!(body_string.contains("<title> - Blog - dev-dao - blog-title</title>"));
-                assert!(body_string.contains("<meta property=\"og:description\" content=\"Read the latest blog from the dev-dao community: blog-title\" />"));
             }
             _ => {
                 panic!("Should return Web4Response::Body");
@@ -729,9 +650,9 @@ mod tests {
                 let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
-                assert!(body_string.contains(
-                    "<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">"
-                ));
+                assert!(
+                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">")
+                );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string =
                     json!({"page": "proposal", "id": "1"}).to_string();
