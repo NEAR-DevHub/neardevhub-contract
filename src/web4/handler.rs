@@ -467,7 +467,7 @@ mod tests {
                 assert!(body_string.contains("<title> - Blog - dev-dao - blog-title</title>"));
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"Read the latest blog from the dev-dao community: blog-title\" />"));
                 assert!(body_string.contains(
-                    "devhub.near/widget/app?page=blogv2&community=dev-dao&id=blog-title?&campaign=x_ros_announcement&social=instagram"
+                    "devhub.near/widget/app?page=blogv2&community=dev-dao&id=blog-title&campaign=x_ros_announcement&social=instagram"
                 ));
             }
             _ => {
