@@ -117,57 +117,20 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     }
 
     let query_parameters: Option<&str> = request.path.split("?").nth(1);
-    let mut campaign_name: Option<&str> = None;
-    let mut social_platform: Option<&str> = None;
 
     if let Some(parameters) = query_parameters {
-        let params: Vec<(&str, &str)> = parameters
-            .split("&")
-            .filter_map(|param| {
-                let mut parts = param.split("=");
-                let key = parts.next()?;
-                let value = parts.next()?;
-                Some((key, value))
-            })
-            .collect();
-
-        campaign_name =
-            params.iter().find_map(|(key, value)| match (key.as_ref(), value.as_ref()) {
-                ("c", "1") | ("campaign", "1") => Some("x_ros_announcement"),
-                ("c", "2") | ("campaign", "2") => Some("wuasm"),
-                ("c", "3") | ("campaign", "3") => Some("redacted"),
-                _ => None,
-            });
-
-        social_platform =
-            params.iter().find_map(|(key, value)| match (key.as_ref(), value.as_ref()) {
-                ("s", "i") | ("social", "i") => Some("instagram"),
-                ("s", "x") | ("social", "x") => Some("twitter"),
-                ("s", "f") | ("social", "f") => Some("facebook"),
-                ("s", "t") | ("social", "t") => Some("telegram"),
-                ("s", "y") | ("social", "y") => Some("youtube"),
-                ("s", "d") | ("social", "d") => Some("discord"),
-                ("s", "tt") | ("social", "tt") => Some("tiktok"),
-                ("s", "l") | ("social", "l") => Some("linkedin"),
-                _ => None,
-            });
+        // let params: Vec<(&str, &str)> = parameters
+        //     .split("&")
+        //     .filter_map(|param| {
+        //         let mut parts = param.split("=");
+        //         let key = parts.next()?;
+        //         let value = parts.next()?;
+        //         Some((key, value))
+        //     })
+        //     .collect();
+        redirect_path = format!("{}&{}", redirect_path, parameters);
     }
 
-    if let Some(campaign_value) = campaign_name {
-        redirect_path = format!("{}&campaign={}", redirect_path, campaign_value);
-        if let Some(obj) = initial_props_json.as_object_mut() {
-            obj.insert("campaign".to_string(), json!(campaign_value));
-            initial_props_json = json!(obj);
-        }
-    }
-
-    if let Some(social_value) = social_platform {
-        redirect_path = format!("{}&social={}", redirect_path, social_value);
-        if let Some(obj) = initial_props_json.as_object_mut() {
-            obj.insert("social".to_string(), json!(social_value));
-            initial_props_json = json!(obj);
-        }
-    }
     let app_name = html_escape::encode_text(&app_name).to_string();
     let title = html_escape::encode_text(&title).to_string();
     let description = html_escape::encode_text(&description).to_string();
@@ -467,7 +430,7 @@ mod tests {
                 assert!(body_string.contains("<title> - Blog - dev-dao - blog-title</title>"));
                 assert!(body_string.contains("<meta property=\"og:description\" content=\"Read the latest blog from the dev-dao community: blog-title\" />"));
                 assert!(body_string.contains(
-                    "devhub.near/widget/app?page=blogv2&community=dev-dao&id=blog-title&campaign=x_ros_announcement&social=instagram"
+                    "devhub.near/widget/app?page=blogv2&community=dev-dao&id=blog-title&c=1&s=i"
                 ));
             }
             _ => {
