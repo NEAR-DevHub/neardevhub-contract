@@ -20,6 +20,41 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let current_account_id = env::current_account_id().to_string();
     let path_parts: Vec<&str> = request.path.split('/').collect();
 
+    // Check if the path starts with /js/
+    if path_parts.len() > 1 && path_parts[1] == "js" {
+        let js_file_path = &request.path[4..];
+        let preload_url = format!(
+            "https://devhub.near.page/web4/contract/social.near/get?keys.json=%5B%22{}%22%5D",
+            js_file_path
+        );
+
+        let Some(preloads) = request.preloads.clone() else {
+            // Return the preload URL if the content is not preloaded yet
+            return Web4Response::PreloadUrls { preload_urls: vec![preload_url.clone()] };
+        };
+
+        // If the preloaded content is available, return the JavaScript content
+        if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&preload_url) {
+            if let Ok(body_value) =
+                serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
+            {
+                // Extract the JS file content from the nested JSON
+                if let Some(js_content) = body_value
+                    .get(&current_account_id)
+                    .and_then(|v| v.get("js"))
+                    .and_then(|v| v.get(path_parts.last().unwrap()))
+                    .and_then(|v| v.get(""))
+                    .and_then(|v| v.as_str())
+                {
+                    return Web4Response::Body {
+                        content_type: "application/javascript".to_owned(),
+                        body: BASE64_ENGINE.encode(js_content.to_owned().into_bytes()),
+                    };
+                }
+            }
+        }
+    }
+
     // A valid path provided by a legit web4 gateway always has '/', so there
     // are always [0] and [1] elements, and [0] is always empty.
     let page = path_parts[1];
@@ -37,21 +72,19 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
     };
 
-    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url) {
-        if let Ok(body_value) = serde_json::from_slice::<serde_json::Value>(
-            &BASE64_ENGINE.decode(body).unwrap()
-        ) {
-            if let Some(app_name_str) = body_value[&current_account_id]
-                ["widget"]["app"]["metadata"]["name"]
-                .as_str()
+    if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url)
+    {
+        if let Ok(body_value) =
+            serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
+        {
+            if let Some(app_name_str) =
+                body_value[&current_account_id]["widget"]["app"]["metadata"]["name"].as_str()
             {
                 app_name = app_name_str.to_string();
             }
 
-            if let Some(description_str) = body_value
-                [&current_account_id]["widget"]["app"]["metadata"]
-                ["description"]
-                .as_str()
+            if let Some(description_str) =
+                body_value[&current_account_id]["widget"]["app"]["metadata"]["description"].as_str()
             {
                 description = description_str.to_string();
             }
@@ -91,8 +124,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             } else {
                 title = " - Proposals".to_string();
             }
-            redirect_path =
-                format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            redirect_path = format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
             initial_props_json = json!({"page": page, "id": id});
         }
         _ => {
@@ -179,6 +211,7 @@ mod tests {
     };
     use near_sdk::{
         base64::Engine, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
+        VMContext,
     };
 
     const PRELOAD_URL: &str = "/web4/contract/social.near/get?keys.json=%5B%22not-only-devhub.near/widget/app/metadata/**%22%5D";
@@ -200,12 +233,13 @@ mod tests {
         });
     }
 
-    fn view_test_env() {
+    fn view_test_env() -> VMContext {
         let contract: String = "not-only-devhub.near".to_string();
         let context =
             VMContextBuilder::new().current_account_id(contract.try_into().unwrap()).build();
 
-        testing_env!(context);
+        testing_env!(context.clone());
+        return context;
     }
 
     #[test]
@@ -288,8 +322,9 @@ mod tests {
                 assert!(body_string.contains(
                     "<meta property=\"og:description\" content=\"The decentralized home base for NEAR builders\" />"
                 ));
-                assert!(body_string
-                    .contains("<meta property=\"og:title\" content=\"near/dev/hub\" />"));
+                assert!(
+                    body_string.contains("<meta property=\"og:title\" content=\"near/dev/hub\" />")
+                );
             }
             _ => {
                 panic!("Should return Web4Response::Body");
@@ -650,9 +685,9 @@ mod tests {
                 let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
 
                 assert!(body_string.contains("<meta name=\"twitter:description\" content=\"The decentralized home base for NEAR builders\">"));
-                assert!(
-                    body_string.contains("<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">")
-                );
+                assert!(body_string.contains(
+                    "<meta name=\"twitter:title\" content=\"near/dev/hub - Proposal #1\">"
+                ));
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string =
                     json!({"page": "proposal", "id": "1"}).to_string();
@@ -692,6 +727,57 @@ mod tests {
             }
             _ => {
                 panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_js_path_handling() {
+        let context = view_test_env();
+        let contract = Contract::new();
+
+        let preload_js_url = format!("https://devhub.near.page/web4/contract/social.near/get?keys.json=%5B%22{}/js/test.js%22%5D", context.current_account_id);
+
+        // Simulated preloaded content
+        let preloaded_content = serde_json::json!({
+            format!("{}",context.current_account_id):
+            {
+                "js":
+                    {
+                        "test.js":
+                            {
+                                "": "console.log('hello again');"
+                            }
+                    }
+            }
+        });
+
+        let preloaded_body_base64 = BASE64_ENGINE.encode(preloaded_content.to_string());
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": format!("/js/{}/js/test.js", context.current_account_id),
+                "preloads": {
+                    preload_js_url: {
+                        "contentType": "application/json",
+                        "body": preloaded_body_base64
+                    }
+                },
+            }))
+            .unwrap(),
+        );
+
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("application/javascript", content_type);
+                assert_eq!(
+                    "console.log('hello again');",
+                    String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap()
+                );
+            }
+            _ => {
+                panic!("Should return Web4Response::Body with JavaScript content");
             }
         }
     }
