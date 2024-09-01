@@ -22,10 +22,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 
     // Check if the path starts with /js/
     if path_parts.len() > 1 && path_parts[1] == "js" {
-        let js_file_path = &request.path[4..];
         let preload_url = format!(
-            "https://devhub.near.page/web4/contract/social.near/get?keys.json=%5B%22{}%22%5D",
-            js_file_path
+            "https://{}.page/web4/contract/social.near/get?keys.json=%5B%22{}%22%5D",
+            env::current_account_id(),
+            format!("{}/js/{}", path_parts[2], path_parts[3])
         );
 
         let Some(preloads) = request.preloads.clone() else {
@@ -64,12 +64,18 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         &current_account_id
     );
 
+    let web4_browserclient_preload_url = format!("https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/js/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D", env::current_account_id(), env::current_account_id());
+
     let mut app_name = String::from("near/dev/hub");
     let mut title = String::new();
     let mut description = String::from("The decentralized home base for NEAR builders");
+    let mut web4_browserclient_block_height = env::block_height();
 
     let Some(preloads) = request.preloads else {
-        return Web4Response::PreloadUrls { preload_urls: [metadata_preload_url.clone()].to_vec() };
+        return Web4Response::PreloadUrls {
+            preload_urls: [metadata_preload_url.clone(), web4_browserclient_preload_url.clone()]
+                .to_vec(),
+        };
     };
 
     if let Some(Web4Response::Body { content_type: _, body }) = preloads.get(&metadata_preload_url)
@@ -87,6 +93,20 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
                 body_value[&current_account_id]["widget"]["app"]["metadata"]["description"].as_str()
             {
                 description = description_str.to_string();
+            }
+        }
+    }
+
+    if let Some(Web4Response::Body { content_type: _, body }) =
+        preloads.get(&web4_browserclient_preload_url)
+    {
+        if let Ok(body_value) =
+            serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
+        {
+            if let Some(web4_browserclient_block_height_value) =
+                body_value[&current_account_id]["js"]["web4browserclient.js"].as_u64()
+            {
+                web4_browserclient_block_height = web4_browserclient_block_height_value;
             }
         }
     }
@@ -137,7 +157,6 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let title = html_escape::encode_text(&title).to_string();
     let description = html_escape::encode_text(&description).to_string();
 
-    let scroll_comment_into_view_js = include_str!("./scroll_comment_into_view.js");
     let body = format!(
         r#"<!DOCTYPE html>
 <html>
@@ -185,12 +204,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     </div>
 </nav>
     <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
-    <script>
-        {scroll_comment_into_view_js}
-    </script>
+    <script src="/js/{current_account_id}/web4browserclient.js?blockHeight={web4_browserclient_block_height}"></script>
 </body>
 </html>"#,
-        url = redirect_path
+        url = redirect_path,
+        current_account_id = env::current_account_id(),
+        web4_browserclient_block_height = web4_browserclient_block_height
     );
 
     Web4Response::Body {
@@ -732,11 +751,14 @@ mod tests {
     }
 
     #[test]
-    pub fn test_js_path_handling() {
+    pub fn test_load_script_from_js_path() {
         let context = view_test_env();
         let contract = Contract::new();
 
-        let preload_js_url = format!("https://devhub.near.page/web4/contract/social.near/get?keys.json=%5B%22{}/js/test.js%22%5D", context.current_account_id);
+        let preload_js_url = format!(
+            "https://{}.page/web4/contract/social.near/get?keys.json=%5B%22{}/js/test.js%22%5D",
+            context.current_account_id, context.current_account_id
+        );
 
         // Simulated preloaded content
         let preloaded_content = serde_json::json!({
@@ -757,7 +779,7 @@ mod tests {
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": format!("/js/{}/js/test.js", context.current_account_id),
+                "path": format!("/js/{}/test.js", context.current_account_id),
                 "preloads": {
                     preload_js_url: {
                         "contentType": "application/json",
@@ -778,6 +800,65 @@ mod tests {
             }
             _ => {
                 panic!("Should return Web4Response::Body with JavaScript content");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_web4browserclient_block_height() {
+        let context = view_test_env();
+        let contract = Contract::new();
+
+        let web4browserclient_preload_url = format!(
+            "https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/js/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D",
+            context.current_account_id,
+            context.current_account_id
+        );
+
+        // Simulated preloaded content with block height
+        let block_height = 127038880;
+        let preloaded_content = serde_json::json!({
+            format!("{}", context.current_account_id): {
+                "js": {
+                    "web4browserclient.js": block_height
+                }
+            }
+        });
+
+        let preloaded_body_base64 = BASE64_ENGINE.encode(preloaded_content.to_string());
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/",
+                "preloads": {
+                    web4browserclient_preload_url: {
+                        "contentType": "application/json",
+                        "body": preloaded_body_base64
+                    },
+                    String::from(PRELOAD_URL): {
+                        "contentType": "application/json",
+                        "body": ""
+                    }
+                },
+            }))
+            .unwrap(),
+        );
+
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_ENGINE.decode(body).unwrap()).unwrap();
+
+                // Check if the block height is correctly included in the script URL
+                assert!(body_string.contains(&format!(
+                    "<script src=\"/js/{}/web4browserclient.js?blockHeight={}\"></script>",
+                    context.current_account_id, block_height
+                )));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body with the correct HTML content");
             }
         }
     }
