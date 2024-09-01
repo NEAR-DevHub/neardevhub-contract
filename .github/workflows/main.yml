@@ -14,10 +14,13 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - name: Install cargo-near
         run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
-      - name: Build and test
-        run: |
-          (cd discussions && cargo near build)
-          (cd community && cargo near build)
-          (cd community-factory && cargo near build)
-          cargo near build
-          cargo test
+      - name: Build discussions contract
+        run: cd discussions && cargo near build
+      - name: Build community contract
+        run: cd community && cargo near build
+      - name: Build community factory contract
+        run: cd community-factory && cargo near build
+      - name: Build devhub contract
+        run: cargo near build
+      - name: Unit tests
+        run: cargo test
