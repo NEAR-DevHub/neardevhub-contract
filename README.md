@@ -19,13 +19,13 @@ From the root directory, run:
 
 ```sh
 cd discussions
-cargo near build
+cargo near build --no-docker
 cd ../community
-cargo near build
+cargo near build --no-docker
 cd ../community-factory
-cargo near build
+cargo near build --no-docker
 cd ..
-cargo near build
+cargo near build --no-docker
 ```
 
 ## Running Tests
