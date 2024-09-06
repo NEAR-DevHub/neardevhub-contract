@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use near_sdk::{AccountIdRef, NearToken};
 use near_workspaces::network::Sandbox;
 use near_workspaces::types::{AccessKey, KeyType, SecretKey};
@@ -80,7 +81,8 @@ pub async fn init_contracts_from_res(
         .await?
         .into_result()?;
 
-    let contract_wasm = std::fs::read(DEVHUB_CONTRACT_PATH)?;
+    let contract_wasm = std::fs::read(DEVHUB_CONTRACT_PATH)
+        .map_err(|err| anyhow!("accessing {} {:?}", DEVHUB_CONTRACT_PATH, err))?;
     let sk = SecretKey::from_seed(KeyType::ED25519, TEST_SEED);
 
     let _test_near = worker.root_account()?;
@@ -105,7 +107,8 @@ pub async fn init_contracts_from_res(
         .transact()
         .await?
         .into_result()?;
-    let community_factory_wasm = std::fs::read(COMMUNITY_FACTORY_CONTRACT_PATH)?;
+    let community_factory_wasm = std::fs::read(COMMUNITY_FACTORY_CONTRACT_PATH)
+        .map_err(|err| anyhow!("accessing {} {:?}", COMMUNITY_FACTORY_CONTRACT_PATH, err))?;
     let _community_factory =
         community_factory_account.deploy(&community_factory_wasm).await?.into_result()?;
     Ok((contract, worker, near_social))
