@@ -18,9 +18,7 @@ Before starting, make sure you have the following installed:
 From the root directory, run:
 
 ```sh
-cd discussions
-cargo near build --no-docker
-cd ../community
+cd community
 cargo near build --no-docker
 cd ../community-factory
 cargo near build --no-docker
