@@ -6,7 +6,7 @@ use crate::{
     Contract, Proposal,
 };
 
-pub const WEB4_RESOURCE_ACCOUNT: &str = "devgovgigs.petersalomonsen.near";
+pub const WEB4_RESOURCE_ACCOUNT: &str = "devhub.near";
 
 pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let current_account_id = env::current_account_id().to_string();
