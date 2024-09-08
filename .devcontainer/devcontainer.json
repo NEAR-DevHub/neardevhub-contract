@@ -1,4 +1,7 @@
 {
+    "features": {
+        "ghcr.io/devcontainers/features/rust:1": {},
+    },
     "customizations": {
         "vscode": {
             "extensions": [
