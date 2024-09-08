@@ -13,6 +13,8 @@ use crate::{
     Contract, Proposal,
 };
 
+pub const WEB4_RESOURCE_ACCOUNT: &str = "devhub.near";
+
 pub const BASE64_ENGINE: engine::GeneralPurpose =
     engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::PAD);
 
@@ -20,12 +22,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     let current_account_id = env::current_account_id().to_string();
     let path_parts: Vec<&str> = request.path.split('/').collect();
 
-    // Check if the path starts with /js/
-    if path_parts.len() > 1 && path_parts[1] == "js" {
+    // Check if the path starts with /resources/
+    if path_parts.len() > 1 && path_parts[1] == "resources" {
         let preload_url = format!(
             "https://{}.page/web4/contract/social.near/get?keys.json=%5B%22{}%22%5D",
-            env::current_account_id(),
-            format!("{}/js/{}", path_parts[2], path_parts[3])
+            current_account_id,
+            format!("{}/web4/{}", path_parts[2], path_parts[3])
         );
 
         let Some(preloads) = request.preloads.clone() else {
@@ -39,16 +41,15 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
                 serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
             {
                 // Extract the JS file content from the nested JSON
-                if let Some(js_content) = body_value
-                    .get(&current_account_id)
-                    .and_then(|v| v.get("js"))
+                if let Some(web4_resource_content) = body_value
+                    .get(path_parts[2])
+                    .and_then(|v| v.get("web4"))
                     .and_then(|v| v.get(path_parts.last().unwrap()))
-                    .and_then(|v| v.get(""))
                     .and_then(|v| v.as_str())
                 {
                     return Web4Response::Body {
                         content_type: "application/javascript".to_owned(),
-                        body: BASE64_ENGINE.encode(js_content.to_owned().into_bytes()),
+                        body: BASE64_ENGINE.encode(web4_resource_content.to_owned().into_bytes()),
                     };
                 }
             }
@@ -64,7 +65,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         &current_account_id
     );
 
-    let web4_browserclient_preload_url = format!("https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/js/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D", env::current_account_id(), env::current_account_id());
+    let web4_browserclient_preload_url = format!(
+            "https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/web4/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D",
+            current_account_id, WEB4_RESOURCE_ACCOUNT
+        );
 
     let mut app_name = String::from("near/dev/hub");
     let mut title = String::new();
@@ -99,12 +103,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 
     if let Some(Web4Response::Body { content_type: _, body }) =
         preloads.get(&web4_browserclient_preload_url)
-    {
+    {        
         if let Ok(body_value) =
             serde_json::from_slice::<serde_json::Value>(&BASE64_ENGINE.decode(body).unwrap())
         {
             if let Some(web4_browserclient_block_height_value) =
-                body_value[&current_account_id]["js"]["web4browserclient.js"].as_u64()
+                body_value[WEB4_RESOURCE_ACCOUNT]["web4"]["web4browserclient.js"].as_u64()
             {
                 web4_browserclient_block_height = web4_browserclient_block_height_value;
             }
@@ -204,11 +208,12 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     </div>
 </nav>
     <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
-    <script src="/js/{current_account_id}/web4browserclient.js?blockHeight={web4_browserclient_block_height}"></script>
+    <script src="/resources/{web4_resource_account}/web4browserclient.js?blockHeight={web4_browserclient_block_height}"></script>
 </body>
 </html>"#,
         url = redirect_path,
-        current_account_id = env::current_account_id(),
+        current_account_id = current_account_id,
+        web4_resource_account = WEB4_RESOURCE_ACCOUNT,
         web4_browserclient_block_height = web4_browserclient_block_height
     );
 
@@ -222,7 +227,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
 mod tests {
     use std::collections::HashSet;
 
-    use super::web4_get;
+    use super::{web4_get, WEB4_RESOURCE_ACCOUNT};
     use crate::{
         web4::{handler::BASE64_ENGINE, types::Web4Response},
         CommunityInputs, Contract, Proposal, ProposalBodyV0, ProposalSnapshot,
@@ -751,35 +756,34 @@ mod tests {
     }
 
     #[test]
-    pub fn test_load_script_from_js_path() {
+    pub fn test_load_script_from_web4_path() {
         let context = view_test_env();
         let contract = Contract::new();
 
         let preload_js_url = format!(
-            "https://{}.page/web4/contract/social.near/get?keys.json=%5B%22{}/js/test.js%22%5D",
-            context.current_account_id, context.current_account_id
+            "https://{}.page/web4/contract/social.near/get?keys.json=%5B%22{}/web4/test.js%22%5D",
+            context.current_account_id, WEB4_RESOURCE_ACCOUNT
         );
+
 
         // Simulated preloaded content
         let preloaded_content = serde_json::json!({
-            format!("{}",context.current_account_id):
+            format!("{}",WEB4_RESOURCE_ACCOUNT):
             {
-                "js":
+                "web4":
                     {
-                        "test.js":
-                            {
-                                "": "console.log('hello again');"
-                            }
+                        "test.js": "console.log('hello again');"
                     }
             }
         });
 
         let preloaded_body_base64 = BASE64_ENGINE.encode(preloaded_content.to_string());
 
+        println!("preloadurl {}", preload_js_url.clone());
         let response = web4_get(
             &contract,
             serde_json::from_value(serde_json::json!({
-                "path": format!("/js/{}/test.js", context.current_account_id),
+                "path": format!("/resources/{}/test.js", WEB4_RESOURCE_ACCOUNT),
                 "preloads": {
                     preload_js_url: {
                         "contentType": "application/json",
@@ -810,16 +814,16 @@ mod tests {
         let contract = Contract::new();
 
         let web4browserclient_preload_url = format!(
-            "https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/js/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D",
+            "https://{}.page/web4/contract/social.near/keys?keys.json=%5B%22{}/web4/web4browserclient.js%22%5D&options.json=%7B%22return_type%22%3A%22BlockHeight%22%7D",
             context.current_account_id,
-            context.current_account_id
+            WEB4_RESOURCE_ACCOUNT
         );
 
         // Simulated preloaded content with block height
         let block_height = 127038880;
         let preloaded_content = serde_json::json!({
-            format!("{}", context.current_account_id): {
-                "js": {
+            format!("{}", WEB4_RESOURCE_ACCOUNT): {
+                "web4": {
                     "web4browserclient.js": block_height
                 }
             }
@@ -853,8 +857,9 @@ mod tests {
 
                 // Check if the block height is correctly included in the script URL
                 assert!(body_string.contains(&format!(
-                    "<script src=\"/js/{}/web4browserclient.js?blockHeight={}\"></script>",
-                    context.current_account_id, block_height
+                    "<script src=\"/resources/{}/web4browserclient.js?blockHeight={}\"></script>",
+                    WEB4_RESOURCE_ACCOUNT,
+                    block_height
                 )));
             }
             _ => {
