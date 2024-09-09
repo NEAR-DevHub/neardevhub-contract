@@ -18,9 +18,7 @@ Before starting, make sure you have the following installed:
 From the root directory, run:
 
 ```sh
-cd community
-cargo near build --no-docker
-cd ../community-factory
+cd community-factory
 cargo near build --no-docker
 cd ..
 cargo near build --no-docker
@@ -39,7 +37,7 @@ cargo test
 Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.
 
 ```sh
-cargo near deploy {{account.near}}
+cargo near deploy --no-docker {{account.near}}
 cd community-factory
-cargo near deploy {{community.account.near}}
+cargo near deploy --no-docker {{community.account.near}}
 ```
