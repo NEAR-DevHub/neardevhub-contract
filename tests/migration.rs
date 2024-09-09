@@ -78,12 +78,13 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
 
     assert!(_edit_proposal_timeline_review.is_success());
 
-    // Call self upgrade with current branch code
-    // compile the current code
-    let wasm = near_workspaces::compile_project("./").await?;
-
-    let mut contract_upgrade_result =
-        contract.call("unsafe_self_upgrade").args(wasm).max_gas().transact().await?;
+    // // Call self upgrade with current branch code
+    let mut contract_upgrade_result = contract
+        .call("unsafe_self_upgrade")
+        .args(test_env::DEVHUB_CONTRACT_WASM.clone())
+        .max_gas()
+        .transact()
+        .await?;
 
     while contract_upgrade_result.json::<String>()? == "needs-migration" {
         contract_upgrade_result =

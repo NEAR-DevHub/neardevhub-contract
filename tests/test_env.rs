@@ -5,6 +5,8 @@ use near_workspaces::types::{AccessKey, KeyType, SecretKey};
 use near_workspaces::{Account, Worker};
 
 use serde_json::json;
+use std::str::FromStr;
+use std::sync::LazyLock;
 
 const DEVHUB_CONTRACT_PREFIX: &str = "devhub";
 const DEVHUB_CONTRACT: &AccountIdRef = AccountIdRef::new_or_panic("devhub.near");
@@ -14,9 +16,66 @@ const COMMUNITY_FACTORY_PREFIX: &str = "community";
 const NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("social.near");
 const _TEST_NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("v1.social08.testnet");
 const TEST_SEED: &str = "testificate";
-const DEVHUB_CONTRACT_PATH: &str = "./target/near/devhub.wasm";
-const COMMUNITY_FACTORY_CONTRACT_PATH: &str =
-    "./community-factory/target/near/devhub_community_factory.wasm";
+
+const WASM_FOR_TESTS_DIRECTORY: &str = "./target/devhub-tests-contracts";
+
+pub static DEVHUB_CONTRACT_WASM: LazyLock<Vec<u8>> = LazyLock::new(|| {
+    let expected_path = std::path::PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
+        .expect("path from str")
+        .join("devhub.wasm");
+    if !std::fs::exists(&expected_path).expect("std::fs::exists call") {
+        cargo_near_build::build(cargo_near_build::BuildOpts {
+            out_dir: Some(
+                cargo_near_build::camino::Utf8PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
+                    .expect("camino PathBuf from str"),
+            ),
+            ..Default::default()
+        })
+        .expect("building `devhub` contract for tests");
+    }
+
+    let contract_wasm = std::fs::read(expected_path.to_string_lossy().as_ref())
+        .map_err(|err| {
+            anyhow!(
+                "accessing {} to read wasm contents: {}",
+                expected_path.to_string_lossy().as_ref(),
+                err
+            )
+        })
+        .expect("std::fs::read");
+    contract_wasm
+});
+
+static COMMUNITY_FACTORY_CONTRACT_WASM: LazyLock<Vec<u8>> = LazyLock::new(|| {
+    let expected_path = std::path::PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
+        .expect("path from str")
+        .join("devhub_community_factory.wasm");
+    if !std::fs::exists(&expected_path).expect("std::fs::exists call") {
+        cargo_near_build::build(cargo_near_build::BuildOpts {
+            manifest_path: Some(
+                cargo_near_build::camino::Utf8PathBuf::from_str("./community-factory/Cargo.toml")
+                    .expect("camino PathBuf from str"),
+            ),
+            out_dir: Some(
+                cargo_near_build::camino::Utf8PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
+                    .expect("camino PathBuf from str"),
+            ),
+            ..Default::default()
+        })
+        .expect("building `devhub-community-factory` contract for tests");
+    }
+
+    let contract_wasm = std::fs::read(expected_path.to_string_lossy().as_ref())
+        .map_err(|err| {
+            anyhow!(
+                "accessing {} to read wasm contents: {}",
+                expected_path.to_string_lossy().as_ref(),
+                err
+            )
+        })
+        .expect("std::fs::read");
+    contract_wasm
+});
 
 #[allow(dead_code)]
 pub async fn init_contracts_from_mainnet() -> anyhow::Result<near_workspaces::Contract> {
@@ -81,8 +140,6 @@ pub async fn init_contracts_from_res(
         .await?
         .into_result()?;
 
-    let contract_wasm = std::fs::read(DEVHUB_CONTRACT_PATH)
-        .map_err(|err| anyhow!("accessing {} {:?}", DEVHUB_CONTRACT_PATH, err))?;
     let sk = SecretKey::from_seed(KeyType::ED25519, TEST_SEED);
 
     let _test_near = worker.root_account()?;
@@ -98,7 +155,7 @@ pub async fn init_contracts_from_res(
         .transact()
         .await?
         .into_result()?;
-    let contract = contract_account.deploy(&contract_wasm).await?.into_result()?;
+    let contract = contract_account.deploy(&DEVHUB_CONTRACT_WASM).await?.into_result()?;
     let _outcome = contract.call("new").args_json(json!({})).transact().await?;
 
     let community_factory_account = contract_account
@@ -107,9 +164,7 @@ pub async fn init_contracts_from_res(
         .transact()
         .await?
         .into_result()?;
-    let community_factory_wasm = std::fs::read(COMMUNITY_FACTORY_CONTRACT_PATH)
-        .map_err(|err| anyhow!("accessing {} {:?}", COMMUNITY_FACTORY_CONTRACT_PATH, err))?;
     let _community_factory =
-        community_factory_account.deploy(&community_factory_wasm).await?.into_result()?;
+        community_factory_account.deploy(&COMMUNITY_FACTORY_CONTRACT_WASM).await?.into_result()?;
     Ok((contract, worker, near_social))
 }

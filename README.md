@@ -32,6 +32,16 @@ From the root directory, run:
 cargo test
 ```
 
+NOTE: integration tests automatically build the `devhub-community-factory` and  
+`devhub` they depend on and place them into `target/devhub-tests-contracts`.
+
+To trigger rebuild of contracts being tested, e.g. after their modification, 
+one should run:
+
+```bash
+rm -rf target/devhub-tests-contracts 
+```
+
 ## Deploying
 
 Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.

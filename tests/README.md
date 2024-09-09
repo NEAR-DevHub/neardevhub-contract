@@ -16,3 +16,13 @@ To run the test, use the following command:
 ```bash
 cargo test
 ```
+
+NOTE: integration tests automatically build the `devhub-community-factory` and  
+`devhub` they depend on and place them into `target/devhub-tests-contracts`.
+
+To trigger rebuild of contracts being tested, e.g. after their modification, 
+one should run:
+
+```bash
+rm -rf target/devhub-tests-contracts 
+```

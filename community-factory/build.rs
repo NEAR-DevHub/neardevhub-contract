@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
         build_opts: Default::default(),
         build_script_opts: BuildScriptOpts {
             result_env_key: Some("BUILD_RS_SUB_BUILD_DEVHUB-COMMUNITY"),
-            rerun_if_changed_list: vec!["../community", "Cargo.toml", "Cargo.lock"],
+            rerun_if_changed_list: vec!["../discussions", "../community", "Cargo.toml", "Cargo.lock"],
             build_skipped_when_env_is: vec![
                 // shorter build for `cargo check`
                 ("PROFILE", "debug"),
