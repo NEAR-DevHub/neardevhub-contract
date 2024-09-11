@@ -17,62 +17,29 @@ const NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("social.near");
 const _TEST_NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("v1.social08.testnet");
 const TEST_SEED: &str = "testificate";
 
-const WASM_FOR_TESTS_DIRECTORY: &str = "./target/devhub-tests-contracts";
+// const WASM_FOR_TESTS_DIRECTORY: &str = "./target/devhub-tests-contracts";
 
 pub static DEVHUB_CONTRACT_WASM: LazyLock<Vec<u8>> = LazyLock::new(|| {
-    let expected_path = std::path::PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
-        .expect("path from str")
-        .join("devhub.wasm");
-    if !std::fs::exists(&expected_path).expect("std::fs::exists call") {
-        cargo_near_build::build(cargo_near_build::BuildOpts {
-            out_dir: Some(
-                cargo_near_build::camino::Utf8PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
-                    .expect("camino PathBuf from str"),
-            ),
-            ..Default::default()
-        })
+    let artifact = cargo_near_build::build(Default::default())
         .expect("building `devhub` contract for tests");
-    }
-
-    let contract_wasm = std::fs::read(expected_path.to_string_lossy().as_ref())
-        .map_err(|err| {
-            anyhow!(
-                "accessing {} to read wasm contents: {}",
-                expected_path.to_string_lossy().as_ref(),
-                err
-            )
-        })
+    let contract_wasm = std::fs::read(&artifact.path)
+        .map_err(|err| anyhow!("accessing {} to read wasm contents: {}", artifact.path, err))
         .expect("std::fs::read");
     contract_wasm
 });
 
 static COMMUNITY_FACTORY_CONTRACT_WASM: LazyLock<Vec<u8>> = LazyLock::new(|| {
-    let expected_path = std::path::PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
-        .expect("path from str")
-        .join("devhub_community_factory.wasm");
-    if !std::fs::exists(&expected_path).expect("std::fs::exists call") {
-        cargo_near_build::build(cargo_near_build::BuildOpts {
-            manifest_path: Some(
-                cargo_near_build::camino::Utf8PathBuf::from_str("./community-factory/Cargo.toml")
-                    .expect("camino PathBuf from str"),
-            ),
-            out_dir: Some(
-                cargo_near_build::camino::Utf8PathBuf::from_str(WASM_FOR_TESTS_DIRECTORY)
-                    .expect("camino PathBuf from str"),
-            ),
-            ..Default::default()
-        })
-        .expect("building `devhub-community-factory` contract for tests");
-    }
+    let artifact = cargo_near_build::build(cargo_near_build::BuildOpts {
+        manifest_path: Some(
+            cargo_near_build::camino::Utf8PathBuf::from_str("./community-factory/Cargo.toml")
+                .expect("camino PathBuf from str"),
+        ),
+        ..Default::default()
+    })
+    .expect("building `devhub-community-factory` contract for tests");
 
-    let contract_wasm = std::fs::read(expected_path.to_string_lossy().as_ref())
-        .map_err(|err| {
-            anyhow!(
-                "accessing {} to read wasm contents: {}",
-                expected_path.to_string_lossy().as_ref(),
-                err
-            )
-        })
+    let contract_wasm = std::fs::read(&artifact.path)
+        .map_err(|err| anyhow!("accessing {} to read wasm contents: {}", artifact.path, err))
         .expect("std::fs::read");
     contract_wasm
 });

@@ -1,5 +1,3 @@
-mod test_env;
-
 use near_sdk::NearToken;
 use {crate::test_env::*, serde_json::json};
 
@@ -81,7 +79,7 @@ async fn test_deploy_contract_self_upgrade() -> anyhow::Result<()> {
     // // Call self upgrade with current branch code
     let mut contract_upgrade_result = contract
         .call("unsafe_self_upgrade")
-        .args(test_env::DEVHUB_CONTRACT_WASM.clone())
+        .args(crate::test_env::DEVHUB_CONTRACT_WASM.clone())
         .max_gas()
         .transact()
         .await?;

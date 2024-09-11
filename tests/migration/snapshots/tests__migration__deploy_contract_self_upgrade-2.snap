@@ -1,6 +1,5 @@
 ---
-source: tests/migration.rs
-assertion_line: 115
+source: tests/migration/mod.rs
 expression: get_proposal
 ---
 {

@@ -1,5 +1,5 @@
 ---
-source: tests/migration.rs
+source: tests/migration/mod.rs
 expression: get_community
 ---
 {
