@@ -3,6 +3,7 @@ name = "devhub"
 version = "0.2.0"
 authors = ["NEAR DevHub <neardevhub.org>"]
 edition = "2021"
+repository = "https://github.com/NEAR-DevHub/neardevhub-contract"
 
 [lib]
 crate-type = ["cdylib"]
