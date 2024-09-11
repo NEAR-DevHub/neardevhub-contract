@@ -1,13 +1,8 @@
 use cargo_near_build::extended::BuildScriptOpts;
 
-macro_rules! p {
-    ($($tokens: tt)*) => {
-        println!("cargo:warning={}", format!($($tokens)*))
-    }
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-    p!("`devhub-community` build script working dir: {:?}", std::env::current_dir().expect("get current dir"));
+    println!("cargo:warning={}", format!("`devhub-community` build script working dir: {:?}", std::env::current_dir().expect("get current dir")));
 
     let opts = cargo_near_build::extended::BuildOptsExtended {
         workdir: "../discussions",

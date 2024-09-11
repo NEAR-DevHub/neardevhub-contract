@@ -1,13 +1,7 @@
 use cargo_near_build::extended::BuildScriptOpts;
 
-macro_rules! p {
-    ($($tokens: tt)*) => {
-        println!("cargo:warning={}", format!($($tokens)*))
-    }
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-    p!("`devhub-community-factory` build script working dir: {:?}", std::env::current_dir().expect("get current dir"));
+    println!("cargo:warning={}", format!("`devhub-community-factory` build script working dir: {:?}", std::env::current_dir().expect("get current dir")));
     // additional step required; can be removed when project moved to 
     // workspaces usage, as all contracts will have a shared target 
     std::fs::create_dir_all("../community/target")?;
