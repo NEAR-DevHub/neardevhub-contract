@@ -17,11 +17,9 @@ const NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("social.near");
 const _TEST_NEAR_SOCIAL: &AccountIdRef = AccountIdRef::new_or_panic("v1.social08.testnet");
 const TEST_SEED: &str = "testificate";
 
-// const WASM_FOR_TESTS_DIRECTORY: &str = "./target/devhub-tests-contracts";
-
 pub static DEVHUB_CONTRACT_WASM: LazyLock<Vec<u8>> = LazyLock::new(|| {
-    let artifact = cargo_near_build::build(Default::default())
-        .expect("building `devhub` contract for tests");
+    let artifact =
+        cargo_near_build::build(Default::default()).expect("building `devhub` contract for tests");
     let contract_wasm = std::fs::read(&artifact.path)
         .map_err(|err| anyhow!("accessing {} to read wasm contents: {}", artifact.path, err))
         .expect("std::fs::read");
