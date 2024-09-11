@@ -18,14 +18,10 @@ Before starting, make sure you have the following installed:
 From the root directory, run:
 
 ```sh
-cd discussions
-cargo near build
-cd ../community
-cargo near build
-cd ../community-factory
-cargo near build
+cd community-factory
+cargo near build --no-docker
 cd ..
-cargo near build
+cargo near build --no-docker
 ```
 
 ## Running Tests
@@ -36,12 +32,15 @@ From the root directory, run:
 cargo test
 ```
 
+NOTE: integration tests automatically build the `devhub-community-factory` and  
+`devhub` they depend on.
+
 ## Deploying
 
 Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.
 
 ```sh
-cargo near deploy {{account.near}}
+cargo near deploy --no-docker {{account.near}}
 cd community-factory
-cargo near deploy {{community.account.near}}
+cargo near deploy --no-docker {{community.account.near}}
 ```
