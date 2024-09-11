@@ -134,13 +134,7 @@ impl Contract {
         let author_id = env::predecessor_account_id();
         let editor_id = author_id.clone();
 
-        let current_block_height = env::block_height();
-
         if let Some(accepted_terms_and_conditions_version) = accepted_terms_and_conditions_version {
-            // require!(
-            //     accepted_terms_and_conditions_version + 10000 >= current_block_height,
-            //     "Terms and conditions version is too old"
-            // );
             require!(
                 accepted_terms_and_conditions_version <= env::block_height(),
                 "Terms and conditions version cannot be from the future"
