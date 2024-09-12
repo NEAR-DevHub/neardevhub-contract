@@ -9,17 +9,8 @@ repository = "https://github.com/NEAR-DevHub/neardevhub-contract"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "5.1.0"
-devhub_common = { path = "../devhub_common" }
+near-sdk.workspace = true
+devhub_common.workspace = true
 
 [build-dependencies]
-cargo-near-build = { version = "0.1.0", features = ["build_script"] }
-
-[profile.release]
-codegen-units = 1
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"
-lto = true
-debug = false
-panic = "abort"
-overflow-checks = true
+cargo-near-build = { workspace = true, features = ["build_script"] }
