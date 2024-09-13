@@ -1,15 +1,20 @@
 use cargo_near_build::extended::BuildScriptOpts;
 
-
 fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-    println!("cargo:warning={}", format!("`devhub-community` build script working dir: {:?}", std::env::current_dir().expect("get current dir")));
+    println!(
+        "cargo:warning={}",
+        format!(
+            "`devhub-community` build script working dir: {:?}",
+            std::env::current_dir().expect("get current dir")
+        )
+    );
 
     let opts = cargo_near_build::extended::BuildOptsExtended {
         workdir: "../discussions",
         env: vec![
             // unix path of target contract from root of repo
-            (cargo_near_build::env_keys::nep330::CONTRACT_PATH, "discussions")
-        ], 
+            (cargo_near_build::env_keys::nep330::CONTRACT_PATH, "discussions"),
+        ],
         build_opts: Default::default(),
         build_script_opts: BuildScriptOpts {
             result_env_key: Some("BUILD_RS_SUB_BUILD_DEVHUB-DISCUSSIONS"),
