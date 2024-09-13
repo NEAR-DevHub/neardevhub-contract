@@ -19,9 +19,9 @@ From the root directory, run:
 
 ```sh
 cd community-factory
-cargo near build --no-docker
+cargo near build
 cd ..
-cargo near build --no-docker
+cargo near build
 ```
 
 ## Running Tests
@@ -40,7 +40,7 @@ NOTE: integration tests automatically build the `devhub-community-factory` and
 Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.
 
 ```sh
-cargo near deploy --no-docker {{account.near}}
+cargo near deploy {{account.near}}
 cd community-factory
-cargo near deploy --no-docker {{community.account.near}}
+cargo near deploy {{community.account.near}}
 ```
