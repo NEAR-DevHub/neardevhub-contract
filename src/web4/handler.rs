@@ -2,6 +2,7 @@ use near_sdk::{base64::prelude::*, env};
 use serde_json::json;
 
 use crate::{
+    rfp::RFP,
     web4::types::{Web4Request, Web4Response},
     Contract, Proposal,
 };
@@ -140,6 +141,21 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
             redirect_path = format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
             initial_props_json = json!({"page": page, "id": id});
         }
+        ("rfp", Some(id)) => {
+            if let Ok(id) = id.parse::<u32>() {
+                if let Some(versioned_rfp) = contract.rfps.get(id.into()) {
+                    let rfp_body = RFP::from(versioned_rfp).snapshot.body.latest_version();
+                    title = format!(" - RFP #{} - {}", id, rfp_body.name);
+                    description = rfp_body.summary;
+                } else {
+                    title = format!(" - RFP #{}", id);
+                }
+            } else {
+                title = " - RFPs".to_string();
+            }
+            redirect_path = format!("{}/widget/app?page={}&id={}", &current_account_id, page, id);
+            initial_props_json = json!({"page": page, "id": id});
+        }
         _ => {
             redirect_path = format!("{}/widget/app", &current_account_id);
             initial_props_json = json!({"page": page});
@@ -218,8 +234,10 @@ mod tests {
 
     use super::{web4_get, WEB4_RESOURCE_ACCOUNT};
     use crate::{
-        web4::types::Web4Response, CommunityInputs, Contract, Proposal, ProposalBodyV0,
-        ProposalSnapshot, VersionedProposalBody,
+        rfp::{RFPBodyV0, RFPSnapshot, VersionedRFPBody, RFP},
+        web4::types::Web4Response,
+        CommunityInputs, Contract, Proposal, ProposalBodyV0, ProposalSnapshot,
+        VersionedProposalBody,
     };
     use near_sdk::{
         base64::prelude::*, serde_json::json, test_utils::VMContextBuilder, testing_env, NearToken,
@@ -735,6 +753,75 @@ mod tests {
                 );
                 assert!(body_string.contains("https://near.social/not-only-devhub.near/widget/app"));
                 let expected_initial_props_string = json!({"page": "proposal"}).to_string();
+                assert!(body_string.contains(&expected_initial_props_string));
+            }
+            _ => {
+                panic!("Should return Web4Response::Body");
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_rfp_path() {
+        let signer = "bob.near".to_string();
+        let contract = "not-only-devhub.near".to_string();
+        let context = VMContextBuilder::new()
+            .signer_account_id(signer.clone().try_into().unwrap())
+            .current_account_id(contract.try_into().unwrap())
+            .build();
+
+        testing_env!(context);
+        let mut contract = Contract::new();
+
+        let rfp_body: RFPBodyV0 = near_sdk::serde_json::from_value(json!({
+            "rfp_body_version": "V0",
+            "name": "The best rfp ever",
+            "description": "You should just understand why this is the best rfp",
+            "category": "Marketing",
+            "summary": "It is obvious why this rfp is so great",
+            "submission_deadline": "1728950400000000000",
+            "timeline": {"status": "ACCEPTING_SUBMISSIONS"}
+        }))
+        .unwrap();
+        let rfp = RFP {
+            id: 0,
+            author_id: "bob.near".parse().unwrap(),
+            social_db_post_block_height: 0u64,
+            snapshot: RFPSnapshot {
+                editor_id: "bob.near".parse().unwrap(),
+                timestamp: 0,
+                labels: HashSet::new(),
+                block_height: 129813773,
+                linked_proposals: [38, 33, 26, 32, 35, 27].into(),
+                body: VersionedRFPBody::V0(rfp_body),
+            },
+            snapshot_history: vec![],
+        };
+
+        contract.rfps.push(&rfp.clone().into());
+
+        let response = web4_get(
+            &contract,
+            serde_json::from_value(serde_json::json!({
+                "path": "/rfp/0",
+                "preloads": create_preload_result(String::from("near/dev/hub"), String::from("The decentralized home base for NEAR builders")),
+            }))
+            .unwrap(),
+        );
+        match response {
+            Web4Response::Body { content_type, body } => {
+                assert_eq!("text/html; charset=UTF-8", content_type);
+
+                let body_string = String::from_utf8(BASE64_STANDARD.decode(body).unwrap()).unwrap();
+
+                assert!(body_string.contains("<meta property=\"og:description\" content=\"It is obvious why this rfp is so great\" />"));
+                assert!(body_string
+                    .contains("<meta name=\"twitter:title\" content=\"near/dev/hub - RFP #0 - The best rfp ever\">"));
+                assert!(body_string
+                    .contains("https://near.social/not-only-devhub.near/widget/app?page=rfp&id=0"));
+                assert!(body_string
+                    .contains("https://near.org/not-only-devhub.near/widget/app?page=rfp&id=0"));
+                let expected_initial_props_string = json!({"page": "rfp", "id": "0"}).to_string();
                 assert!(body_string.contains(&expected_initial_props_string));
             }
             _ => {
