@@ -3,19 +3,27 @@ name = "devhub-community-factory"
 version = "0.1.0"
 authors = ["NEAR DevHub <neardevhub.org>"]
 edition = "2021"
+repository.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
 
-[dependencies]
-near-sdk = "5.1.0"
-devhub_common = { path = "../devhub_common" }
+# fields to configure build with WASM reproducibility, according to specs  
+# in https://github.com/near/NEPs/blob/master/neps/nep-0330.md 
+[package.metadata.near.reproducible_build]
+# docker image, descriptor of build environment
+image = "sourcescan/cargo-near:0.8.2-rust-1.81.0"
+# tag after colon above serves only descriptive purpose; image is identified by digest
+image_digest = "sha256:3b5e6efa1d0cef710009f9cc20c845d316187cc170455edc5ba7fdf471c19655"
+# build command inside of docker container 
+# if docker image from default gallery is used https://hub.docker.com/r/sourcescan/cargo-near/tags,
+# the command may be any combination of flags of `cargo-near`,
+# supported by respective version of binary inside the container besides `--no-locked` flag
+container_build_command = ["cargo", "near", "build"]
 
-[profile.release]
-codegen-units = 1
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"
-lto = true
-debug = false
-panic = "abort"
-overflow-checks = true
+[dependencies]
+near-sdk.workspace = true
+devhub_common.workspace = true
+
+[build-dependencies]
+cargo-near-build = { workspace = true, features = ["build_script"] }
