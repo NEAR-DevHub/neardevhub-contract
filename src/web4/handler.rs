@@ -932,6 +932,7 @@ mod tests {
         }
     }
 
+    #[test]
     pub fn test_rfp_path() {
         let signer = "bob.near".to_string();
         let contract = "not-only-devhub.near".to_string();
