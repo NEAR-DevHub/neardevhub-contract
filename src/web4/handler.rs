@@ -160,15 +160,10 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         }
         // Handle blog route with community and blog title
         ("blog", Some(community), Some(last)) => {
-            // Split the query parameters from the last path segment 'last' before decoding
             let (blog_title_encoded, _) = last.split_once('?').unwrap_or((last, ""));
             let community = decode(community).unwrap_or(Cow::Borrowed(community));
             let blog_title =
                 decode(blog_title_encoded).unwrap_or(Cow::Borrowed(blog_title_encoded));
-            // Split the query parameters from the blog title
-            // let community = decode(community).unwrap_or(Cow::Borrowed(community));
-            // let blog_title_with_query = decode(last).unwrap_or(Cow::Borrowed(last));
-            // let blog_title = blog_title_with_query.split('?').next().unwrap_or("");
 
             redirect_path = format!(
                 "{}/widget/app?page=blogv2&community={}&id={}",
