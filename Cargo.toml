@@ -49,6 +49,9 @@ cargo-near-build.workspace = true
 tokio = { version = "1.10.0", features = ["full"] }
 anyhow = "1.0"
 
+[patch.crates-io]
+near-workspaces = { git = "https://github.com/near/near-workspaces" }
+
 # this profile is important as it applies to contract members of workspace: 
 # ["discussions", "community", "community-factory"]
 [profile.release]
