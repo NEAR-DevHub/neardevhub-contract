@@ -19,9 +19,9 @@ From the root directory, run:
 
 ```sh
 cd community-factory
-cargo near build
+cargo near build reproducible-wasm
 cd ..
-cargo near build
+cargo near build reproducible-wasm
 ```
 
 ## Running Tests
@@ -32,7 +32,7 @@ From the root directory, run:
 cargo test
 ```
 
-NOTE: integration tests automatically build the `devhub-community-factory` and  
+NOTE: integration tests automatically build the `devhub-community-factory` and
 `devhub` they depend on.
 
 ## Deploying
@@ -40,7 +40,7 @@ NOTE: integration tests automatically build the `devhub-community-factory` and
 Using [cargo-near](https://github.com/near/cargo-near), run the following command. Be sure to set your own account id and corresponding network.
 
 ```sh
-cargo near deploy {{account.near}}
+cargo near deploy build-reproducible-wasm {{account.near}}
 cd community-factory
-cargo near deploy {{community.account.near}}
+cargo near deploy build-reproducible-wasm {{community.account.near}}
 ```
