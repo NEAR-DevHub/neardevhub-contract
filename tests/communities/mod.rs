@@ -1,7 +1,6 @@
-mod test_env;
-
 use near_sdk::NearToken;
-use {crate::test_env::*, serde_json::json};
+use serde_json::json;
+use crate::test_env::*;
 
 #[tokio::test]
 async fn test_community_addon() -> anyhow::Result<()> {

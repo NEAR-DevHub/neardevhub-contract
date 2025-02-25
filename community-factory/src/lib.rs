@@ -3,7 +3,7 @@ use near_sdk::serde_json::json;
 
 use devhub_common::social_db_contract;
 
-const CODE: &[u8] = include_bytes!("../../community/target/near/devhub_community.wasm");
+const CODE: &[u8] = include_bytes!(env!("BUILD_RS_SUB_BUILD_DEVHUB-COMMUNITY"));
 const INITIAL_BALANCE: NearToken = NearToken::from_near(4);
 const PUBKEY_STR: &str = "ed25519:4deBAvg1S4MF7qe9GBDJwDCGLyyXtJa73JnMXwyG9vsB";
 

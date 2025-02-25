@@ -1,5 +1,3 @@
-mod test_env;
-
 use near_sdk::NearToken;
 use serde_json::Value;
 use {crate::test_env::*, serde_json::json};

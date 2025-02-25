@@ -18,11 +18,7 @@ Before starting, make sure you have the following installed:
 From the root directory, run:
 
 ```sh
-cd discussions
-cargo near build
-cd ../community
-cargo near build
-cd ../community-factory
+cd community-factory
 cargo near build
 cd ..
 cargo near build
@@ -35,6 +31,9 @@ From the root directory, run:
 ```sh
 cargo test
 ```
+
+NOTE: integration tests automatically build the `devhub-community-factory` and  
+`devhub` they depend on.
 
 ## Deploying
 

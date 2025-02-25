@@ -16,3 +16,6 @@ To run the test, use the following command:
 ```bash
 cargo test
 ```
+
+NOTE: integration tests automatically build the `devhub-community-factory` and  
+`devhub` they depend on.
