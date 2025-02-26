@@ -17,6 +17,6 @@ jobs:
       - name: Build community factory contract
         run: cd community-factory && cargo near build non-reproducible-wasm
       - name: Build devhub contract
-        run: cargo near build
+        run: cargo near build non-reproducible-wasm
       - name: Unit tests
         run: cargo test
