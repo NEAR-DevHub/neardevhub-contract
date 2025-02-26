@@ -124,6 +124,14 @@ impl Contract {
         (0..self.rfps.len().try_into().unwrap()).collect()
     }
 
+    pub fn get_change_log(&self) -> Vec<ChangeLog> {
+        self.change_log.to_vec()
+    }
+
+    pub fn get_change_log_since(&self, since: u64) -> Vec<ChangeLog> {
+        self.change_log.iter().filter(|log| log.block_id > since).collect()
+    }
+
     #[payable]
     pub fn add_proposal(
         &mut self,
