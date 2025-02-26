@@ -183,8 +183,8 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
     <meta name="twitter:title" content="{app_name}{title}">
     <meta name="twitter:description" content="{description}">
     <meta name="twitter:image" content="{image}">
-    <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/main.794b6347ae264789bc61.bundle.js"></script>
-    <script src="https://ipfs.web4.near.page/ipfs/bafybeic6aeztkdlthx5uwehltxmn5i6owm47b7b2jxbbpwmydv2mwxdfca/runtime.25b143da327a5371509f.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/near-bos-webcomponent@0.0.9/dist/main.1b3f0d7d1017de355a7c.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/near-bos-webcomponent@0.0.9/dist/runtime.25b143da327a5371509f.bundle.js"></script>
     <style>
         @media screen and (max-width: 600px) {{
             .gatewaylinks .nav-link {{
@@ -212,7 +212,7 @@ pub fn web4_get(contract: &Contract, request: Web4Request) -> Web4Response {
         </a>
     </div>
 </nav>
-    <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}'></near-social-viewer>
+    <near-social-viewer src="{current_account_id}/widget/app" initialProps='{initial_props_json}' rpc="https://rpc.mainnet.fastnear.com"></near-social-viewer>
     <script src="/resources/{web4_resource_account}/web4browserclient.js?blockHeight={web4_browserclient_block_height}"></script>
 </body>
 </html>"#,

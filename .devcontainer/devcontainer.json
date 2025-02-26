@@ -2,7 +2,8 @@
     "image": "ghcr.io/near/near-devcontainer:latest",
     "features": {
       "ghcr.io/near/near-devcontainers/features/cargo-near:latest": {},
-      "ghcr.io/near/near-devcontainers/features/near-cli:latest": {}
+      "ghcr.io/near/near-devcontainers/features/near-cli:latest": {},
+      "ghcr.io/devcontainers/features/rust:1": {}    
     },
     "customizations": {
         "vscode": {
