@@ -5,12 +5,13 @@ use std::collections::HashSet;
 
 pub use self::timeline::TimelineStatus;
 
-use crate::Contract;
-use crate::proposal::{Proposal, ProposalId, VersionedProposalBody};
+use crate::changelog::{ChangeLog, ChangeLogType};
 use crate::notify::get_text_mentions;
+use crate::proposal::{Proposal, ProposalId, VersionedProposalBody};
 use crate::str_serializers::*;
+use crate::Contract;
 
-use near_sdk::{env, require, near, AccountId, BlockHeight, Timestamp};
+use near_sdk::{env, near, require, AccountId, BlockHeight, Timestamp};
 
 pub type RFPId = u32;
 
@@ -128,7 +129,6 @@ enum LinkedProposalChangeOperation {
     Remove,
 }
 
-
 impl Contract {
     fn assert_can_link_unlink_rfp(&self, rfp_id: Option<RFPId>) {
         if let Some(rfp_id) = rfp_id {
@@ -158,7 +158,12 @@ impl Contract {
         rfp.snapshot.linked_proposals
     }
 
-    fn change_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId, operation: LinkedProposalChangeOperation) {
+    fn change_linked_proposal_in_rfp(
+        &mut self,
+        rfp_id: RFPId,
+        proposal_id: ProposalId,
+        operation: LinkedProposalChangeOperation,
+    ) {
         let mut rfp: RFP = self.get_rfp(rfp_id).into();
         let mut linked_proposals = rfp.snapshot.linked_proposals.clone();
         match operation {
@@ -187,7 +192,11 @@ impl Contract {
     }
 
     fn remove_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
-        self.change_linked_proposal_in_rfp(rfp_id, proposal_id, LinkedProposalChangeOperation::Remove);
+        self.change_linked_proposal_in_rfp(
+            rfp_id,
+            proposal_id,
+            LinkedProposalChangeOperation::Remove,
+        );
     }
 
     pub(crate) fn update_and_check_rfp_link(
@@ -234,10 +243,19 @@ impl Contract {
         let rfp_body = body.clone().latest_version();
 
         if rfp_body.timeline.is_proposal_selected() {
-            let has_approved_proposal = self.get_rfp_linked_proposals(id)
+            let has_approved_proposal = self
+                .get_rfp_linked_proposals(id)
                 .into_iter()
                 .filter_map(|proposal_id| self.proposals.get(proposal_id.into()))
-                .any(|proposal|  Into::<Proposal>::into(proposal).snapshot.body.latest_version().timeline.latest_version().was_approved());
+                .any(|proposal| {
+                    Into::<Proposal>::into(proposal)
+                        .snapshot
+                        .body
+                        .latest_version()
+                        .timeline
+                        .latest_version()
+                        .was_approved()
+                });
             require!(has_approved_proposal, "Cannot change RFP status to Proposal Selected without an approved proposal linked to this RFP");
         }
 
@@ -278,6 +296,12 @@ impl Contract {
             rfps.insert(id);
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
+
+        self.add_change_log(ChangeLog {
+            block_id: env::block_height().into(),
+            changed_object_id: id,
+            change_log_type: ChangeLogType::RFP(id),
+        });
 
         crate::notify::notify_rfp_subscribers(&rfp, self.get_moderators());
         id
