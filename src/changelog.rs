@@ -9,6 +9,7 @@ use crate::*;
 #[borsh(crate = "near_sdk::borsh")]
 pub struct ChangeLog {
     pub block_id: u64,
+    pub block_timestamp: u64,
     pub changed_object_id: u32,
     pub change_log_type: ChangeLogType,
 }

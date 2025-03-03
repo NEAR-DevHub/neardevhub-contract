@@ -275,6 +275,7 @@ impl Contract {
         self.proposals.push(&proposal.clone().into());
         self.add_change_log(ChangeLog {
             block_id: set_result.block_height.into(),
+            block_timestamp: env::block_timestamp(),
             changed_object_id: proposal.id,
             change_log_type: ChangeLogType::Proposal(proposal.id),
         });
@@ -291,7 +292,8 @@ impl Contract {
         self.rfps.push(&rfp.clone().into());
         self.add_change_log(ChangeLog {
             block_id: set_result.block_height.into(),
-            changed_object_id: rfp.id.clone(),
+            block_timestamp: env::block_timestamp(),
+            changed_object_id: rfp.id,
             change_log_type: ChangeLogType::RFP(rfp.id),
         });
         ret_value

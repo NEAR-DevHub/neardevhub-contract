@@ -299,6 +299,7 @@ impl Contract {
 
         self.add_change_log(ChangeLog {
             block_id: env::block_height(),
+            block_timestamp: env::block_timestamp(),
             changed_object_id: id,
             change_log_type: ChangeLogType::Proposal(id),
         });
