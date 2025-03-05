@@ -367,12 +367,7 @@ impl Contract {
             self.label_to_proposals.insert(&label_to_add, &proposals);
         }
 
-        self.add_change_log(ChangeLog {
-            block_id: env::block_height(),
-            block_timestamp: env::block_timestamp(),
-            changed_object_id: id,
-            change_log_type: ChangeLogType::Proposal(id),
-        });
+        self.add_change_log(ChangeLogType::Proposal(id));
 
         crate::notify::notify_edit_proposal(id, proposal_author);
         id

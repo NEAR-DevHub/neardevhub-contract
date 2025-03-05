@@ -34,7 +34,7 @@ use near_sdk::store::Lazy;
 use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
 use web4::types::{Web4Request, Web4Response};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::convert::TryInto;
 
 type PostId = u64;
@@ -61,7 +61,7 @@ pub struct Contract {
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
-    pub change_log: Vector<ChangeLog>,
+    pub change_log: VecDeque<ChangeLog>,
 }
 
 #[near]
@@ -87,7 +87,7 @@ impl Contract {
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
-            change_log: Vector::new(StorageKey::ChangeLog),
+            change_log: VecDeque::new(),
         };
 
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
@@ -124,12 +124,12 @@ impl Contract {
         (0..self.rfps.len().try_into().unwrap()).collect()
     }
 
-    pub fn get_change_log(&self) -> Vec<ChangeLog> {
-        self.change_log.to_vec()
+    pub fn get_change_log(&self) -> VecDeque<ChangeLog> {
+        self.change_log.clone()
     }
 
-    pub fn get_change_log_since(&self, since: u64) -> Vec<ChangeLog> {
-        self.change_log.iter().filter(|log| log.block_id > since).collect()
+    pub fn get_change_log_since(&self, since: u64) -> VecDeque<ChangeLog> {
+        self.change_log.iter().filter(|log| log.block_id > since).cloned().collect()
     }
 
     #[payable]
@@ -273,12 +273,7 @@ impl Contract {
     ) -> BlockHeightCallbackRetValue {
         proposal.social_db_post_block_height = set_result.block_height.into();
         self.proposals.push(&proposal.clone().into());
-        self.add_change_log(ChangeLog {
-            block_id: set_result.block_height.into(),
-            block_timestamp: env::block_timestamp(),
-            changed_object_id: proposal.id,
-            change_log_type: ChangeLogType::Proposal(proposal.id),
-        });
+        self.add_change_log(ChangeLogType::Proposal(proposal.id));
         BlockHeightCallbackRetValue { proposal_id: proposal.id }
     }
 
@@ -290,12 +285,7 @@ impl Contract {
         let ret_value = BlockHeightCallbackRetValue { proposal_id: rfp.id.clone() };
         rfp.social_db_post_block_height = set_result.block_height.into();
         self.rfps.push(&rfp.clone().into());
-        self.add_change_log(ChangeLog {
-            block_id: set_result.block_height.into(),
-            block_timestamp: env::block_timestamp(),
-            changed_object_id: rfp.id,
-            change_log_type: ChangeLogType::RFP(rfp.id),
-        });
+        self.add_change_log(ChangeLogType::RFP(rfp.id));
         ret_value
     }
 

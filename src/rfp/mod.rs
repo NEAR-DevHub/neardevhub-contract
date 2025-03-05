@@ -297,12 +297,7 @@ impl Contract {
             self.label_to_rfps.insert(&label_to_add, &rfps);
         }
 
-        self.add_change_log(ChangeLog {
-            block_id: env::block_height(),
-            block_timestamp: env::block_timestamp(),
-            changed_object_id: id,
-            change_log_type: ChangeLogType::Proposal(id),
-        });
+        self.add_change_log(ChangeLogType::RFP(id));
 
         crate::notify::notify_rfp_subscribers(&rfp, self.get_moderators());
         id
