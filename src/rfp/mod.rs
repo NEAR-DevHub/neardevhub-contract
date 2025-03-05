@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 pub use self::timeline::TimelineStatus;
 
-use crate::changelog::{ChangeLog, ChangeLogType};
+use crate::changelog::ChangeLogType;
 use crate::notify::get_text_mentions;
 use crate::proposal::{Proposal, ProposalId, VersionedProposalBody};
 use crate::str_serializers::*;

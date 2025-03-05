@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 use self::timeline::{TimelineStatusV1, VersionedTimelineStatus};
 
-use crate::changelog::{ChangeLog, ChangeLogType};
+use crate::changelog::ChangeLogType;
 use crate::str_serializers::*;
 use crate::Contract;
 use crate::{notify::get_text_mentions, rfp::RFPId};
