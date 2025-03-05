@@ -181,10 +181,10 @@ impl Contract {
             block_height: env::block_height(),
             labels: rfp.snapshot.labels,
             body: rfp.snapshot.body,
-            linked_proposals: linked_proposals,
+            linked_proposals,
         };
         rfp.snapshot = new_snapshot;
-        self.rfps.replace(rfp_id.try_into().unwrap(), &rfp.clone().into());
+        self.rfps.replace(rfp_id.into(), &rfp.clone().into());
     }
 
     fn add_linked_proposal_in_rfp(&mut self, rfp_id: RFPId, proposal_id: ProposalId) {
@@ -268,11 +268,11 @@ impl Contract {
             timestamp: env::block_timestamp(),
             block_height: env::block_height(),
             labels: new_labels.clone(),
-            body: body,
+            body,
             linked_proposals: old_snapshot.linked_proposals.clone(),
         };
         rfp.snapshot = new_snapshot;
-        self.rfps.replace(id.try_into().unwrap(), &rfp.clone().into());
+        self.rfps.replace(id.into(), &rfp.clone().into());
 
         // Update labels index.
         let new_labels_set = new_labels;
