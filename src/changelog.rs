@@ -1,18 +1,16 @@
 use crate::*;
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
-#[derive(BorshDeserialize, BorshSerialize, Clone, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers=[borsh, json])]
 pub struct ChangeLog {
     pub block_id: u64,
     pub block_timestamp: u64,
     pub change_log_type: ChangeLogType,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Clone, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers=[borsh, json])]
 pub enum ChangeLogType {
     Proposal(ProposalId),
     RFP(RFPId),
@@ -34,8 +32,7 @@ impl Contract {
 }
 
 // TODO remove this if not necessary
-#[derive(BorshDeserialize, BorshSerialize, Clone, Default, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers=[borsh, json])]
 pub struct ChangeLogQueue(pub VecDeque<ChangeLog>);
 
 // TODO remove this
