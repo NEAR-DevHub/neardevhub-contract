@@ -1,6 +1,6 @@
-use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::{NearSchema, BorshStorageKey, CryptoHash};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{BorshStorageKey, CryptoHash, NearSchema};
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, NearSchema)]
 #[serde(crate = "near_sdk::serde")]
@@ -9,7 +9,6 @@ use near_sdk::{NearSchema, BorshStorageKey, CryptoHash};
 pub enum VersionedPost {
     V0,
 }
-
 
 #[derive(BorshSerialize, BorshStorageKey)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -36,4 +35,5 @@ pub enum StorageKey {
     LabelToRFPs,
     RFPLinkedProposals,
     LabelInfo,
+    ChangeLog,
 }

@@ -5,8 +5,9 @@ use std::collections::HashSet;
 
 use self::timeline::{TimelineStatusV1, VersionedTimelineStatus};
 
-use crate::Contract;
+use crate::changelog::ChangeLogType;
 use crate::str_serializers::*;
+use crate::Contract;
 use crate::{notify::get_text_mentions, rfp::RFPId};
 
 use near_sdk::{env, near, require, AccountId, BlockHeight, Timestamp};
@@ -199,7 +200,7 @@ impl From<VersionedProposalBody> for ProposalBodyV2 {
             VersionedProposalBody::V0(v0) => {
                 let v1: ProposalBodyV1 = v0.into();
                 v1.into()
-            },
+            }
             VersionedProposalBody::V1(v1) => v1.into(),
             VersionedProposalBody::V2(v2) => v2,
         }
@@ -265,7 +266,11 @@ pub enum ProposalFundingCurrency {
 }
 
 impl Contract {
-    pub(crate) fn update_proposal_labels(&mut self, proposal_id: ProposalId, new_labels: HashSet<String>) -> ProposalId {
+    pub(crate) fn update_proposal_labels(
+        &mut self,
+        proposal_id: ProposalId,
+        new_labels: HashSet<String>,
+    ) -> ProposalId {
         let proposal: Proposal = self
             .proposals
             .get(proposal_id.into())
@@ -295,7 +300,8 @@ impl Contract {
         let proposal_body = body.clone().latest_version();
 
         let old_body = proposal.snapshot.body.clone();
-        let labels = self.update_and_check_rfp_link(id, body.clone(), Some(old_body.clone()), labels);
+        let labels =
+            self.update_and_check_rfp_link(id, body.clone(), Some(old_body.clone()), labels);
 
         let current_timeline = old_body.latest_version().timeline.latest_version();
         let new_timeline = proposal_body.timeline.latest_version();
@@ -304,8 +310,7 @@ impl Contract {
             self.has_moderator(editor_id.clone())
                 || editor_id.clone() == env::current_account_id()
                 || current_timeline.is_draft()
-                    && (new_timeline.is_empty_review()
-                        || new_timeline.is_draft())
+                    && (new_timeline.is_empty_review() || new_timeline.is_draft())
                 || current_timeline.can_be_cancelled() && new_timeline.is_cancelled(),
             "This account is only allowed to change proposal status from DRAFT to REVIEW"
         );
@@ -361,6 +366,8 @@ impl Contract {
             proposals.insert(id);
             self.label_to_proposals.insert(&label_to_add, &proposals);
         }
+
+        self.add_change_log(ChangeLogType::Proposal(id));
 
         crate::notify::notify_edit_proposal(id, proposal_author);
         id
