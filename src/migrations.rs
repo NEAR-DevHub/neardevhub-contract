@@ -729,7 +729,7 @@ impl Contract {
             communities,
             featured_communities,
             available_addons,
-            change_log: Vector::new(StorageKey::ChangeLog),
+            change_log: ChangeLogQueue::new(),
         });
     }
 }
@@ -752,7 +752,7 @@ pub struct ContractV12 {
     pub communities: UnorderedMap<CommunityHandle, CommunityV5>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
-    pub change_log: Vector<ChangeLog>,
+    pub change_log: ChangeLogQueue,
 }
 
 #[near]

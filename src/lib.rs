@@ -34,7 +34,7 @@ use near_sdk::store::Lazy;
 use near_sdk::{env, near, require, AccountId, NearSchema, PanicOnDefault, Promise};
 use web4::types::{Web4Request, Web4Response};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::convert::TryInto;
 
 type PostId = u64;
@@ -61,7 +61,7 @@ pub struct Contract {
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
-    pub change_log: Vector<ChangeLog>,
+    pub change_log: ChangeLogQueue,
 }
 
 #[near]
@@ -87,7 +87,7 @@ impl Contract {
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
-            change_log: Vector::new(StorageKey::ChangeLog),
+            change_log: ChangeLogQueue::new(),
         };
 
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
@@ -124,12 +124,12 @@ impl Contract {
         (0..self.rfps.len().try_into().unwrap()).collect()
     }
 
-    pub fn get_change_log(&self) -> Vec<ChangeLog> {
-        self.change_log.iter().collect()
+    pub fn get_change_log(&self) -> VecDeque<ChangeLog> {
+        self.change_log.0.clone()
     }
 
-    pub fn get_change_log_since(&self, since: u64) -> Vec<ChangeLog> {
-        self.change_log.iter().filter(|log| log.block_id > since).collect()
+    pub fn get_change_log_since(&self, since: u64) -> VecDeque<ChangeLog> {
+        self.change_log.iter().filter(|log| log.block_id > since).cloned().collect()
     }
 
     #[payable]
