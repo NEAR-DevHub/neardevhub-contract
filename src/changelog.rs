@@ -35,6 +35,30 @@ impl Contract {
 #[near(serializers=[borsh, json])]
 pub struct ChangeLogQueue(pub VecDeque<ChangeLog>);
 
+// #[serde(with = "vec_deque_as_vec")]
+// mod vec_deque_as_vec {
+//     use super::*;
+//     use near_sdk::serde::{Deserialize, Deserializer, Serializer};
+
+//     pub fn serialize<S, T>(deque: &VecDeque<T>, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: Serializer,
+//         T: near_sdk::serde::Serialize,
+//     {
+//         let vec: Vec<&T> = deque.iter().collect();
+//         vec.serialize(serializer)
+//     }
+
+//     pub fn deserialize<'de, D, T>(deserializer: D) -> Result<VecDeque<T>, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//         T: Deserialize<'de>,
+//     {
+//         let vec = Vec::<T>::deserialize(deserializer)?;
+//         Ok(VecDeque::from(vec))
+//     }
+// }
+
 // impl BorshSerialize for ChangeLogQueue {
 //     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
 //         let vec: Vec<_> = self.0.iter().cloned().collect();

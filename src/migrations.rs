@@ -2,6 +2,7 @@
 //! Should be invocable only by the owner and in most cases should be called only once though the
 //! latter is not asserted.
 
+use crate::changelog::ChangeLog;
 use crate::*;
 use near_sdk::store::Lazy;
 use near_sdk::{borsh::to_vec, env, near, NearToken, Promise};
@@ -729,7 +730,7 @@ impl Contract {
             communities,
             featured_communities,
             available_addons,
-            change_log: ChangeLogQueue::new(),
+            change_log: VecDeque::new(),
         });
     }
 }
@@ -752,7 +753,7 @@ pub struct ContractV12 {
     pub communities: UnorderedMap<CommunityHandle, CommunityV5>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
-    pub change_log: ChangeLogQueue,
+    pub change_log: VecDeque<ChangeLog>,
 }
 
 #[near]

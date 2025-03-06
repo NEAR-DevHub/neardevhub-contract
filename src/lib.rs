@@ -61,7 +61,7 @@ pub struct Contract {
     pub communities: UnorderedMap<CommunityHandle, Community>,
     pub featured_communities: Vec<FeaturedCommunity>,
     pub available_addons: UnorderedMap<AddOnId, AddOn>,
-    pub change_log: ChangeLogQueue,
+    pub change_log: VecDeque<ChangeLog>,
 }
 
 #[near]
@@ -87,7 +87,7 @@ impl Contract {
             communities: UnorderedMap::new(StorageKey::Communities),
             featured_communities: Vec::new(),
             available_addons: UnorderedMap::new(StorageKey::AddOns),
-            change_log: ChangeLogQueue::new(),
+            change_log: VecDeque::new(),
         };
 
         contract.post_to_children.insert(&ROOT_POST_ID, &Vec::new());
@@ -125,7 +125,7 @@ impl Contract {
     }
 
     pub fn get_change_log(&self) -> VecDeque<ChangeLog> {
-        self.change_log.0.clone()
+        self.change_log.clone()
     }
 
     pub fn get_change_log_since(&self, since: u64) -> VecDeque<ChangeLog> {
