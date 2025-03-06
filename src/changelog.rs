@@ -1,16 +1,18 @@
 use crate::*;
-// use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
-#[derive(Clone)]
-#[near(serializers=[borsh, json])]
+
+#[derive(BorshDeserialize, BorshSerialize, Clone, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct ChangeLog {
     pub block_id: u64,
     pub block_timestamp: u64,
     pub change_log_type: ChangeLogType,
 }
 
-#[derive(Clone)]
-#[near(serializers=[borsh, json])]
+#[derive(BorshDeserialize, BorshSerialize, Clone, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum ChangeLogType {
     Proposal(ProposalId),
     RFP(RFPId),
@@ -31,53 +33,12 @@ impl Contract {
     }
 }
 
-#[derive(Clone, Default)]
-#[near(serializers=[borsh, json])]
+// TODO remove this if not necessary
+#[derive(BorshDeserialize, BorshSerialize, Clone, Default, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct ChangeLogQueue(pub VecDeque<ChangeLog>);
 
-// #[serde(with = "vec_deque_as_vec")]
-// mod vec_deque_as_vec {
-//     use super::*;
-//     use near_sdk::serde::{Deserialize, Deserializer, Serializer};
-
-//     pub fn serialize<S, T>(deque: &VecDeque<T>, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//         T: near_sdk::serde::Serialize,
-//     {
-//         let vec: Vec<&T> = deque.iter().collect();
-//         vec.serialize(serializer)
-//     }
-
-//     pub fn deserialize<'de, D, T>(deserializer: D) -> Result<VecDeque<T>, D::Error>
-//     where
-//         D: Deserializer<'de>,
-//         T: Deserialize<'de>,
-//     {
-//         let vec = Vec::<T>::deserialize(deserializer)?;
-//         Ok(VecDeque::from(vec))
-//     }
-// }
-
-// impl BorshSerialize for ChangeLogQueue {
-//     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-//         let vec: Vec<_> = self.0.iter().cloned().collect();
-//         borsh::BorshSerialize::serialize(&vec, writer)
-//     }
-// }
-
-// impl BorshDeserialize for ChangeLogQueue {
-//     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-//         let vec: Vec<ChangeLog> = borsh::BorshDeserialize::deserialize(buf)?;
-//         Ok(Self(VecDeque::from(vec)))
-//     }
-
-//     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-//         let vec: Vec<ChangeLog> = borsh::BorshDeserialize::deserialize_reader(reader)?;
-//         Ok(Self(VecDeque::from(vec)))
-//     }
-// }
-
+// TODO remove this
 // Add methods to delegate to the inner VecDeque
 impl ChangeLogQueue {
     pub fn new() -> Self {
