@@ -1,11 +1,11 @@
 use crate::*;
-use std::collections::VecDeque;
+use near_sdk::{BlockHeight, Timestamp};
 
 #[derive(Clone)]
 #[near(serializers=[borsh, json])]
 pub struct ChangeLog {
-    pub block_id: u64,
-    pub block_timestamp: u64,
+    pub block_id: BlockHeight,
+    pub block_timestamp: Timestamp,
     pub change_log_type: ChangeLogType,
 }
 
@@ -28,37 +28,5 @@ impl Contract {
             self.change_log.pop_front();
         }
         self.change_log.push_back(new_log);
-    }
-}
-
-// TODO remove this if not necessary
-#[near(serializers=[borsh, json])]
-pub struct ChangeLogQueue(pub VecDeque<ChangeLog>);
-
-// TODO remove this
-// Add methods to delegate to the inner VecDeque
-impl ChangeLogQueue {
-    pub fn new() -> Self {
-        Self(VecDeque::new())
-    }
-
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub fn pop_front(&mut self) -> Option<ChangeLog> {
-        self.0.pop_front()
-    }
-
-    pub fn push_back(&mut self, value: ChangeLog) {
-        self.0.push_back(value)
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &ChangeLog> {
-        self.0.iter()
     }
 }
